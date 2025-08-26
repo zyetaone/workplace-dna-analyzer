@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Zyeta DX - Workplace Experience Platform</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Transform workplace insights with real-time engagement and analytics" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+		<style>
+			/* Zyeta DX Loading Screen */
+			#zyeta-loading {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh;
+				background: #000;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				z-index: 9999;
+				transition: opacity 0.5s ease-out;
+			}
+			
+			#zyeta-loading.fade-out {
+				opacity: 0;
+				pointer-events: none;
+			}
+			
+			.zyeta-logo-container {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin-bottom: 40px;
+			}
+			
+			.zyeta-logo {
+				width: 200px;
+				height: 200px;
+				animation: pulse 2s infinite;
+			}
+			
+			.dx-text {
+				font-family: 'Dancing Script', cursive;
+				font-size: 72px;
+				font-weight: 700;
+				color: #fff;
+				margin-left: -20px;
+				margin-top: 20px;
+				animation: slideIn 1s ease-out;
+			}
+			
+			.loading-text {
+				color: #fff;
+				font-family: system-ui, -apple-system, sans-serif;
+				font-size: 14px;
+				letter-spacing: 2px;
+				text-transform: uppercase;
+				opacity: 0.8;
+				margin-top: 20px;
+			}
+			
+			.loading-bar {
+				width: 200px;
+				height: 2px;
+				background: rgba(255, 255, 255, 0.1);
+				border-radius: 2px;
+				overflow: hidden;
+				margin-top: 20px;
+			}
+			
+			.loading-progress {
+				height: 100%;
+				background: linear-gradient(90deg, transparent, #fff, transparent);
+				animation: loading 1.5s infinite linear;
+			}
+			
+			@keyframes pulse {
+				0%, 100% { transform: scale(1); }
+				50% { transform: scale(1.05); }
+			}
+			
+			@keyframes slideIn {
+				from { 
+					opacity: 0;
+					transform: translateX(-30px);
+				}
+				to {
+					opacity: 1;
+					transform: translateX(0);
+				}
+			}
+			
+			@keyframes loading {
+				0% { transform: translateX(-100%); }
+				100% { transform: translateX(200%); }
+			}
+		</style>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<!-- Zyeta DX Loading Screen -->
+		<div id="zyeta-loading">
+			<div class="zyeta-logo-container">
+				<svg class="zyeta-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+					<rect x="25.04" y="25.04" width="249.93" height="249.93" fill="#fff"/>
+					<g>
+						<polygon fill="#000" points="64.6 160.09 60.75 165.55 83.17 165.55 83.17 172.19 52.46 172.19 52.46 165.78 52.62 165.55 56.48 160.09 66.69 145.62 74.57 134.45 52.46 134.45 52.46 127.81 83.17 127.81 83.17 133.78 82.7 134.45 74.82 145.62 64.6 160.09"/>
+						<polygon fill="#000" points="205.35 127.81 205.35 134.45 192.76 134.45 192.76 172.19 186.12 172.19 186.12 134.45 173.53 134.45 173.53 127.81 205.35 127.81"/>
+						<path fill="#000" d="M244.96,165.55l-2.13-5.47-2.59-6.64-3.05-7.83-4.35-11.17-2.37-6.08-.22-.56h-6.69l-.22.56-2.37,6.08-4.35,11.17-3.05,7.83-2.59,6.64-2.13,5.47-2.59,6.64h7.12l2.59-6.64,2.13-5.47h17.6l2.13,5.47,2.59,6.64h7.12l-2.59-6.64ZM220.69,153.45l3.05-7.83,3.16-8.11,3.16,8.11,3.05,7.83h-12.42Z"/>
+						<polygon fill="#000" points="127.24 127.81 123.3 134.45 116.67 145.62 112.61 152.46 112.56 152.54 112.56 172.19 104.86 172.19 104.86 152.41 100.82 145.62 94.2 134.45 90.25 127.81 97.98 127.81 101.92 134.45 104.86 139.4 108.55 145.62 108.75 145.95 108.95 145.62 112.56 139.53 115.58 134.45 119.52 127.81 127.24 127.81"/>
+						<polygon fill="#000" points="143.6 134.45 143.6 145.62 161.45 145.62 161.45 152.25 143.6 152.25 143.6 165.55 164.23 165.55 164.23 172.19 136.96 172.19 136.96 127.81 164.23 127.81 164.23 134.45 143.6 134.45"/>
+					</g>
+				</svg>
+				<span class="dx-text">dx</span>
+			</div>
+			<div class="loading-text">Loading Experience</div>
+			<div class="loading-bar">
+				<div class="loading-progress"></div>
+			</div>
+		</div>
+		
+		<div style="display: contents">%sveltekit.body%</div>
+		
+		<script>
+			// Remove loading screen when app is ready
+			if (typeof window !== 'undefined') {
+				window.addEventListener('load', () => {
+					setTimeout(() => {
+						const loader = document.getElementById('zyeta-loading');
+						if (loader) {
+							loader.classList.add('fade-out');
+							setTimeout(() => loader.remove(), 500);
+						}
+					}, 500);
+				});
+			}
+		</script>
+	</body>
+</html>

@@ -1,0 +1,137 @@
+@import 'tailwindcss';
+
+/* Custom theme configuration for Tailwind CSS 4 */
+@theme {
+  /* Custom animations */
+  --animate-fade-in: fade-in 0.5s ease forwards;
+  --animate-gradient: gradient 15s ease infinite;
+  --animate-float: float 3s ease-in-out infinite;
+  
+  @keyframes fade-in {
+    from { 
+      opacity: 0; 
+      transform: translateY(10px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+  
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+/* Simple utility classes */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.glass-dark {
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Classy grey gradient */
+.animated-gradient {
+  background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 25%, #6b7280 50%, #9ca3af 75%, #e5e7eb 100%);
+  background-size: 400% 400%;
+  animation: var(--animate-gradient);
+}
+
+/* Option card states */
+.option-card {
+  transition: all 0.3s ease;
+}
+
+.option-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.option-card.selected {
+  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.3);
+  transform: scale(1.02);
+}
+
+/* Badge styling - grey theme */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: linear-gradient(to right, #4b5563, #6b7280);
+  color: white;
+}
+
+/* Live indicator */
+.live-indicator {
+  position: relative;
+}
+
+.live-indicator::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #ef4444;
+  border-radius: 9999px;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+/* 3D card effect - subtle */
+.card-3d {
+  transition: transform 0.3s;
+}
+
+.card-3d:hover {
+  transform: perspective(1000px) rotateY(1deg) translateZ(5px);
+}
+
+/* Button styles */
+.btn-primary {
+  background: linear-gradient(135deg, #4b5563, #374151);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #374151, #1f2937);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: #374151;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
