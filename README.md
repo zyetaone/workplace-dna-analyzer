@@ -1,6 +1,6 @@
-# Workplace DNA Analyzer
+# Workplace Preference Survey App
 
-An interactive real-time workplace preference analysis platform that helps organizations understand their team's workplace DNA through engaging quizzes and AI-powered insights.
+A real-time survey application for analyzing workplace preferences across different generations, built with SvelteKit 5 and modern web technologies.
 
 ## 🌟 Features
 
@@ -24,72 +24,65 @@ An interactive real-time workplace preference analysis platform that helps organ
 
 ## 🚀 Tech Stack
 
-- **Frontend**: SvelteKit 5 with Svelte's latest runes API
-- **Database**: SQLite with libSQL/Turso support
-- **Real-time**: Server-Sent Events (SSE) for live updates
+- **Framework**: SvelteKit 5 with Svelte 5 runes
+- **Database**: SQLite with Drizzle ORM
+- **Validation**: Valibot with SvelteKit remote functions
+- **Real-time**: Server-Sent Events (SSE)
 - **Styling**: TailwindCSS
-- **Visualizations**: D3.js, Chart.js, d3-cloud
-- **AI Integration**: OpenAI GPT-4 and DALL-E 3
-- **Runtime**: Bun
-- **Validation**: Valibot
-- **ORM**: Drizzle
+- **Charts**: Chart.js with reusable utilities
+- **Build**: Vite
+- **AI Integration**: OpenAI GPT-4 (optional)
 
 ## 📋 Prerequisites
 
-- [Bun](https://bun.sh) v1.0 or higher
+- Node.js 20+ or Bun 1.0+
 - OpenAI API key (optional, for AI features)
 
 ## 🔧 Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/zyetaone/workplace-dna-analyzer.git
-cd workplace-dna-analyzer
+git clone <repository-url>
+cd ppt-app
 ```
 
 2. Install dependencies:
 ```bash
+npm install
+# or
 bun install
 ```
 
-3. Set up environment variables:
+3. Set up environment variables (optional):
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-4. Edit `.env.local` and add your configuration:
+4. Edit `.env` and add your configuration:
 ```env
-# Database configuration
-DATABASE_URL=local.db
-
-# Server configuration
-HOST=0.0.0.0
-PORT=3000
-NODE_ENV=development
-
 # Optional: OpenAI API key for AI features
 OPENAI_API_KEY=your-api-key-here
 ```
 
 5. Initialize the database:
 ```bash
-bun run db:generate
-bun run db:migrate
+npm run db:generate
+npm run db:push
 ```
 
 ## 🏃 Running the Application
 
 ### Development Mode
 ```bash
-bun run dev
+npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
+The application will be available at `http://localhost:5173`
 
 ### Production Mode
 ```bash
-bun run build
-bun run preview
+npm run build
+npm run preview
 ```
 
 ## 📱 Usage
@@ -132,35 +125,59 @@ Access the chatbot via the floating button in the presenter dashboard.
 - **Word Cloud**: Visual representation of key workplace themes
 - **AI Insights**: Smart recommendations based on team composition
 
-## 🗄️ Database Schema
+## 📁 Project Structure
+
+```
+src/
+├── routes/                 # SvelteKit routes
+│   ├── +page.svelte       # Home/create session
+│   └── session/[sessionId]/
+│       ├── presenter/     # Presenter dashboard
+│       ├── join/          # Attendee join page
+│       └── attendee/      # Survey interface
+├── lib/
+│   ├── server/            # Server-side code
+│   │   ├── db/           # Database (Drizzle + SQLite)
+│   │   └── sse-manager.ts # SSE management
+│   ├── stores/           # Svelte stores
+│   ├── components/       # Reusable components
+│   └── utils/            # Utility functions
+└── hooks/                # SvelteKit hooks
+```
+
+## 🗄️ Database Management
+
+```bash
+# Generate migrations
+npm run db:generate
+
+# Apply migrations
+npm run db:push
+
+# Open database studio
+npm run db:studio
+```
 
 The application uses SQLite with two main tables:
 - `sessions`: Stores session information and metadata
 - `attendees`: Stores participant data and quiz responses
 
-## 🚢 Deployment
-
-### Local VPS with libSQL
-
-1. Update `DATABASE_URL` in `.env` to use libSQL:
-```env
-DATABASE_URL=libsql://your-database.turso.io
-DATABASE_AUTH_TOKEN=your-auth-token
-```
-
-2. Build and run:
-```bash
-bun run build
-bun run start
-```
-
-### Using PM2
+## 🐳 Docker Deployment
 
 ```bash
-pm2 start "bun run start" --name workplace-dna
-pm2 save
-pm2 startup
+# Build and run with Docker
+docker build -t survey-app .
+docker run -p 3000:3000 -v ./data:/app/data survey-app
 ```
+
+See [DOCKER.md](./DOCKER.md) for detailed deployment instructions.
+
+## 📖 Documentation
+
+- [Architecture Overview](./ARCHITECTURE.md) - System design and data flow
+- [Docker Deployment](./DOCKER.md) - Container deployment guide
+- [Implementation Guide](./docs/IMPLEMENTATION-CHECKLIST.md) - Development checklist
+- [Migration Guide](./docs/MIGRATION_GUIDE.md) - Svelte 5 migration notes
 
 ## 🤝 Contributing
 
@@ -186,6 +203,4 @@ For questions or support, please open an issue on GitHub.
 
 ---
 
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+Built with SvelteKit 5 and modern web technologies.

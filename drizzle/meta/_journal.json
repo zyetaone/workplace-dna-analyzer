@@ -8,6 +8,13 @@
       "when": 1756186046790,
       "tag": "0000_soft_virginia_dare",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1756223003728,
+      "tag": "0001_little_magma",
+      "breakpoints": true
     }
   ]
 }

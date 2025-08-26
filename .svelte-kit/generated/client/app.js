@@ -1,3 +1,5 @@
+import * as universal_hooks from '../../../src/hooks.ts';
+
 export { matchers } from './matchers.js';
 
 export const nodes = [
@@ -8,27 +10,25 @@ export const nodes = [
 	() => import('./nodes/4'),
 	() => import('./nodes/5'),
 	() => import('./nodes/6'),
-	() => import('./nodes/7'),
-	() => import('./nodes/8')
+	() => import('./nodes/7')
 ];
 
 export const server_loads = [];
 
 export const dictionary = {
 		"/": [2],
-		"/join": [3],
-		"/session/[sessionId]/attendee/[attendeeId]": [4],
-		"/session/[sessionId]/attendee/[attendeeId]/complete": [5],
-		"/session/[sessionId]/join": [6],
-		"/session/[sessionId]/presenter": [~7],
-		"/test-stores": [8]
+		"/session/[slug]": [3],
+		"/session/[slug]/attendee/[attendeeId]": [4],
+		"/session/[slug]/attendee/[attendeeId]/complete": [5],
+		"/session/[slug]/join": [6],
+		"/session/[slug]/presenter": [7]
 	};
 
 export const hooks = {
 	handleError: (({ error }) => { console.error(error) }),
 	
-	reroute: (() => {}),
-	transport: {}
+	reroute: universal_hooks.reroute || (() => {}),
+	transport: universal_hooks.transport || {}
 };
 
 export const decoders = Object.fromEntries(Object.entries(hooks.transport).map(([k, v]) => [k, v.decode]));

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { createSession } from './session.remote';
+	import { createSession } from './session/[slug]/presenter/presenter.remote';
 	
 	let title = $state('');
 	let isCreating = $state(false);
@@ -21,12 +21,14 @@
 				presenterId: 'presenter-' + Date.now()
 			});
 			
+			console.log("createSession result:", result);
 			if (result.redirect) {
+				console.log("Redirecting to:", result.redirect);
 				goto(result.redirect);
 			}
 		} catch (err) {
 			error = 'Failed to create session. Please try again.';
-			console.error(err);
+			console.error("CreateSession error:", err);
 			isCreating = false;
 		}
 	}

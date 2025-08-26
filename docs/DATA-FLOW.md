@@ -50,7 +50,7 @@ graph TD
 
 **Code Path:**
 1. `src/routes/+page.svelte` - UI for title input
-2. `src/routes/session.remote.ts::createSession()` - Validates and creates session
+2. `src/routes/session/[sessionId]/presenter/presenter.remote.ts::createSession()` - Validates and creates session
 3. Database insert with auto-generated ID and code
 4. Returns redirect URL to presenter dashboard
 
@@ -75,7 +75,7 @@ graph TD
 
 **Code Path:**
 1. `src/routes/session/[sessionId]/join/+page.svelte` - Name input UI
-2. `src/routes/session.remote.ts::joinSession()` - Validates and creates attendee
+2. `src/routes/session/[sessionId]/attendee/[attendeeId]/attendee.remote.ts::joinSession()` - Validates and creates attendee
 3. Database: Find session by code, insert attendee
 4. SSE broadcast: Notify presenter of new attendee
 5. Redirect to quiz page
@@ -92,15 +92,24 @@ graph TD
     F --> G[Redirect to Complete]
     
     subgraph "Score Calculation"
-    D --> H[Sum values per dimension]
-    H --> I[Average by question count]
-    I --> J[Store in preference_scores]
+    D --> H[Skip generation question without values]
+    H --> I[Sum values per dimension]
+    I --> J[Average by scored questions only]
+    J --> K[Store in preference_scores]
     end
 ```
 
+**Code Path:**
+1. `src/routes/session/[sessionId]/attendee/[attendeeId]/+page.svelte` - Quiz UI
+2. `src/routes/session/[sessionId]/attendee/[attendeeId]/attendee.remote.ts::saveResponse()` - Save each answer
+3. `src/routes/session/[sessionId]/attendee/[attendeeId]/attendee.remote.ts::completeQuiz()` - Calculate and save scores
+4. SSE broadcast: Notify presenter of completion with scores
+5. Redirect to completion page
+
 **Database Updates:**
 1. After each answer: `UPDATE attendees SET responses = ? WHERE id = ?`
-2. On completion: `UPDATE attendees SET completed = true, preference_scores = ?, completed_at = ?`
+2. Generation question (index 0): Also updates `generation` field
+3. On completion: `UPDATE attendees SET completed = true, preference_scores = ?, completed_at = ?`
 
 ## 4. Real-time Updates (SSE)
 
@@ -120,10 +129,11 @@ graph TD
     end
 ```
 
-**SSE Endpoint:** `/api/sessions/[id]/stream/+server.ts`
-- Maintains connection pool per session
+**SSE Endpoint:** `/session/[sessionId]/stream/+server.ts`
+- Maintains connection pool per session via SSE manager
 - Broadcasts events to all connected clients
 - Auto-reconnects on disconnect
+- Events broadcast directly from remote functions (no API calls needed)
 
 ## 5. Analytics Aggregation
 
@@ -145,7 +155,7 @@ graph TD
     K[Return to Presenter]
 ```
 
-**Code:** `src/routes/session/[sessionId]/presenter/dashboard.remote.ts::getSessionAnalytics()`
+**Code:** `src/lib/stores/sessionState.svelte.ts::getAnalytics()` - Computed from reactive state
 
 ## Data Integrity Features
 

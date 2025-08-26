@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { qrCode } from '$lib/attachments';
-	
 	interface Props {
 		url: string;
 		size?: number;
@@ -8,33 +6,54 @@
 	}
 	
 	let { url, size = 256, class: className = '' }: Props = $props();
-	let canvas: HTMLCanvasElement;
 	let qrCodeGenerated = $state(false);
 	
-	$effect(() => {
-		if (!canvas) return;
+	// QR Code attachment function
+	function qrCodeAttachment(canvas: HTMLCanvasElement) {
+		let QRCodeLib: any = null;
 		
-		qrCodeGenerated = false;
-		
-		import('qrcode').then(({ default: QRCode }) => {
-			QRCode.toCanvas(canvas, url, {
-				width: size,
-				margin: 2,
-				color: {
-					dark: '#000000',
-					light: '#FFFFFF'
+		// Load QRCode library and generate code
+		async function generateQR() {
+			qrCodeGenerated = false;
+			
+			try {
+				if (!QRCodeLib) {
+					const module = await import('qrcode');
+					QRCodeLib = module.default;
 				}
-			}).then(() => {
+				
+				await QRCodeLib.toCanvas(canvas, url, {
+					width: size,
+					margin: 2,
+					color: {
+						dark: '#000000',
+						light: '#FFFFFF'
+					}
+				});
+				
 				qrCodeGenerated = true;
-			}).catch((err) => {
+			} catch (err) {
 				console.error('Failed to generate QR code:', err);
-			});
+			}
+		}
+		
+		// Initial generation
+		generateQR();
+		
+		// Watch for url/size changes
+		$effect(() => {
+			generateQR();
 		});
-	});
+		
+		// Return cleanup function
+		return () => {
+			// Cleanup if needed
+		};
+	}
 </script>
 
 <div class="qr-code-container {className}">
-	<canvas bind:this={canvas} width={size} height={size}></canvas>
+	<canvas {@attach qrCodeAttachment} width={size} height={size}></canvas>
 	{#if !qrCodeGenerated}
 		<div class="qr-placeholder" style="width: {size}px; height: {size}px;">
 			<p>Loading QR Code...</p>
