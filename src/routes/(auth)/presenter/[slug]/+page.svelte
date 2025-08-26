@@ -74,7 +74,7 @@
 		if (!isClient || !slug || !session) return;
 		
 		// Connect SSE using the slug for the URL
-		const sseUrl = `/session/${slug}/stream`;
+		const sseUrl = `/api/stream/${slug}`;
 		console.log('[Presenter Page] Connecting SSE to:', sseUrl);
 		sse.connect(sseUrl);
 		
@@ -120,9 +120,9 @@
 			
 			// Build the attendee join URL
 			if (hostname === 'localhost' || hostname === '127.0.0.1') {
-				networkUrl = `${protocol}//${window.location.host}/session/${slug}/join`;
+				networkUrl = `${protocol}//${window.location.host}/${slug}/join`;
 			} else {
-				networkUrl = `${protocol}//${hostname}${port ? ':' + port : ''}/session/${slug}/join`;
+				networkUrl = `${protocol}//${hostname}${port ? ':' + port : ''}/${slug}/join`;
 			}
 			
 			sessionUrl = networkUrl;
@@ -517,7 +517,7 @@
 	}
 	
 	function copyParticipantLink(participantId: string) {
-		const link = `${window.location.origin}/session/${slug}/attendee/${participantId}`;
+		const link = `${window.location.origin}/${slug}/${participantId}/quiz`;
 		navigator.clipboard.writeText(link);
 	}
 </script>

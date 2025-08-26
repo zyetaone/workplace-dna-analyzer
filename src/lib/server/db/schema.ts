@@ -18,6 +18,7 @@ export const sessions = sqliteTable('sessions', {
 id: text('id').primaryKey().$defaultFn(() => generateId()),
 	code: text('code').notNull().unique(),
 	name: text('name').notNull(),
+	presenterId: text('presenter_id').notNull(),
 	slug: text('slug').notNull().unique(), // Now required and unique
 	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 	createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
