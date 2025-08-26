@@ -1,0 +1,27 @@
+{
+	"/": [],
+	"/api/ai/chat": [
+		"src/routes/api/ai/chat/+server.ts"
+	],
+	"/api/ai/render": [
+		"src/routes/api/ai/render/+server.ts"
+	],
+	"/api/sessions/[id]/stream": [
+		"src/routes/api/sessions/[id]/stream/+server.ts"
+	],
+	"/api/test-session": [
+		"src/routes/api/test-session/+server.ts"
+	],
+	"/health": [
+		"src/routes/health/+server.ts"
+	],
+	"/join": [],
+	"/session/[sessionId]/attendee/[attendeeId]": [],
+	"/session/[sessionId]/attendee/[attendeeId]/complete": [],
+	"/session/[sessionId]/join": [],
+	"/session/[sessionId]/presenter": [
+		"src/routes/session/[sessionId]/presenter/+page.ts",
+		"src/routes/session/[sessionId]/presenter/+page.server.ts"
+	],
+	"/test-stores": []
+}

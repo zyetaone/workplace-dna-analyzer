@@ -1,0 +1,1 @@
+.confetti{position:fixed;width:10px;height:10px;top:-10px;z-index:9999;animation:svelte-1tmcuac-fall 4s linear}@keyframes svelte-1tmcuac-fall{to{transform:translateY(100vh) rotate(360deg)}}

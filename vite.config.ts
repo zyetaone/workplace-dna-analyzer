@@ -4,6 +4,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	resolve: {
+		extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.svelte']
+	},
 	server: { 
 		port: 5173, 
 		host: true,  // Expose on all network interfaces

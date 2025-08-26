@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Development configs
+.npmrc
+.prettierrc
+.eslintrc.cjs
+.graphqlrc
+.editorconfig
+
+# IDE
+.vscode
+.idea
+
+# Dependencies (will be installed fresh)
+node_modules
+
+# Build outputs (will be built fresh)
+build
+.svelte-kit
+dist
+
+# Environment files
+.env
+.env.*
+**/.env
+
+# Database files (will be created in volume)
+*.db
+*.db-shm
+*.db-wal
+local.db*
+data/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.temp/
+.tmp/

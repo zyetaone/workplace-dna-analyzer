@@ -1,0 +1,309 @@
+{
+  ".svelte-kit/generated/server/internal.js": {
+    "file": "internal.js",
+    "name": "internal",
+    "src": ".svelte-kit/generated/server/internal.js",
+    "isEntry": true,
+    "imports": [
+      "_internal.js",
+      "_environment.js",
+      "_paths.js",
+      "_shared-server.js"
+    ]
+  },
+  "_client.js": {
+    "file": "chunks/client.js",
+    "name": "client",
+    "imports": [
+      "_index.js",
+      "_exports.js",
+      "_utils.js",
+      "_equality.js"
+    ]
+  },
+  "_environment.js": {
+    "file": "chunks/environment.js",
+    "name": "environment"
+  },
+  "_equality.js": {
+    "file": "chunks/equality.js",
+    "name": "equality"
+  },
+  "_exports.js": {
+    "file": "chunks/exports.js",
+    "name": "exports",
+    "imports": [
+      "_equality.js",
+      "_index.js"
+    ]
+  },
+  "_index.js": {
+    "file": "chunks/index.js",
+    "name": "index",
+    "imports": [
+      "_true.js"
+    ]
+  },
+  "_index2.js": {
+    "file": "chunks/index2.js",
+    "name": "index",
+    "imports": [
+      "_client.js",
+      "_index.js"
+    ]
+  },
+  "_index3.js": {
+    "file": "chunks/index3.js",
+    "name": "index",
+    "imports": [
+      "_shared-server.js"
+    ]
+  },
+  "_internal.js": {
+    "file": "chunks/internal.js",
+    "name": "internal",
+    "imports": [
+      "_index.js",
+      "_true.js",
+      "_equality.js",
+      "_environment.js",
+      "_paths.js",
+      "_shared-server.js"
+    ],
+    "dynamicImports": [
+      "src/hooks.server.ts"
+    ]
+  },
+  "_paths.js": {
+    "file": "chunks/paths.js",
+    "name": "paths"
+  },
+  "_query.js": {
+    "file": "chunks/query.js",
+    "name": "query",
+    "imports": [
+      "_shared.js",
+      "_environment.js"
+    ]
+  },
+  "_shared-server.js": {
+    "file": "chunks/shared-server.js",
+    "name": "shared-server"
+  },
+  "_shared.js": {
+    "file": "chunks/shared.js",
+    "name": "shared",
+    "imports": [
+      "_utils.js"
+    ]
+  },
+  "_true.js": {
+    "file": "chunks/true.js",
+    "name": "true"
+  },
+  "_utils.js": {
+    "file": "chunks/utils.js",
+    "name": "utils"
+  },
+  "_workplace-dna.js": {
+    "file": "chunks/workplace-dna.js",
+    "name": "workplace-dna"
+  },
+  "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js": {
+    "file": "remote-entry.js",
+    "name": "remote-entry",
+    "src": "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js",
+    "isEntry": true,
+    "imports": [
+      "_query.js",
+      "_true.js",
+      "_shared.js",
+      "_paths.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte": {
+    "file": "entries/fallbacks/error.svelte.js",
+    "name": "entries/fallbacks/error.svelte",
+    "src": "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_index2.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/server/index.js": {
+    "file": "index.js",
+    "name": "index",
+    "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js",
+    "isEntry": true,
+    "imports": [
+      "_true.js",
+      "_paths.js",
+      "_exports.js",
+      "_shared.js",
+      "_utils.js",
+      "_shared-server.js",
+      "_internal.js"
+    ]
+  },
+  "src/hooks.server.ts": {
+    "file": "chunks/hooks.server.js",
+    "name": "hooks.server",
+    "src": "src/hooks.server.ts",
+    "isDynamicEntry": true
+  },
+  "src/routes/+layout.svelte": {
+    "file": "entries/pages/_layout.svelte.js",
+    "name": "entries/pages/_layout.svelte",
+    "src": "src/routes/+layout.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_layout.BFyXciWu.css"
+    ]
+  },
+  "src/routes/+page.svelte": {
+    "file": "entries/pages/_page.svelte.js",
+    "name": "entries/pages/_page.svelte",
+    "src": "src/routes/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_client.js",
+      "src/routes/session.remote.ts"
+    ]
+  },
+  "src/routes/api/ai/chat/+server.ts": {
+    "file": "entries/endpoints/api/ai/chat/_server.ts.js",
+    "name": "entries/endpoints/api/ai/chat/_server.ts",
+    "src": "src/routes/api/ai/chat/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/api/ai/render/+server.ts": {
+    "file": "entries/endpoints/api/ai/render/_server.ts.js",
+    "name": "entries/endpoints/api/ai/render/_server.ts",
+    "src": "src/routes/api/ai/render/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/api/sessions/[id]/stream/+server.ts": {
+    "file": "entries/endpoints/api/sessions/_id_/stream/_server.ts.js",
+    "name": "entries/endpoints/api/sessions/_id_/stream/_server.ts",
+    "src": "src/routes/api/sessions/[id]/stream/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/join/+page.svelte": {
+    "file": "entries/pages/join/_page.svelte.js",
+    "name": "entries/pages/join/_page.svelte",
+    "src": "src/routes/join/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_client.js",
+      "src/routes/session.remote.ts"
+    ]
+  },
+  "src/routes/session.remote.ts": {
+    "file": "remote/xu03kg.js",
+    "name": "remote/xu03kg",
+    "src": "src/routes/session.remote.ts",
+    "isEntry": true,
+    "imports": [
+      "_utils.js",
+      "_query.js",
+      "_index3.js",
+      "src/routes/api/sessions/[id]/stream/+server.ts"
+    ]
+  },
+  "src/routes/session/[sessionId]/attendee/[attendeeId]/+page.svelte": {
+    "file": "entries/pages/session/_sessionId_/attendee/_attendeeId_/_page.svelte.js",
+    "name": "entries/pages/session/_sessionId_/attendee/_attendeeId_/_page.svelte",
+    "src": "src/routes/session/[sessionId]/attendee/[attendeeId]/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_index2.js",
+      "_client.js",
+      "src/routes/session.remote.ts",
+      "src/routes/session/[sessionId]/attendee/[attendeeId]/quiz.remote.ts"
+    ]
+  },
+  "src/routes/session/[sessionId]/attendee/[attendeeId]/complete/+page.svelte": {
+    "file": "entries/pages/session/_sessionId_/attendee/_attendeeId_/complete/_page.svelte.js",
+    "name": "entries/pages/session/_sessionId_/attendee/_attendeeId_/complete/_page.svelte",
+    "src": "src/routes/session/[sessionId]/attendee/[attendeeId]/complete/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_index2.js",
+      "src/routes/session.remote.ts",
+      "_workplace-dna.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CB_Anbi2.css"
+    ]
+  },
+  "src/routes/session/[sessionId]/attendee/[attendeeId]/quiz.remote.ts": {
+    "file": "remote/1vxpwt5.js",
+    "name": "remote/1vxpwt5",
+    "src": "src/routes/session/[sessionId]/attendee/[attendeeId]/quiz.remote.ts",
+    "isEntry": true,
+    "imports": [
+      "_utils.js",
+      "_query.js",
+      "_index3.js",
+      "src/routes/api/sessions/[id]/stream/+server.ts"
+    ]
+  },
+  "src/routes/session/[sessionId]/join/+page.svelte": {
+    "file": "entries/pages/session/_sessionId_/join/_page.svelte.js",
+    "name": "entries/pages/session/_sessionId_/join/_page.svelte",
+    "src": "src/routes/session/[sessionId]/join/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_index2.js",
+      "_client.js",
+      "src/routes/session.remote.ts"
+    ]
+  },
+  "src/routes/session/[sessionId]/presenter/+page.svelte": {
+    "file": "entries/pages/session/_sessionId_/presenter/_page.svelte.js",
+    "name": "entries/pages/session/_sessionId_/presenter/_page.svelte",
+    "src": "src/routes/session/[sessionId]/presenter/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_index2.js",
+      "_client.js",
+      "src/routes/session.remote.ts",
+      "_workplace-dna.js",
+      "src/routes/session/[sessionId]/presenter/dashboard.remote.ts"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.vxEYZY79.css"
+    ]
+  },
+  "src/routes/session/[sessionId]/presenter/+page.ts": {
+    "file": "entries/pages/session/_sessionId_/presenter/_page.ts.js",
+    "name": "entries/pages/session/_sessionId_/presenter/_page.ts",
+    "src": "src/routes/session/[sessionId]/presenter/+page.ts",
+    "isEntry": true,
+    "imports": [
+      "src/routes/session.remote.ts"
+    ]
+  },
+  "src/routes/session/[sessionId]/presenter/dashboard.remote.ts": {
+    "file": "remote/c3ww8i.js",
+    "name": "remote/c3ww8i",
+    "src": "src/routes/session/[sessionId]/presenter/dashboard.remote.ts",
+    "isEntry": true,
+    "imports": [
+      "_utils.js",
+      "_query.js",
+      "_index3.js",
+      "src/routes/api/sessions/[id]/stream/+server.ts"
+    ]
+  }
+}

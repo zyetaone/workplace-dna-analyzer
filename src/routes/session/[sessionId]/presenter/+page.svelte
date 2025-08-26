@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { realtime } from '$lib/attachments/realtime';
-	import { sessionStore, analyticsStore, realtimeStore } from '$lib/stores';
+	import { sessionState } from '$lib/stores/session-state.svelte';
 	import QRCode from '$lib/components/QRCode.svelte';
 	import Chart from 'chart.js/auto';
-	import { generateAIInsights, endSession as endSessionRemote, deleteAttendee } from './dashboard.remote';
+	import { generateAIInsights, endSession as endSessionRemote, deleteAttendee } from '$lib/remote/presenter.remote';
 	import UnifiedChatbot from '$lib/components/UnifiedChatbot.svelte';
 	import * as d3 from 'd3';
 	import cloud from 'd3-cloud';
@@ -14,59 +13,83 @@
 	let preferenceChart: Chart;
 	let comparisonChart: Chart;
 	let detailChart: Chart;
+	let refreshInterval: ReturnType<typeof setInterval> | undefined;
 	let sessionUrl = $state('');
 	let networkUrl = $state('');
 	let isClient = $state(false);
-	let sessionId = $derived(page.params.sessionId);
+	let sessionId = $derived.by(() => {
+		const id = page.params.sessionId;
+		console.log('[Presenter Page] Derived sessionId from params:', id);
+		return id;
+	});
 	
-	// Use global stores for all session data
-	let session = $derived(sessionStore.currentSession);
+	// Use unified session state for all session data
+	let session = $derived(sessionState.currentSession);
 	let sessionCode = $derived(session?.code || '');
-	let attendees = $derived(sessionStore.currentAttendees);
-	let isLoading = $derived(sessionStore.loading.has(sessionId));
-	let connectionStatus = $derived(realtimeStore.connectionStatus);
+	let attendees = $derived(sessionState.currentAttendees);
+	let isLoading = $derived(sessionState.isLoading);
+	let connectionStatus = $derived(sessionState.isConnected ? 'connected' : 'disconnected');
 	
 	
-	// All analytics from global store (fully reactive)
+	// All analytics from unified session state (fully reactive)
 	let aiInsights = $state<string[]>([]);
 	let analytics = $derived({
-		activeCount: analyticsStore.activeCount,
-		completedCount: analyticsStore.completedCount,
-		responseRate: analyticsStore.responseRate,
-		generationDistribution: analyticsStore.generationDistribution,
-		preferenceScores: analyticsStore.preferenceScores,
-		generationPreferences: analyticsStore.generationPreferences,
-		workplaceDNA: analyticsStore.workplaceDNA,
-		wordCloudData: analyticsStore.wordCloudData,
+		activeCount: sessionState.activeCount,
+		completedCount: sessionState.completedCount,
+		responseRate: sessionState.responseRate,
+		generationDistribution: sessionState.generationDistribution,
+		preferenceScores: sessionState.preferenceScores,
+		generationPreferences: sessionState.generationPreferences,
+		workplaceDNA: sessionState.workplaceDNA,
+		wordCloudData: sessionState.wordCloudData,
 		aiInsights: aiInsights
 	});
 	
-	// Refresh using global store
+	// Refresh using unified session state
 	async function refreshSession() {
+		console.log('[Presenter Page] refreshSession called with sessionId:', sessionId);
 		try {
-			await sessionStore.refreshSession(sessionId);
+			// Load session data if needed
+			await sessionState.loadSession(sessionId);
+			
+			// Log the current state after refresh
+			console.log('[Presenter Page] After refresh:');
+			console.log('  - Current session:', sessionState.currentSession);
+			console.log('  - Current attendees:', sessionState.currentAttendees);
+			console.log('  - Completed attendees:', sessionState.completedAttendees);
+			console.log('  - Analytics activeCount:', sessionState.activeCount);
+			console.log('  - Analytics completedCount:', sessionState.completedCount);
 			
 			// Generate AI insights if needed
-			if (analyticsStore.completedCount >= 2 && aiInsights.length === 0) {
-				const insights = await generateAIInsights({ sessionId });
-				aiInsights = insights;
+			if (sessionState.completedCount >= 2 && aiInsights.length === 0) {
+				const result = await generateAIInsights({ 
+					sessionId,
+					focusArea: 'overall'
+				});
+				if (result.insights) {
+					aiInsights = result.insights.keyFindings || [];
+				}
 			}
 		} catch (error) {
 			console.error('Failed to refresh session:', error);
 		}
 	}
 	
-	// Use centralized realtime event handler from store
-	const handleRealtime = realtimeStore.createEventHandler();
+	// Create realtime event handler
+	function handleRealtime(type: string, payload: any) {
+		sessionState.handleRealtimeEvent(type, payload);
+	}
 	
 	// Initialize on client side
 	$effect(() => {
 		if (typeof window !== 'undefined') {
 			isClient = true;
 			
-			// Set current session in store
+			console.log('[Presenter Page] Initializing with sessionId:', sessionId);
+			
+			// Set current session in unified state
 			if (sessionId) {
-				sessionStore.setCurrentSession(sessionId);
+				sessionState.setCurrentSession(sessionId);
 			} else {
 				goto('/');
 				return;
@@ -85,7 +108,11 @@
 			
 			sessionUrl = networkUrl;
 			
-			// Initial data already loaded from server
+			// Initial data load - force a refresh to test
+			console.log('[Presenter Page] Triggering initial refresh...');
+			refreshSession().then(() => {
+				console.log('[Presenter Page] Initial refresh complete');
+			});
 			
 			// Initialize charts after a short delay to ensure DOM is ready
 			setTimeout(() => {
@@ -320,9 +347,19 @@
 	
 	// Update charts when data changes
 	$effect(() => {
+		// Skip if charts not initialized yet
+		if (!isClient) return;
+		
 		const genDist = analytics.generationDistribution;
 		const scores = analytics.preferenceScores;
 		const genPrefs = analytics.generationPreferences;
+		
+		// Initialize charts if needed
+		if (!generationChart || !preferenceChart || !comparisonChart || !detailChart) {
+			// Wait a tick for DOM to be ready
+			setTimeout(() => initCharts(), 100);
+			return;
+		}
 		
 		if (generationChart && genDist) {
 			const newData = [

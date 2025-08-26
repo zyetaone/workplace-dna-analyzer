@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { realtime } from '$lib/attachments/realtime';
-	import { attendeeQuizStore } from '$lib/stores';
+	import { realtime } from '$lib/realtime';
+	import { attendeeQuizStore } from '$lib/stores/index';
 	import { 
 		loadAttendeeData, 
 		saveResponse, 

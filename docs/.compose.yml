@@ -1,0 +1,42 @@
+# compose.yml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: workplace-dna-analyzer:latest
+    container_name: workplace-dna-app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DATABASE_URL: file:/app/data/local.db
+      # OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      # RECOMMENDED: named volume to avoid UID/GID headaches
+      - app-data:/app/data
+      # If you prefer a bind mount instead, comment the line above and use:
+      # - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000').then(()=>process.exit(0)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Turso/libSQL for remote DB
+  # libsql:
+  #   image: ghcr.io/tursodatabase/libsql-server:latest
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - libsql-data:/var/lib/libsql
+  #   environment:
+  #     LIBSQL_ADDR: 0.0.0.0:8080
+
+volumes:
+  app-data:
+  libsql-data:

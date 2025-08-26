@@ -79,8 +79,8 @@
 		{:else}
 			<div class="grid gap-4">
 				{#each activeSessions as session}
-					<div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
-					     onclick={() => joinSession(session.id)}>
+					<button class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer w-full text-left"
+					        onclick={() => joinSession(session.id)}>
 						<div class="flex justify-between items-start">
 							<div class="flex-1">
 								<h3 class="text-xl font-semibold text-gray-800 mb-2">
@@ -98,11 +98,11 @@
 									</span>
 								</div>
 							</div>
-							<button
-								class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+							<div
+								class="px-4 py-2 bg-gray-600 text-white rounded-lg"
 							>
 								Join →
-							</button>
+							</div>
 						</div>
 						{#if session.activeCount > 0}
 							<div class="mt-3 pt-3 border-t border-gray-100">
@@ -120,7 +120,7 @@
 								</div>
 							</div>
 						{/if}
-					</div>
+					</button>
 				{/each}
 			</div>
 			

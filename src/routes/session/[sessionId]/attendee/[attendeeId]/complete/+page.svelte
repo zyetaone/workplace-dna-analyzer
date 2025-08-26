@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { refreshSessionData } from '../../../../../session.remote';
-	import { attendeeQuizStore } from '$lib/stores';
+	import { attendeeQuizStore } from '$lib/stores/index';
 	import { generateWorkplaceDNA } from '$lib/utils/workplace-dna';
 	
 	let sessionId = $derived(page.params.sessionId);
