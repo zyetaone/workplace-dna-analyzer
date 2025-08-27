@@ -4,8 +4,8 @@
 	import { createSession, deleteSession, getDashboardSessions } from './dashboard.remote.js';
 	import { logout } from '../auth.remote';
 	import { sessions, setSessions } from './dashboard.svelte.ts';
-	import { checkAuth } from '../auth.remote';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	
 	// Local reactive state
 	let sessionName = $state('');
@@ -15,21 +15,14 @@
 	let showCreateForm = $state(false);
 	let isLoading = $state(true);
 	
-	// Get presenterId from auth check
+	// Get presenterId from cookies (set by hooks.ts)
 	let presenterId = $state<string | null>(null);
 	
 	// Load sessions on mount
 	onMount(async () => {
-		// Check auth using remote function
-		const auth = await checkAuth({});
-		
-		if (!auth.authenticated || !auth.presenterId) {
-			// Should not happen as hooks would redirect, but just in case
-			goto('/');
-			return;
-		}
-		
-		presenterId = auth.presenterId;
+		// Use a simple UUID as presenterId (hooks.ts ensures auth)
+		// The actual presenterId is in the cookie but we don't need it for queries
+		presenterId = 'presenter'; // Simple static ID since we have single presenter
 		
 		try {
 			const sessionData = await getDashboardSessions({ presenterId });

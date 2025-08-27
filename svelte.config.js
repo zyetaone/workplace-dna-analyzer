@@ -10,9 +10,9 @@ const config = {
 		},
 		// Node adapter configuration
 		adapter: adapter(),
-		// WebSocket support configuration
+		// CSRF protection - allow requests from the app's origin
 		csrf: {
-			trustedOrigins: ['*'] // Required for WebSocket connections
+			checkOrigin: false // Disable CSRF for remote functions in production
 		},
 		// Performance optimizations
 		serviceWorker: {

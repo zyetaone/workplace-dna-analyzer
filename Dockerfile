@@ -42,11 +42,11 @@ WORKDIR /app
 RUN apk add --no-cache sqlite curl
 
 # Set environment variables
+# ORIGIN will be overridden at runtime via environment variable
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000 \
-    DATABASE_URL=file:./local.db \
-    ORIGIN=http://localhost:3000
+    DATABASE_URL=file:./local.db
 
 # Copy package files for production install
 COPY package*.json ./
@@ -68,7 +68,18 @@ RUN sqlite3 local.db "PRAGMA journal_mode=WAL; SELECT 'Database initialized';"
 RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo 'echo "Starting application..."' >> /app/start.sh && \
+    echo '# Set ORIGIN if not provided (detect from Coolify environment)' >> /app/start.sh && \
+    echo 'if [ -z "$ORIGIN" ]; then' >> /app/start.sh && \
+    echo '  if [ -n "$COOLIFY_URL" ]; then' >> /app/start.sh && \
+    echo '    export ORIGIN="$COOLIFY_URL"' >> /app/start.sh && \
+    echo '  elif [ -n "$COOLIFY_FQDN" ]; then' >> /app/start.sh && \
+    echo '    export ORIGIN="http://$COOLIFY_FQDN"' >> /app/start.sh && \
+    echo '  else' >> /app/start.sh && \
+    echo '    export ORIGIN="http://localhost:3000"' >> /app/start.sh && \
+    echo '  fi' >> /app/start.sh && \
+    echo 'fi' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'echo "Starting application with ORIGIN=$ORIGIN"' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
     echo '# Ensure database has proper permissions' >> /app/start.sh && \
     echo 'chmod 644 local.db 2>/dev/null || true' >> /app/start.sh && \

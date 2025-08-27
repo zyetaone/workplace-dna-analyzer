@@ -7,8 +7,8 @@ import { command, getRequestEvent } from '$app/server';
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
 
-// Hardcoded password for simplicity
-const PRESENTER_PASSWORD = 'zyetadx';
+// Use environment variable or fallback to default
+const PRESENTER_PASSWORD = process.env.PRESENTER_PASSWORD || 'zyetadx';
 
 // Login schema
 const LoginSchema = v.object({
@@ -29,19 +29,14 @@ export const login = command(
 		// Get the request event to access cookies
 		const { cookies } = getRequestEvent();
 		
-		// Check if there's already a presenterId in the cookie
-		let presenterId = cookies.get('presenterId');
+		// Generate or reuse presenter ID
+		const presenterId = cookies.get('presenterId') || crypto.randomUUID();
 		
-		// If no existing presenterId, generate a new one
-		if (!presenterId) {
-			presenterId = crypto.randomUUID();
-		}
-		
-		// Set/refresh the auth cookie
+		// Set the auth cookie
 		cookies.set('presenterId', presenterId, {
 			path: '/',
 			httpOnly: true,
-			secure: false, // Set to true in production with HTTPS
+			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'lax',
 			maxAge: 60 * 60 * 24 * 7 // 1 week
 		});
@@ -73,20 +68,4 @@ export const logout = command(
 	}
 );
 
-/**
- * Check auth status - returns current authentication state
- */
-export const checkAuth = command(
-	v.object({}),
-	async () => {
-		// Get the request event to access cookies
-		const { cookies } = getRequestEvent();
-		
-		const presenterId = cookies.get('presenterId');
-		
-		return {
-			authenticated: !!presenterId,
-			presenterId: presenterId || null
-		};
-	}
-);
+// checkAuth removed - unused in application

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { login } from './auth.remote';
 	
 	let password = $state('');
@@ -8,26 +8,15 @@
 	
 	async function handleLogin(e: Event) {
 		e.preventDefault();
-		
-		if (!password.trim()) {
-			error = 'Please enter a password';
-			return;
-		}
+		error = password.trim() ? '' : 'Please enter a password';
+		if (error) return;
 		
 		isLoggingIn = true;
-		error = '';
-		
 		try {
-			// Use server-side auth with remote function
-			const result = await login({ password }) as { success: boolean; presenterId: string };
-			
-			if (result.success) {
-				// Use proper SvelteKit navigation after successful login
-				// The cookie is already set by the remote function
-				await goto('/dashboard', { invalidateAll: true });
-			}
+			await login({ password });
+			await goto('/dashboard', { invalidateAll: true });
 		} catch (err: any) {
-			error = err.body?.message || 'Invalid password';
+			error = 'Invalid password';
 			password = '';
 		} finally {
 			isLoggingIn = false;
