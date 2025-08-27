@@ -25,6 +25,9 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy all source files
 COPY . .
 
+# Generate SvelteKit files first (required for TypeScript config)
+RUN npm run prepare
+
 # Build the SvelteKit application
 # This generates the build directory that will be used in production
 RUN npm run build

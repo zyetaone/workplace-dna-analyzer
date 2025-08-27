@@ -6,6 +6,12 @@
 import type { Session, Participant, PreferenceScores } from '$lib/server/db/schema';
 import type { ConnectionStatus, ParticipantUpdate, LiveAnalytics, Generation, WordCloudItem, GenerationPreferences } from '$lib/types';
 import { invalidateAll } from '$app/navigation';
+import { 
+	calculatePreferenceScores, 
+	getGenerationFromResponse, 
+	GENERATION_OPTIONS,
+	type GenerationOption 
+} from '$lib/questions';
 
 // Type definitions for generation preferences (different from lib/types)
 interface GenerationPreferencesMap {
@@ -209,6 +215,7 @@ export class DashboardState {
 	
 	/**
 	 * FAST analytics computation using optimized single-pass algorithms
+	 * Now uses dynamic question structure from questions.ts
 	 */
 	computeAnalyticsFast(participants: Participant[]): LiveAnalytics {
 		const totalCount = participants.length;
@@ -217,13 +224,11 @@ export class DashboardState {
 		const activeCount = totalCount - completedCount;
 		const responseRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 		
-		// Single-pass computation for generation distribution and preference scores
-		const generationDistribution: Record<Generation, number> = {
-			'Baby Boomer': 0,
-			'Gen X': 0,
-			'Millennial': 0,
-			'Gen Z': 0
-		};
+		// Initialize generation distribution dynamically from GENERATION_OPTIONS
+		const generationDistribution: Record<GenerationOption, number> = {} as Record<GenerationOption, number>;
+		GENERATION_OPTIONS.forEach(gen => {
+			generationDistribution[gen] = 0;
+		});
 		
 		const preferenceTotals = {
 			collaboration: 0,
@@ -234,14 +239,47 @@ export class DashboardState {
 		
 		// Process all participants in one pass
 		completedParticipants.forEach(participant => {
-			// Count generations
-			const gen = participant.generation as Generation;
-			if (gen && generationDistribution[gen] !== undefined) {
-				generationDistribution[gen]++;
+			// Use dynamic generation extraction if responses are available
+			if (participant.responses) {
+				// Convert responses object to array for the utility function
+				const responsesArray: string[] = [];
+				const responses = participant.responses as Record<number, string>;
+				for (let i = 0; i < Object.keys(responses).length; i++) {
+					responsesArray[i] = responses[i] || '';
+				}
+				
+				// Get generation dynamically from responses
+				const generation = getGenerationFromResponse(responsesArray);
+				if (generation && generation in generationDistribution) {
+					generationDistribution[generation]++;
+				}
+			} else if (participant.generation) {
+				// Fallback to stored generation field if no responses
+				const gen = participant.generation as GenerationOption;
+				if (gen && gen in generationDistribution) {
+					generationDistribution[gen]++;
+				}
 			}
 			
-			// Sum preference scores
-			if (participant.preferenceScores) {
+			// Calculate scores dynamically from responses if available
+			if (participant.responses) {
+				const responses = participant.responses as Record<number, string>;
+				const responsesArray: string[] = [];
+				for (let i = 0; i < Object.keys(responses).length; i++) {
+					responsesArray[i] = responses[i] || '';
+				}
+				
+				// Calculate scores dynamically
+				const dynamicScores = calculatePreferenceScores(responsesArray);
+				
+				// Note: calculatePreferenceScores returns percentages (0-100)
+				// We need to convert back to 0-10 scale for compatibility
+				preferenceTotals.collaboration += Math.round(dynamicScores.collaboration / 10);
+				preferenceTotals.formality += Math.round(dynamicScores.formality / 10);
+				preferenceTotals.technology += Math.round(dynamicScores.tech / 10);
+				preferenceTotals.wellness += Math.round(dynamicScores.wellness / 10);
+			} else if (participant.preferenceScores) {
+				// Fallback to stored preference scores if no responses
 				const scores = participant.preferenceScores as any;
 				preferenceTotals.collaboration += scores.collaboration || 0;
 				preferenceTotals.formality += scores.formality || 0;
@@ -263,12 +301,23 @@ export class DashboardState {
 			wellness: 0
 		};
 		
-		// Generation preferences
+		// Generation preferences using dynamic calculations
 		const generationPreferences: GenerationPreferencesMap = {};
-		const generations: Generation[] = ['Baby Boomer', 'Gen X', 'Millennial', 'Gen Z'];
 		
-		generations.forEach(gen => {
-			const genParticipants = completedParticipants.filter(p => p.generation === gen);
+		GENERATION_OPTIONS.forEach(gen => {
+			const genParticipants = completedParticipants.filter(p => {
+				// Check generation from responses first, then fallback to stored field
+				if (p.responses) {
+					const responses = p.responses as Record<number, string>;
+					const responsesArray: string[] = [];
+					for (let i = 0; i < Object.keys(responses).length; i++) {
+						responsesArray[i] = responses[i] || '';
+					}
+					return getGenerationFromResponse(responsesArray) === gen;
+				}
+				return p.generation === gen;
+			});
+			
 			if (genParticipants.length > 0) {
 				const genTotals = {
 					collaboration: 0,
@@ -278,7 +327,22 @@ export class DashboardState {
 				};
 				
 				genParticipants.forEach(p => {
-					if (p.preferenceScores) {
+					// Use dynamic score calculation if responses available
+					if (p.responses) {
+						const responses = p.responses as Record<number, string>;
+						const responsesArray: string[] = [];
+						for (let i = 0; i < Object.keys(responses).length; i++) {
+							responsesArray[i] = responses[i] || '';
+						}
+						
+						const dynamicScores = calculatePreferenceScores(responsesArray);
+						// Convert from percentage (0-100) to 0-10 scale
+						genTotals.collaboration += Math.round(dynamicScores.collaboration / 10);
+						genTotals.formality += Math.round(dynamicScores.formality / 10);
+						genTotals.technology += Math.round(dynamicScores.tech / 10);
+						genTotals.wellness += Math.round(dynamicScores.wellness / 10);
+					} else if (p.preferenceScores) {
+						// Fallback to stored scores
 						const scores = p.preferenceScores as any;
 						genTotals.collaboration += scores.collaboration || 0;
 						genTotals.formality += scores.formality || 0;
@@ -309,7 +373,7 @@ export class DashboardState {
 			completedCount,
 			totalCount,
 			responseRate,
-			generationDistribution,
+			generationDistribution: generationDistribution as Record<Generation, number>,
 			preferenceScores,
 			generationPreferences: generationPreferences as any,
 			workplaceDNA,
@@ -344,7 +408,7 @@ export class DashboardState {
 	/**
 	 * Generate word cloud data from analytics
 	 */
-	generateWordCloudData(scores: PreferenceScores, generations: Record<Generation, number>): WordCloudItem[] {
+	generateWordCloudData(scores: PreferenceScores, generations: Record<GenerationOption, number>): WordCloudItem[] {
 		const words: WordCloudItem[] = [
 			{ text: 'Collaboration', size: 20 + scores.collaboration * 8 },
 			{ text: 'Formality', size: 20 + scores.formality * 8 },

@@ -13,9 +13,9 @@
 	import ErrorScreen from '$lib/components/ErrorScreen.svelte';
 	
 	// Get IDs from URL
-	const $page = get(page);
-	let slug = $state($page.params.slug);
-	let participantId = $state($page.params.id);
+	const pageData = get(page);
+	let slug = $state(pageData.params.slug);
+	let participantId = $state(pageData.params.id);
 	
 	// State
 	let session = $state<Session | null>(null);

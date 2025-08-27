@@ -16,8 +16,8 @@
 	
 	// Load session data on mount
 	onMount(async () => {
-		const $page = get(page);
-		const slug = $page.params.slug;
+		const pageData = get(page);
+		const slug = pageData.params.slug;
 		if (!slug || slug.trim() === '') return;
 		
 		try {

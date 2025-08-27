@@ -12,9 +12,9 @@
 	
 	// Initialize params and load data on mount
 	onMount(async () => {
-		const $page = get(page);
-		sessionSlug = $page.params.slug;
-		participantId = $page.params.id;
+		const pageData = get(page);
+		sessionSlug = pageData.params.slug;
+		participantId = pageData.params.id;
 		
 		// Validate slug before loading session
 		if (sessionSlug && sessionSlug.trim() !== '') {
