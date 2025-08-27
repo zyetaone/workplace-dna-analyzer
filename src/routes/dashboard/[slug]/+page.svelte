@@ -8,21 +8,11 @@
 	import Chart from '$lib/components/charts/Chart.svelte';
 	import { getSessionAnalytics, generateAIInsights, endSession as endSessionRemote, deleteParticipant, updateSession } from '../dashboard.remote';
 	import {
-		sessions,
-		currentSession,
-		participants,
-		isLoading,
-		error,
-		connectionStatus,
-		lastUpdate,
-		updateQueue,
-		sessionUrl,
-		networkUrl,
-		sessionCode,
-		slug as sessionSlug,
+		state,
 		analytics,
-		setSessions,
-		setCurrentSession,
+		completionPercentage,
+		hasParticipants,
+		isActive,
 		setParticipants,
 		removeParticipant,
 		setConnectionStatus,
@@ -41,9 +31,9 @@
 	let aiInsights = $state<string[]>([]);
 
 	// Chart configurations are derived from analytics
-	let preferenceChartConfig = $derived(createChartConfig(analytics().preferenceScores));
-	let generationChartConfig = $derived(createGenerationChartConfig(analytics().generationDistribution));
-	let radarChartConfig = $derived(createPreferenceRadarConfig(analytics().preferenceScores));
+	let preferenceChartConfig = $derived(createChartConfig(analytics.preferenceScores));
+	let generationChartConfig = $derived(createGenerationChartConfig(analytics.generationDistribution));
+	let radarChartConfig = $derived(createPreferenceRadarConfig(analytics.preferenceScores));
 
 	// Get slug from page params
 	const slug = $page.params.slug;
@@ -97,10 +87,9 @@
 
 	// Toggle session active status
 	async function toggleSessionActive() {
-		const session = currentSession();
-		if (!session) return;
+		if (!state.currentSession) return;
 
-		const newStatus = !session.isActive;
+		const newStatus = !state.currentSession.isActive;
 		try {
 			const result = await updateSession({ slug, isActive: newStatus });
 			if (result.success) {
@@ -138,7 +127,7 @@
 
 	// End the current session
 	async function endSession() {
-		if (!currentSession()) return;
+		if (!state.currentSession) return;
 		
 		if (!confirm('Are you sure you want to end this session?')) return;
 		
@@ -165,27 +154,27 @@
 			<div class="flex justify-between items-start">
 				<div>
 					<h1 class="text-4xl font-bold text-gray-800 mb-2">Presenter Dashboard</h1>
-					<p class="text-gray-600">Session Code: <span class="font-mono text-2xl text-gray-700">{sessionCode()}</span></p>
+					<p class="text-gray-600">Session Code: <span class="font-mono text-2xl text-gray-700">{state.sessionCode}</span></p>
 				</div>
 				<div class="flex items-center gap-2">
 					<span class="relative flex h-3 w-3">
-						{#if connectionStatus() === 'connected'}
+						{#if state.connectionStatus === 'connected'}
 							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
 							<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-						{:else if connectionStatus() === 'connecting'}
+						{:else if state.connectionStatus === 'connecting'}
 							<span class="animate-pulse relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
 						{:else}
 							<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
 						{/if}
 					</span>
 					<span class="text-sm font-medium text-gray-700 capitalize">
-						{connectionStatus()}
+						{state.connectionStatus}
 					</span>
 				</div>
 			</div>
 		</div>
 		
-		{#if isLoading()}
+		{#if state.isLoading}
 			<LoadingScreen 
 				variant="inline"
 				message="Loading session data..."
@@ -196,13 +185,13 @@
 				<!-- QR Code -->
 				<div class="bg-white rounded-lg shadow-lg p-8">
 					<h2 class="text-2xl font-semibold text-gray-800 mb-4">Join Session</h2>
-					{#if isClient && sessionUrl()}
+					{#if isClient && state.sessionUrl}
 						<div class="flex justify-center mb-4">
-							<QRCode url={sessionUrl()} />
+							<QRCode url={state.sessionUrl} />
 						</div>
 						<p class="text-center text-sm text-gray-600">
 							Scan to join or visit:<br>
-							<a href={sessionUrl()} target="_blank" class="text-gray-500 hover:text-gray-700 break-all">{sessionUrl()}</a>
+							<a href={state.sessionUrl} target="_blank" class="text-gray-500 hover:text-gray-700 break-all">{state.sessionUrl}</a>
 						</p>
 					{:else}
 						<div class="animate-pulse bg-gray-200 h-64 rounded"></div>
@@ -215,15 +204,15 @@
 					<div class="space-y-4">
 						<div class="flex justify-between items-center p-4 bg-gray-50 rounded">
 							<span class="text-gray-700">Active Participants</span>
-							<span class="text-3xl font-bold text-gray-600">{analytics().activeCount}</span>
+							<span class="text-3xl font-bold text-gray-600">{analytics.activeCount}</span>
 						</div>
 						<div class="flex justify-between items-center p-4 bg-gray-50 rounded">
 							<span class="text-gray-700">Completed</span>
-							<span class="text-3xl font-bold text-green-600">{analytics().completedCount}</span>
+							<span class="text-3xl font-bold text-green-600">{analytics.completedCount}</span>
 						</div>
 						<div class="flex justify-between items-center p-4 bg-gray-50 rounded">
 							<span class="text-gray-700">Response Rate</span>
-							<span class="text-3xl font-bold text-gray-600">{analytics().responseRate}%</span>
+							<span class="text-3xl font-bold text-gray-600">{analytics.responseRate}%</span>
 						</div>
 					</div>
 				</div>
@@ -246,10 +235,10 @@
 				<!-- Workplace DNA -->
 				<div class="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-lg p-8">
 					<h2 class="text-2xl font-semibold text-gray-800 mb-4">Workplace DNA Profile</h2>
-					{#if analytics().workplaceDNA}
+					{#if analytics.workplaceDNA}
 						<div class="text-center py-8">
 							<div class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
-								{analytics().workplaceDNA}
+								{analytics.workplaceDNA}
 							</div>
 							{#snippet scoreCard(score, label, colorClass)}
 								<div class="bg-white rounded-lg p-4 shadow">
@@ -259,10 +248,10 @@
 							{/snippet}
 							
 							<div class="grid grid-cols-2 gap-4 mt-6">
-								{@render scoreCard(analytics().preferenceScores.collaboration, "Collaboration", "text-blue-600")}
-								{@render scoreCard(analytics().preferenceScores.formality, "Formality", "text-amber-600")}
-								{@render scoreCard(analytics().preferenceScores.tech, "Technology", "text-green-600")}
-								{@render scoreCard(analytics().preferenceScores.wellness, "Wellness", "text-red-600")}
+								{@render scoreCard(analytics.preferenceScores.collaboration, "Collaboration", "text-blue-600")}
+								{@render scoreCard(analytics.preferenceScores.formality, "Formality", "text-amber-600")}
+								{@render scoreCard(analytics.preferenceScores.tech, "Technology", "text-green-600")}
+								{@render scoreCard(analytics.preferenceScores.wellness, "Wellness", "text-red-600")}
 							</div>
 						</div>
 					{:else}
@@ -275,8 +264,8 @@
 				<!-- Word Cloud Component -->
 				<div class="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-lg p-8">
 					<h2 class="text-2xl font-semibold text-gray-800 mb-4">Conceptual Trends Cloud</h2>
-					{#if analytics().wordCloudData && analytics().wordCloudData.length > 0}
-						<WordCloud words={analytics().wordCloudData} height={400} />
+					{#if analytics.wordCloudData && analytics.wordCloudData.length > 0}
+						<WordCloud words={analytics.wordCloudData} height={400} />
 					{:else}
 						<div class="h-96 flex items-center justify-center text-gray-400">
 							<p>Waiting for data...</p>
@@ -306,7 +295,7 @@
 			<div class="bg-white rounded-lg shadow-lg p-8">
 				<h2 class="text-2xl font-semibold text-gray-800 mb-6">Participants</h2>
 				<ParticipantList
-					participants={participants()}
+					participants={state.participants}
 					onDelete={handleDeleteParticipant}
 					onCopyLink={copyParticipantLink}
 					showActions={true}

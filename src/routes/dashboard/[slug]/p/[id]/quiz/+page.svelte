@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { get } from 'svelte/store';
 	import type { Session, Participant } from '$lib/server/db/schema';

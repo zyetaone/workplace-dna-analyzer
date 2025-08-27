@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { createSession, deleteSession, getDashboardSessions } from './dashboard.remote.js';
 	import { logout } from '../auth.remote';
-	import { sessions, setSessions } from './dashboard.svelte.ts';
+	import { state, setSessions } from './dashboard.svelte.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	
@@ -215,7 +215,7 @@
 				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 mx-auto"></div>
 				<p class="mt-4 text-gray-600">Loading sessions...</p>
 			</div>
-		{:else if sessions().length === 0}
+		{:else if state.sessions.length === 0}
 			<div class="bg-white rounded-lg shadow-lg p-12 text-center">
 				<div class="text-6xl mb-4">📋</div>
 				<h3 class="text-2xl font-semibold text-gray-800 mb-2">No Sessions Yet</h3>
@@ -231,7 +231,7 @@
 			</div>
 		{:else}
 			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{#snippet sessionCard(session)}
+				{#snippet sessionCard(session: typeof state.sessions[0])}
 					<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
 						<!-- Card Header with Status -->
 						<div class="p-6 border-b border-gray-100">
@@ -311,37 +311,37 @@
 					</div>
 				{/snippet}
 				
-				{#each sessions() as session}
+				{#each state.sessions as session}
 					{@render sessionCard(session)}
 				{/each}
 			</div>
 		{/if}
 		
 		<!-- Footer Stats -->
-		{#if sessions().length > 0}
+		{#if state.sessions.length > 0}
 			<div class="mt-12 bg-white rounded-lg shadow-lg p-6">
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{sessions().length}
+							{state.sessions.length}
 						</div>
 						<div class="text-sm text-gray-500">Total Sessions</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-green-600">
-							{sessions().filter(s => s.isActive).length}
+							{state.sessions.filter(s => s.isActive).length}
 						</div>
 						<div class="text-sm text-gray-500">Active Sessions</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{sessions().reduce((sum, s) => sum + ((s.activeCount || 0) + (s.completedCount || 0)), 0)}
+							{state.sessions.reduce((sum, s) => sum + ((s.activeCount || 0) + (s.completedCount || 0)), 0)}
 						</div>
 						<div class="text-sm text-gray-500">Total Participants</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{sessions().reduce((sum, s) => sum + (s.completedCount || 0), 0)}
+							{state.sessions.reduce((sum, s) => sum + (s.completedCount || 0), 0)}
 						</div>
 						<div class="text-sm text-gray-500">Completed Surveys</div>
 					</div>

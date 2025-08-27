@@ -277,8 +277,8 @@ export const exportSessionData = command(ExportSessionDataSchema, async ({
 }) => {
 	
 	try {
-		// Get session analytics
-		const analyticsData = await getSessionAnalytics(slug);
+		// Get session data directly
+		const data = await getSessionAnalytics(slug);
 		
 		// Build export data structure
 		const exportData = {
