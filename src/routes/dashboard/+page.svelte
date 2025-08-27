@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { createSession, deleteSession, getDashboardSessions } from './dashboard.remote.js';
-	import { logout } from '../auth.remote';
 	import { handleError } from '$lib/utils/error-utils';
-import { formatDate, copyToClipboard } from '$lib/utils/common';
-	import { state as dashboardState, setSessions } from './dashboard.svelte.ts';
+	import { formatDate, copyToClipboard } from '$lib/utils/common';
+	import { state as dashboardState, setSessions, setLoading, setError } from './dashboard.svelte.ts';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+	import Toast, { showToast } from '$lib/components/Toast.svelte';
+	
 	
 	
 	// Local reactive state
@@ -13,33 +15,37 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 	let isDeletingSession = $state<string | null>(null);
 	let showCreateForm = $state(false);
 	
+	// Dialog states
+	let deleteDialogOpen = $state(false);
+	let sessionToDelete = $state<string | null>(null);
+	
 	// Presenter ID is managed by hooks.ts authentication
 	const presenterId = 'presenter';
 	
 	// Load sessions on mount
 	$effect(() => {
-		dashboardState.isLoading = true;
+		setLoading(true);
 		getDashboardSessions({ presenterId })
 			.then(sessionData => setSessions(sessionData))
 			.catch(err => {
 				console.error('Failed to load sessions:', err);
-				dashboardState.error = 'Failed to load sessions';
+				setError('Failed to load sessions');
 			})
 			.finally(() => {
-				dashboardState.isLoading = false;
+				setLoading(false);
 			});
 	});
 	
 	// Create new session
 	async function handleCreateSession() {
 		if (!sessionName.trim()) {
-			dashboardState.error = 'Please enter a session name';
+			setError('Please enter a session name');
 			return;
 		}
 		
 		
 		isCreating = true;
-		dashboardState.error = null;
+		setError(null);
 		
 		try {
 			const result = await createSession({
@@ -47,7 +53,7 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 				presenterId: presenterId
 			});
 			
-			if (result.success && result.session) {
+			if (result.success && result.data?.session) {
 				// Refresh the sessions list
 				const updatedSessions = await getDashboardSessions({ presenterId });
 				setSessions(updatedSessions);
@@ -57,12 +63,12 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 				showCreateForm = false;
 				
 				// Then navigate to the new session
-				if (result.redirect) {
-					goto(result.redirect);
+				if (result.data?.redirect) {
+					goto(result.data.redirect);
 				}
 			}
 		} catch (err) {
-			dashboardState.error = 'Failed to create session';
+			dashboardState.setError('Failed to create session');
 			console.error('Create session error:', err);
 		} finally {
 			isCreating = false;
@@ -71,22 +77,33 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 	
 	// Delete session
 	async function handleDeleteSession(slug: string) {
-		if (!confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
-			return;
-		}
+		sessionToDelete = slug;
+		deleteDialogOpen = true;
+	}
+	
+	async function confirmDeleteSession() {
+		if (!sessionToDelete) return;
 		
-		isDeletingSession = slug;
+		isDeletingSession = sessionToDelete;
 		try {
-			await deleteSession({ slug, presenterId });
+			await deleteSession({ slug: sessionToDelete, presenterId });
 			
 			// Update global state by removing the session
 			const updatedSessions = await getDashboardSessions({ presenterId });
 			setSessions(updatedSessions);
+			
+			// Show success toast
+			showToast({
+				title: 'Session deleted',
+				description: 'The session has been permanently deleted.',
+				variant: 'success'
+			});
 		} catch (err) {
 			console.error('Failed to delete session:', err);
-			alert('Failed to delete session');
+			setError('Failed to delete session');
 		} finally {
 			isDeletingSession = null;
+			sessionToDelete = null;
 		}
 	}
 	
@@ -94,6 +111,11 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 	function handleCopyLink(slug: string) {
 		const link = `${window.location.origin}/dashboard/${slug}/join`;
 		copyToClipboard(link);
+		showToast({
+			title: 'Link copied!',
+			description: 'The participant join link has been copied to your clipboard.',
+			variant: 'success'
+		});
 	}
 	
 	// Navigate to session dashboard
@@ -101,14 +123,9 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 		goto(`/dashboard/${slug}`);
 	}
 	
-	// Logout
+	// Logout (simplified without auth)
 	async function handleLogout() {
-		try {
-			await logout({});
-			goto('/');
-		} catch (err) {
-			console.error('Logout failed:', err);
-		}
+		goto('/');
 	}
 	
 
@@ -121,6 +138,75 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 	}
 	
 </script>
+
+<!-- Snippet for session card to reduce duplication -->
+{#snippet sessionCard(session)}
+	<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+		<div class="p-6 border-b border-gray-100">
+			<div class="flex justify-between items-start mb-3">
+				<h3 class="text-xl font-semibold text-gray-800 truncate pr-2">
+					{session.name}
+				</h3>
+				<div class="flex items-center gap-1">
+					{#if session.isActive}
+						<span class="relative flex h-3 w-3">
+							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+							<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+						</span>
+						<span class="text-xs font-medium text-green-600">Active</span>
+					{:else}
+						<span class="relative inline-flex rounded-full h-3 w-3 bg-gray-400"></span>
+						<span class="text-xs font-medium text-gray-500">Inactive</span>
+					{/if}
+				</div>
+			</div>
+			
+			<div class="mb-4">
+				<span class="text-sm text-gray-500">Session Code:</span>
+				<span class="ml-2 font-mono text-lg text-gray-700">{session.code}</span>
+			</div>
+			
+			<div class="grid grid-cols-2 gap-4">
+				<div class="text-center p-2 bg-gray-50 rounded">
+					<div class="text-2xl font-bold text-gray-700">{session.activeCount || 0}</div>
+					<div class="text-xs text-gray-500">Active</div>
+				</div>
+				<div class="text-center p-2 bg-green-50 rounded">
+					<div class="text-2xl font-bold text-green-600">{session.completedCount || 0}</div>
+					<div class="text-xs text-gray-500">Completed</div>
+				</div>
+			</div>
+			
+			<div class="mt-4 text-sm text-gray-500">
+				Created: {formatDate(session.createdAt)}
+			</div>
+		</div>
+		
+		<div class="p-4 bg-gray-50">
+			<div class="grid grid-cols-3 gap-2">
+				<button
+					onclick={() => openSession(session.slug)}
+					class="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition text-sm font-medium"
+				>
+					Open
+				</button>
+				<button
+					onclick={() => handleCopyLink(session.slug)}
+					class="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition text-sm font-medium"
+				>
+					Copy Link
+				</button>
+				<button
+					onclick={() => handleDeleteSession(session.slug)}
+					disabled={isDeletingSession === session.slug}
+					class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm font-medium disabled:opacity-50"
+				>
+					{isDeletingSession === session.slug ? '...' : 'Delete'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/snippet}
 
 <div class="min-h-screen animated-gradient">
 	<div class="container mx-auto px-6 py-12">
@@ -170,7 +256,7 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 							{isCreating ? 'Creating...' : 'Create'}
 						</button>
 						<button
-							onclick={() => { showCreateForm = false; sessionName = ''; dashboardState.error = null; }}
+							onclick={() => { showCreateForm = false; sessionName = ''; dashboardState.setError(null); }}
 							class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
 						>
 							Cancel
@@ -210,71 +296,7 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 		{:else}
 			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{#each dashboardState.sessions as session}
-					<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-						<div class="p-6 border-b border-gray-100">
-							<div class="flex justify-between items-start mb-3">
-								<h3 class="text-xl font-semibold text-gray-800 truncate pr-2">
-									{session.name}
-								</h3>
-								<div class="flex items-center gap-1">
-									{#if session.isActive}
-										<span class="relative flex h-3 w-3">
-											<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-											<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-										</span>
-										<span class="text-xs font-medium text-green-600">Active</span>
-									{:else}
-										<span class="relative inline-flex rounded-full h-3 w-3 bg-gray-400"></span>
-										<span class="text-xs font-medium text-gray-500">Inactive</span>
-									{/if}
-								</div>
-							</div>
-							
-							<div class="mb-4">
-								<span class="text-sm text-gray-500">Session Code:</span>
-								<span class="ml-2 font-mono text-lg text-gray-700">{session.code}</span>
-							</div>
-							
-							<div class="grid grid-cols-2 gap-4">
-								<div class="text-center p-2 bg-gray-50 rounded">
-									<div class="text-2xl font-bold text-gray-700">{session.activeCount || 0}</div>
-									<div class="text-xs text-gray-500">Active</div>
-								</div>
-								<div class="text-center p-2 bg-green-50 rounded">
-									<div class="text-2xl font-bold text-green-600">{session.completedCount || 0}</div>
-									<div class="text-xs text-gray-500">Completed</div>
-								</div>
-							</div>
-							
-							<div class="mt-4 text-sm text-gray-500">
-								Created: {formatDate(session.createdAt)}
-							</div>
-						</div>
-						
-						<div class="p-4 bg-gray-50">
-							<div class="grid grid-cols-3 gap-2">
-								<button
-									onclick={() => openSession(session.slug)}
-									class="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition text-sm font-medium"
-								>
-									Open
-								</button>
-								<button
-									onclick={() => handleCopyLink(session.slug)}
-									class="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition text-sm font-medium"
-								>
-									Copy Link
-								</button>
-								<button
-									onclick={() => handleDeleteSession(session.slug)}
-									disabled={isDeletingSession === session.slug}
-									class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm font-medium disabled:opacity-50"
-								>
-									{isDeletingSession === session.slug ? '...' : 'Delete'}
-								</button>
-							</div>
-						</div>
-					</div>
+					{@render sessionCard(session)}
 				{/each}
 			</div>
 		{/if}
@@ -312,5 +334,19 @@ import { formatDate, copyToClipboard } from '$lib/utils/common';
 		{/if}
 	</div>
 </div>
+
+<!-- Confirm Dialog for Delete -->
+<ConfirmDialog 
+	bind:open={deleteDialogOpen}
+	title="Delete Session"
+	description="Are you sure you want to delete this session? This action cannot be undone and all participant data will be lost."
+	confirmText="Delete"
+	cancelText="Cancel"
+	onConfirm={confirmDeleteSession}
+	variant="danger"
+/>
+
+<!-- Toast notifications -->
+<Toast />
 
 <!-- Styles moved to global app.css -->

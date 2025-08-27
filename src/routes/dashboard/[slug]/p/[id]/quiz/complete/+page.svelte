@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { getSessionAnalytics } from '../../../../../dashboard.remote';
-	import type { Session, Participant } from '$lib/server/db/schema';
+	import type { Session, Participant, PreferenceScores } from '$lib/server/db/schema';
 	
-	let sessionData = $state<{ session: Session; participants: Participant[]; analytics: any } | null>(null);
+	// Type matches what getSessionAnalytics actually returns (only raw data now)
+	let sessionData = $state<{
+		session: Session;
+		participants: Participant[];
+	} | null>(null);
 	let showConfetti = $state(false);
 	
 	// Get params from page store using derived for Svelte 5 runes mode
@@ -39,7 +43,7 @@
 		}
 		
 		try {
-			sessionData = await getSessionAnalytics(sessionSlug);
+			sessionData = await getSessionAnalytics({ slug: sessionSlug });
 		} catch (error) {
 			console.error('Failed to fetch session:', error);
 		}

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { login } from './auth.remote';
 	
 	let isLoggingIn = $state(false);
 	
@@ -8,13 +7,8 @@
 	async function enterDashboard() {
 		isLoggingIn = true;
 		try {
-			// No password needed for POC
-			await login({});
+			// Direct navigation without auth
 			await goto('/dashboard', { invalidateAll: true });
-		} catch (err: any) {
-			console.error('Login failed:', err);
-			// Try again with direct navigation
-			await goto('/dashboard');
 		} finally {
 			isLoggingIn = false;
 		}

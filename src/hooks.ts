@@ -1,8 +1,7 @@
 import type { Handle, HandleServerError, HandleClientError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-import { redirect } from '@sveltejs/kit';
 
-// Global error handlers for SSE and streaming (server-side only)
+// Global error handlers (server-side only)
 if (typeof process !== 'undefined') {
 	process.on('unhandledRejection', (reason, promise) => {
 		if (import.meta.env.DEV) {
@@ -14,34 +13,9 @@ if (typeof process !== 'undefined') {
 		if (import.meta.env.DEV) {
 			console.error('[Uncaught Exception]:', error);
 		}
-		// Ignore stream errors (SSE connections closing)
-		if (error.message?.includes('write') || error.message?.includes('stream')) {
-			return;
-		}
 		process.exit(1);
 	});
 }
-
-// Centralized authentication handler
-const authHandler: Handle = async ({ event, resolve }) => {
-	const path = event.url.pathname;
-	const presenterId = event.cookies.get('presenterId') || 'poc-presenter';
-	event.locals.presenterId = presenterId;
-	
-	// Check if route requires authentication
-	const isProtectedRoute = 
-		path === '/dashboard' || 
-		(path.startsWith('/dashboard/') && 
-		 !path.includes('/p/') && 
-		 !path.includes('/join'));
-	
-	// For POC: auto-authenticate, for production: validate presenterId
-	if (isProtectedRoute && !presenterId) {
-		throw redirect(303, '/');
-	}
-	
-	return resolve(event);
-};
 
 // Performance monitoring handler
 const performanceHandler: Handle = async ({ event, resolve }) => {
@@ -50,7 +24,7 @@ const performanceHandler: Handle = async ({ event, resolve }) => {
 	const duration = Date.now() - start;
 	
 	// Log slow requests (over 1 second)
-	if (duration > 1000 && !event.url.pathname.includes('/stream')) {
+	if (duration > 1000) {
 		if (import.meta.env.DEV) {
 			console.warn(`Slow request: ${event.url.pathname} took ${duration}ms`);
 		}
@@ -82,7 +56,7 @@ const errorHandler: Handle = async ({ event, resolve }) => {
 };
 
 // Server-side handle - combines all handlers in sequence
-export const handle = sequence(errorHandler, authHandler, performanceHandler);
+export const handle = sequence(errorHandler, performanceHandler);
 
 // Client-side error handling
 export const handleError: HandleClientError = ({ error, event }) => {

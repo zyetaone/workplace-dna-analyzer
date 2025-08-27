@@ -19,7 +19,7 @@
 		setLoading,
 		setError
 	} from '../dashboard.svelte.ts';
-	import ZyetaAssistant from '$lib/components/ZyetaAssistant.svelte';
+	import { realtimeSession } from './realtime.svelte.ts';
 	import ParticipantList from '$lib/components/ParticipantList.svelte';
 	import { createChartConfig, createGenerationChartConfig, createPreferenceRadarConfig } from '$lib/utils/chart-config';
 	
@@ -28,29 +28,30 @@ import { copyToClipboard } from '$lib/utils/common';
 	let isClient = $state(false);
 	let aiInsights = $state<string[]>([]);
 
-	// Compute analytics locally from dashboardState
+	// Use dashboard analytics which are automatically computed from participants
 	let analytics = $derived(getAnalytics());
 
-	// Chart configurations are derived from analytics
-	let preferenceChartConfig = $derived(createChartConfig(analytics.preferenceScores));
-	let generationChartConfig = $derived(createGenerationChartConfig(analytics.generationDistribution));
-	let radarChartConfig = $derived(createPreferenceRadarConfig(analytics.preferenceScores));
+	// Chart configurations are derived from analytics - will auto-update when realtime data changes
+	let preferenceChartConfig = $derived.by(() => createChartConfig(analytics.preferenceScores));
+	let generationChartConfig = $derived.by(() => createGenerationChartConfig(analytics.generationDistribution));
+	let radarChartConfig = $derived.by(() => createPreferenceRadarConfig(analytics.preferenceScores));
 
 	// Get slug from page params
 	const slug = $page.params.slug;
 
-	// Load initial data on mount
+	// Load initial data and start polling on mount
 	$effect(() => {
 		isClient = true; // Set client flag for QR code display
 		setLoading(true);
 		
 		// Load data asynchronously
-		getSessionAnalytics(slug).then(data => {
+		getSessionAnalytics({ slug }).then(data => {
 			initSession(data.session, data.participants);
-
-			// Set up SSE for real-time updates
-			if (typeof window !== 'undefined' && typeof EventSource !== 'undefined') {
-				setupSSE();
+			
+			// Start polling immediately after initialization
+			if (slug) {
+				realtimeSession.startPolling(slug, 2000);
+				console.log('Real-time polling started for session:', slug);
 			}
 		}).catch(err => {
 			setError('Failed to load session data.');
@@ -58,29 +59,26 @@ import { copyToClipboard } from '$lib/utils/common';
 		}).finally(() => {
 			setLoading(false);
 		});
-	});
-
-	// Set up SSE connection for real-time updates
-	let pollInterval: number | undefined;
-	function setupSSE() {
-		if (!slug) return;
-
-		// For POC, we'll skip SSE setup since it requires additional backend setup
-		// Just poll periodically instead
-		pollInterval = setInterval(() => {
-			getSessionAnalytics(slug).then(data => {
-				setParticipants(data.participants);
-			}).catch(console.error);
-		}, 5000); // Poll every 5 seconds
-	}
-	
-	// Cleanup polling on unmount
-	$effect(() => {
+		
+		// Cleanup polling on unmount
 		return () => {
-			if (pollInterval) {
-				clearInterval(pollInterval);
-			}
+			realtimeSession.stopPolling();
 		};
+	});
+	
+	// Track realtime updates and sync to dashboard state
+	$effect(() => {
+		// Sync participants from realtime to dashboard
+		if (realtimeSession.participants.length > 0) {
+			setParticipants(realtimeSession.participants);
+		}
+		
+		// Update connection status based on polling state
+		setConnectionStatus(
+			realtimeSession.isPolling ? 'connected' : 
+			realtimeSession.error ? 'error' : 
+			'disconnected'
+		);
 	});
 
 	// Toggle session active status
@@ -167,7 +165,6 @@ import { copyToClipboard } from '$lib/utils/common';
 		
 		{#if dashboardState.isLoading}
 			<LoadingScreen 
-				variant="inline"
 				message="Loading session data..."
 			/>
 		{:else}
@@ -308,7 +305,7 @@ import { copyToClipboard } from '$lib/utils/common';
 			<!-- Controls -->
 			<div class="mt-8 flex justify-center gap-4">
 				<button
-					onclick={() => getSessionAnalytics(slug).then(data => initSession(data.session, data.participants))}
+					onclick={() => getSessionAnalytics({ slug }).then(data => initSession(data.session, data.participants))}
 					class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
 				>
 					Refresh Data

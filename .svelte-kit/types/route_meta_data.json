@@ -5,8 +5,5 @@
 	"/dashboard/[slug]/join": [],
 	"/dashboard/[slug]/p/[id]": [],
 	"/dashboard/[slug]/p/[id]/quiz": [],
-	"/dashboard/[slug]/p/[id]/quiz/complete": [],
-	"/dashboard/[slug]/stream": [
-		"src/routes/dashboard/[slug]/stream/+server.ts"
-	]
+	"/dashboard/[slug]/p/[id]/quiz/complete": []
 }

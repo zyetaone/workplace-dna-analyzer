@@ -18,9 +18,9 @@
 		const slug = $page.params.slug;
 		if (!slug?.trim()) return;
 		
-		getSessionSummary(slug)
+		getSessionSummary({ slug })
 			.then(data => {
-				sessionData = data;
+				sessionData = data.session;
 			})
 			.catch(err => {
 				error = handleError(err, 'session loading');
@@ -43,7 +43,7 @@
 				name: participantName.trim()
 			});
 			
-			if (result.redirect) {
+			if (result.success && result.redirect) {
 				goto(result.redirect);
 			}
 		} catch (err) {

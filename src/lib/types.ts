@@ -41,8 +41,7 @@ export type GenerationDistribution = {
 // Word cloud visualization
 export interface WordCloudItem {
 	text: string;
-	value?: number;
-	size: number; // Required to match WordCloud component expectations
+	size: number; // The size/value for the word cloud visualization
 }
 
 // Connection status for real-time features

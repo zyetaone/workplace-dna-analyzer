@@ -252,7 +252,7 @@ function createBaseOptions(
 	const baseOptions: ChartOptions = {
 		responsive: preset.responsive,
 		maintainAspectRatio: preset.maintainAspectRatio,
-		animation: preset.animation,
+		animation: preset.animation as false | any,
 		plugins: {
 			legend: {
 				display: preset.plugins.legend,
@@ -503,6 +503,7 @@ export function createDoughnutChartConfig(
 		},
 		options: {
 			...baseOptions,
+			...(baseOptions as any),
 			cutout: '60%',
 			plugins: {
 				...baseOptions.plugins,
@@ -655,12 +656,6 @@ export function createChartWithPreset(
 }
 
 // ============================================================================
-// Additional Exports (Types only - constants are already exported above)
+// Additional Exports 
 // ============================================================================
-
-export type {
-	ChartTheme,
-	ChartPreset,
-	ChartConfigOptions,
-	ChartType
-};
+// All types are already exported as interfaces above

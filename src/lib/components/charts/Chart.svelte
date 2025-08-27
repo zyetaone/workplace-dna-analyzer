@@ -44,7 +44,7 @@
 	let container = $state<HTMLDivElement>();
 	let chartInstance: Chart | null = null;
 	
-	// Attachment function for chart behavior
+	// Attachment function for chart behavior lifecycle
 	function attachChart(node: HTMLCanvasElement) {
 		if (!config) return;
 		
@@ -61,7 +61,7 @@
 		chartInstance = new Chart(node, mergedConfig);
 		onChartCreated?.(chartInstance);
 		
-		// Cleanup function
+		// Return cleanup function
 		return () => {
 			onChartDestroyed?.();
 			if (chartInstance) {
@@ -85,7 +85,7 @@
 			};
 		}
 		
-		const updateMode = animateOnUpdate ? 'normal' : 'none';
+		const updateMode = animateOnUpdate ? 'active' : 'none';
 		chartInstance.update(updateMode);
 		onChartUpdated?.(chartInstance);
 	});

@@ -11,16 +11,12 @@ const config = {
 		// Node adapter configuration
 		adapter: adapter(),
 		// CSRF protection - allow requests from the app's origin
-		csrf: {
-			trustedOrigins: ['http://localhost:5173']
-		},
+		
 		// Performance optimizations
 		serviceWorker: {
 			register: false // Disable for real-time apps
 		},
-		prerender: {
-			entries: [] // Disable prerendering for dynamic app
-		}
+	
 	},
 	compilerOptions: {
 		experimental: { async: true }
