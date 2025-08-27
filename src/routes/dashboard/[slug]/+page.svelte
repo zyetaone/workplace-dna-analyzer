@@ -10,6 +10,7 @@
 	import { getSessionAnalytics, generateAIInsights, endSession as endSessionRemote, deleteParticipant } from '../dashboard.remote';
 	import { createDashboardState } from '../dashboard.svelte.ts';
 	import ZyetaAssistant from '$lib/components/ZyetaAssistant.svelte';
+	import ParticipantList from '$lib/components/ParticipantList.svelte';
 	
 	// Create a local state instance for this session
 	const sessionState = createDashboardState();
@@ -827,77 +828,20 @@
 			
 			<!-- Participants List -->
 			<div class="bg-white rounded-lg shadow-lg p-8">
-				<h2 class="text-2xl font-semibold text-gray-800 mb-4">Participants</h2>
-				{#if participants && participants.length > 0}
-					<div class="overflow-x-auto">
-						<table class="w-full text-left">
-							<thead>
-								<tr class="border-b">
-									<th class="p-2 text-gray-700">Name</th>
-									<th class="p-2 text-gray-700">ID</th>
-									<th class="p-2 text-gray-700">Generation</th>
-									<th class="p-2 text-gray-700">Progress</th>
-									<th class="p-2 text-gray-700">Status</th>
-									<th class="p-2 text-gray-700">Link</th>
-									<th class="p-2 text-gray-700">Actions</th>
-								</tr>
-							</thead>
-							{#snippet participantRow(participant: typeof participants[0])}
-								<tr class="border-b hover:bg-gray-50">
-									<td class="p-2 font-medium">{participant.name}</td>
-									<td class="p-2 text-xs text-gray-500 font-mono">
-										{participant.id.substring(0, 8)}...
-									</td>
-									<td class="p-2">{participant.generation || '-'}</td>
-									<td class="p-2">
-										<div class="flex items-center gap-2">
-											<span>{Object.keys(participant.responses || {}).length} / 7</span>
-											<div class="w-20 bg-gray-200 rounded-full h-2">
-												<div 
-													class="bg-gray-600 h-2 rounded-full"
-													style="width: {(Object.keys(participant.responses || {}).length / 7) * 100}%"
-												></div>
-											</div>
-										</div>
-									</td>
-									<td class="p-2">
-										{#if participant.completed}
-											<span class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">Completed</span>
-										{:else}
-											<span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">In Progress</span>
-										{/if}
-									</td>
-									<td class="p-2">
-										<button
-											onclick={() => copyParticipantLink(participant.id)}
-											class="text-gray-500 hover:text-gray-700"
-											title="Copy participant link"
-										>
-											📋
-										</button>
-									</td>
-									<td class="p-2">
-										<button
-											onclick={() => deleteParticipantHandler(participant.id, participant.name)}
-											class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
-											title="Delete participant"
-										>
-											Delete
-										</button>
-									</td>
-								</tr>
-							{/snippet}
-							
-							<tbody>
-								{#each participants as participant (participant.id)}
-									{@render participantRow(participant)}
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				{:else}
-					<p class="text-gray-500">No participants yet. Share the QR code to get started!</p>
-				{/if}
+				<h2 class="text-2xl font-semibold text-gray-800 mb-6">Participants</h2>
+				<ParticipantList
+					{participants}
+					onDelete={deleteParticipantHandler}
+					onCopyLink={copyParticipantLink}
+					showActions={true}
+					showProgress={true}
+					showStatus={true}
+					showGeneration={true}
+					showScores={false}
+					showId={true}
+					showLink={true}
+					emptyMessage="No participants yet. Share the QR code to get started!"
+				/>
 			</div>
 			
 			<!-- Controls -->
