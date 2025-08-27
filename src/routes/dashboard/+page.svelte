@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { createSession, deleteSession, getDashboardSessions } from './dashboard.remote.js';
 	import { logout } from '../auth.remote';
-	import { dashboardState } from './dashboard.svelte';
+	import { sessions, setSessions } from './dashboard.svelte.ts';
 	import { checkAuth } from '../auth.remote';
 	import { onMount } from 'svelte';
 	
@@ -17,9 +17,6 @@
 	
 	// Get presenterId from auth check
 	let presenterId = $state<string | null>(null);
-	
-	// Use global state for sessions
-	let sessions = $derived(dashboardState.sessions);
 	
 	// Load sessions on mount
 	onMount(async () => {
@@ -36,7 +33,7 @@
 		
 		try {
 			const sessionData = await getDashboardSessions({ presenterId });
-			dashboardState.setSessions(sessionData);
+			setSessions(sessionData);
 		} catch (err) {
 			console.error('Failed to load sessions:', err);
 			error = 'Failed to load sessions';
@@ -69,7 +66,7 @@
 			if (result.success && result.session) {
 				// Refresh the sessions list
 				const updatedSessions = await getDashboardSessions({ presenterId });
-				dashboardState.setSessions(updatedSessions);
+				setSessions(updatedSessions);
 				
 				// Clear form
 				sessionName = '';
@@ -102,7 +99,7 @@
 			
 			// Update global state by removing the session
 			const updatedSessions = await getDashboardSessions({ presenterId: presenterId! });
-			dashboardState.setSessions(updatedSessions);
+			setSessions(updatedSessions);
 		} catch (err) {
 			if (import.meta.env.DEV) {
 			console.error('Failed to delete session:', err);
@@ -149,7 +146,7 @@
 	}
 	
 	// Allow Enter key to create session
-	function handleKeypress(e: KeyboardEvent) {
+	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter' && !isCreating) {
 			handleCreateSession();
 		}
@@ -194,7 +191,7 @@
 							type="text"
 							bind:value={sessionName}
 							placeholder="Enter session name..."
-							onkeypress={handleKeypress}
+							onkeydown={handleKeydown}
 							disabled={isCreating}
 							class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
 						/>
@@ -225,7 +222,7 @@
 				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 mx-auto"></div>
 				<p class="mt-4 text-gray-600">Loading sessions...</p>
 			</div>
-		{:else if sessions.length === 0}
+		{:else if sessions().length === 0}
 			<div class="bg-white rounded-lg shadow-lg p-12 text-center">
 				<div class="text-6xl mb-4">📋</div>
 				<h3 class="text-2xl font-semibold text-gray-800 mb-2">No Sessions Yet</h3>
@@ -241,7 +238,7 @@
 			</div>
 		{:else}
 			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{#snippet sessionCard(session: typeof sessions[0])}
+				{#snippet sessionCard(session)}
 					<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
 						<!-- Card Header with Status -->
 						<div class="p-6 border-b border-gray-100">
@@ -321,37 +318,37 @@
 					</div>
 				{/snippet}
 				
-				{#each sessions as session}
+				{#each sessions() as session}
 					{@render sessionCard(session)}
 				{/each}
 			</div>
 		{/if}
 		
 		<!-- Footer Stats -->
-		{#if sessions.length > 0}
+		{#if sessions().length > 0}
 			<div class="mt-12 bg-white rounded-lg shadow-lg p-6">
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{sessions.length}
+							{sessions().length}
 						</div>
 						<div class="text-sm text-gray-500">Total Sessions</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-green-600">
-							{sessions.filter(s => s.isActive).length}
+							{sessions().filter(s => s.isActive).length}
 						</div>
 						<div class="text-sm text-gray-500">Active Sessions</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{sessions.reduce((sum, s) => sum + ((s.activeCount || 0) + (s.completedCount || 0)), 0)}
+							{sessions().reduce((sum, s) => sum + ((s.activeCount || 0) + (s.completedCount || 0)), 0)}
 						</div>
 						<div class="text-sm text-gray-500">Total Participants</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{sessions.reduce((sum, s) => sum + (s.completedCount || 0), 0)}
+							{sessions().reduce((sum, s) => sum + (s.completedCount || 0), 0)}
 						</div>
 						<div class="text-sm text-gray-500">Completed Surveys</div>
 					</div>

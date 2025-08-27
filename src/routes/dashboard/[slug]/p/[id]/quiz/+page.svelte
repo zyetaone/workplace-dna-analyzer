@@ -20,7 +20,7 @@
 	// State
 	let session = $state<Session | null>(null);
 	let participant = $state<Participant | null>(null);
-	let questions = $state<typeof import('./quiz.svelte.js').questions>([]);
+	let questions = $state<any[]>([]);
 	let sessionCode = $state('');
 	let currentQuestion = $state(0);
 	let responses: Record<number, string> = $state({});

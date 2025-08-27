@@ -52,44 +52,44 @@
 	}
 </script>
 
-<div class="participant-list {className}">
+<div class="w-full {className}">
 	{#if participants && participants.length > 0}
 		<div class="overflow-x-auto">
-			<table class="w-full text-left">
+			<table class="w-full text-left max-md:text-sm">
 				<thead>
 					<tr class="border-b border-gray-200">
-						<th class="px-3 py-3 text-gray-700 font-semibold">Name</th>
+						<th class="px-3 py-3 text-gray-700 font-semibold max-md:px-2 max-md:py-2">Name</th>
 						{#if showId}
-							<th class="px-3 py-3 text-gray-700 font-semibold">ID</th>
+							<th class="px-3 py-3 text-gray-700 font-semibold max-md:px-2 max-md:py-2">ID</th>
 						{/if}
 						{#if showGeneration}
-							<th class="px-3 py-3 text-gray-700 font-semibold">Generation</th>
+							<th class="px-3 py-3 text-gray-700 font-semibold max-md:px-2 max-md:py-2">Generation</th>
 						{/if}
 						{#if showProgress}
-							<th class="px-3 py-3 text-gray-700 font-semibold">Progress</th>
+							<th class="px-3 py-3 text-gray-700 font-semibold max-md:px-2 max-md:py-2">Progress</th>
 						{/if}
 						{#if showStatus}
-							<th class="px-3 py-3 text-gray-700 font-semibold">Status</th>
+							<th class="px-3 py-3 text-gray-700 font-semibold max-md:px-2 max-md:py-2">Status</th>
 						{/if}
 						{#if showScores}
-							<th class="px-3 py-3 text-gray-700 font-semibold" colspan="4">Preference Scores</th>
+							<th class="px-3 py-3 text-gray-700 font-semibold max-md:px-2 max-md:py-2" colspan="4">Preference Scores</th>
 						{/if}
 						{#if showLink && onCopyLink}
-							<th class="px-3 py-3 text-gray-700 font-semibold">Link</th>
+							<th class="px-3 py-3 text-gray-700 font-semibold max-md:px-2 max-md:py-2">Link</th>
 						{/if}
 						{#if showActions && onDelete}
-							<th class="px-3 py-3 text-gray-700 font-semibold">Actions</th>
+							<th class="px-3 py-3 text-gray-700 font-semibold max-md:px-2 max-md:py-2">Actions</th>
 						{/if}
 					</tr>
 					{#if showScores}
 						<tr class="border-b border-gray-100">
-							<th colspan={showId ? 5 : 4}></th>
-							<th class="px-2 py-2 text-xs text-gray-500 text-center">Collab</th>
-							<th class="px-2 py-2 text-xs text-gray-500 text-center">Formal</th>
-							<th class="px-2 py-2 text-xs text-gray-500 text-center">Tech</th>
-							<th class="px-2 py-2 text-xs text-gray-500 text-center">Wellness</th>
+							<th class={showId ? 'max-md:px-2 max-md:py-2' : 'max-md:px-2 max-md:py-2'} colspan={showId ? 5 : 4}></th>
+							<th class="px-2 py-2 text-xs text-gray-500 text-center max-md:px-2 max-md:py-2">Collab</th>
+							<th class="px-2 py-2 text-xs text-gray-500 text-center max-md:px-2 max-md:py-2">Formal</th>
+							<th class="px-2 py-2 text-xs text-gray-500 text-center max-md:px-2 max-md:py-2">Tech</th>
+							<th class="px-2 py-2 text-xs text-gray-500 text-center max-md:px-2 max-md:py-2">Wellness</th>
 							{#if (showLink && onCopyLink) || (showActions && onDelete)}
-								<th colspan={(showLink && onCopyLink ? 1 : 0) + (showActions && onDelete ? 1 : 0)}></th>
+								<th class={ (showLink && onCopyLink ? 'max-md:px-2 max-md:py-2' : '') + (showActions && onDelete ? ' max-md:px-2 max-md:py-2' : '')} colspan={(showLink && onCopyLink ? 1 : 0) + (showActions && onDelete ? 1 : 0)}></th>
 							{/if}
 						</tr>
 					{/if}
@@ -99,27 +99,27 @@
 					{@const progress = getProgress(participant.responses)}
 					<tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
 						<!-- Name -->
-						<td class="px-3 py-3 font-medium text-gray-900">
+						<td class="px-3 py-3 font-medium text-gray-900 max-md:px-2 max-md:py-2">
 							{participant.name}
 						</td>
 						
 						<!-- ID -->
 						{#if showId}
-							<td class="px-3 py-3 text-xs text-gray-500 font-mono">
+							<td class="px-3 py-3 text-xs text-gray-500 font-mono max-md:px-2 max-md:py-2">
 								{truncateId(participant.id)}
 							</td>
 						{/if}
 						
 						<!-- Generation -->
 						{#if showGeneration}
-							<td class="px-3 py-3 text-gray-700">
+							<td class="px-3 py-3 text-gray-700 max-md:px-2 max-md:py-2">
 								{participant.generation || '-'}
 							</td>
 						{/if}
 						
 						<!-- Progress -->
 						{#if showProgress}
-							<td class="px-3 py-3">
+							<td class="px-3 py-3 max-md:px-2 max-md:py-2">
 								<div class="flex items-center gap-3">
 									<span class="text-sm text-gray-600 min-w-[3rem]">
 										{progress.count} / 7
@@ -136,7 +136,7 @@
 						
 						<!-- Status -->
 						{#if showStatus}
-							<td class="px-3 py-3">
+							<td class="px-3 py-3 max-md:px-2 max-md:py-2">
 								{#if participant.completed}
 									<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
 										Completed
@@ -151,23 +151,23 @@
 						
 						<!-- Preference Scores -->
 						{#if showScores}
-							<td class="px-2 py-3 text-center text-sm font-medium text-blue-600">
+							<td class="px-2 py-3 text-center text-sm font-medium text-blue-600 max-md:px-2 max-md:py-2">
 								{formatScore(participant.preferenceScores?.collaboration)}
 							</td>
-							<td class="px-2 py-3 text-center text-sm font-medium text-amber-600">
+							<td class="px-2 py-3 text-center text-sm font-medium text-amber-600 max-md:px-2 max-md:py-2">
 								{formatScore(participant.preferenceScores?.formality)}
 							</td>
-							<td class="px-2 py-3 text-center text-sm font-medium text-green-600">
+							<td class="px-2 py-3 text-center text-sm font-medium text-green-600 max-md:px-2 max-md:py-2">
 								{formatScore(participant.preferenceScores?.tech)}
 							</td>
-							<td class="px-2 py-3 text-center text-sm font-medium text-red-600">
+							<td class="px-2 py-3 text-center text-sm font-medium text-red-600 max-md:px-2 max-md:py-2">
 								{formatScore(participant.preferenceScores?.wellness)}
 							</td>
 						{/if}
 						
 						<!-- Copy Link -->
 						{#if showLink && onCopyLink}
-							<td class="px-3 py-3">
+							<td class="px-3 py-3 max-md:px-2 max-md:py-2">
 								<button
 									onclick={() => onCopyLink?.(participant.id)}
 									class="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
@@ -184,7 +184,7 @@
 						
 						<!-- Actions -->
 						{#if showActions && onDelete}
-							<td class="px-3 py-3">
+							<td class="px-3 py-3 max-md:px-2 max-md:py-2">
 								<button
 									onclick={() => onDelete?.(participant.id, participant.name)}
 									class="px-3 py-1.5 bg-red-500 text-white text-sm font-medium rounded hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
@@ -216,21 +216,3 @@
 		</div>
 	{/if}
 </div>
-
-<style>
-	.participant-list {
-		@apply w-full;
-	}
-	
-	/* Ensure table is responsive */
-	@media (max-width: 768px) {
-		.participant-list {
-			font-size: 0.875rem;
-		}
-		
-		.participant-list th,
-		.participant-list td {
-			@apply px-2 py-2;
-		}
-	}
-</style>

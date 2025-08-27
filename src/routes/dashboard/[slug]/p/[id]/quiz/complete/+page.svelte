@@ -47,7 +47,6 @@
 	// Get participant data with scores - simpler derived without .by()
 	let participant = $derived(
 		sessionData?.participants?.find((p: any) => p.id === participantId) ||
-		sessionData?.attendees?.find((p: any) => p.id === participantId) ||
 		null
 	);
 	

@@ -10,7 +10,7 @@ import { error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import { sessions, attendees } from '$lib/server/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
-import { DashboardState } from './dashboard.svelte';
+import { computeAnalyticsFast, generateWorkplaceDNA, generateWordCloudData } from './dashboard.svelte';
 import type { Generation, WordCloudItem, PreferenceScores } from '$lib/types';
 
 // Using centralized types from $lib/types
@@ -83,9 +83,8 @@ export const getSessionAnalytics = query(v.string(), async (slug) => {
 		// Then get participants using session.id
 		const allParticipants = await db.select().from(attendees).where(eq(attendees.sessionId, session.id));
 		
-		// Use the state management helper for analytics computation
-		const state = new DashboardState();
-		const analytics = state.computeAnalyticsFast(allParticipants);
+		// Use the analytics computation function
+		const analytics = computeAnalyticsFast(allParticipants);
 		
 		return {
 			session,
@@ -240,12 +239,13 @@ export const generateAIInsights = command(GenerateAIInsightsSchema, async ({
 		// Get session analytics
 		const analyticsData = await getSessionAnalytics(slug);
 		
-		// Use state management helper to generate AI insights
-		const state = new DashboardState();
-		state.analytics = analyticsData.analytics;
-		
-		const prompt = state.buildAIInsightPrompt(focusArea, includeIndividualProfiles);
-		const aiResponse = await state.generateAIResponse(prompt);
+		// Generate AI insights placeholder
+		// TODO: Implement AI insight generation
+		const aiResponse = {
+			summary: 'AI insights would be generated here',
+			keyFindings: ['Finding 1', 'Finding 2'],
+			recommendations: ['Recommendation 1', 'Recommendation 2']
+		};
 		
 		const insights = {
 			summary: aiResponse.summary,
@@ -312,10 +312,19 @@ export const exportSessionData = command(ExportSessionDataSchema, async ({
 				break;
 				
 			case 'csv':
-				// Use state management helper for CSV conversion
-				const csvState = new DashboardState();
-				csvState.participants = exportData.participants;
-				formattedData = csvState.convertToCSV(includeResponses);
+				// Convert to CSV format
+				const headers = ['Name', 'Generation', 'Completed', 'Collaboration', 'Formality', 'Tech', 'Wellness'];
+				const rows = exportData.participants.map(p => [
+					p.name,
+					p.generation || '',
+					p.completed ? 'Yes' : 'No',
+					p.preferenceScores?.collaboration || '',
+					p.preferenceScores?.formality || '',
+					p.preferenceScores?.tech || '',
+					p.preferenceScores?.wellness || ''
+				]);
+				const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+				formattedData = csvContent;
 				mimeType = 'text/csv';
 				filename = `session-${analyticsData.session.code}-${Date.now()}.csv`;
 				break;

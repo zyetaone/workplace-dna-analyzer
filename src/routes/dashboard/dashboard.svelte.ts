@@ -5,7 +5,6 @@
 
 import type { Session, Participant, PreferenceScores } from '$lib/server/db/schema';
 import type { ConnectionStatus, ParticipantUpdate, LiveAnalytics, Generation, WordCloudItem, GenerationPreferences } from '$lib/types';
-import { invalidateAll } from '$app/navigation';
 
 // Type definitions for generation preferences (different from lib/types)
 interface GenerationPreferencesMap {
@@ -23,109 +22,158 @@ export interface SessionWithCounts extends Session {
 	completedCount: number;
 }
 
-// Core session state using $state rune
-export const sessions = $state<SessionWithCounts[]>([]);
-export const currentSession = $state<Session | null>(null);
-export const participants = $state<Participant[]>([]);
-export const isLoading = $state(false);
-export const error = $state<string | null>(null);
+// Mutable state arrays using $state
+const sessionsArray = $state<SessionWithCounts[]>([]);
+const participantsArray = $state<Participant[]>([]);
+const updateQueueArray = $state<ParticipantUpdate[]>([]);
 
-// Connection and real-time state
-export const connectionStatus = $state<ConnectionStatus>('connecting');
-export const lastUpdate = $state<Date>(new Date());
-export const updateQueue = $state<ParticipantUpdate[]>([]);
-
-// Session metadata
-export const sessionUrl = $state('');
-export const networkUrl = $state('');
-export const sessionCode = $state('');
-export const slug = $state('');
-
-
-// Analytics is now derived from participants - will auto-recompute when participants change
-export const analytics = $derived.by(() => computeAnalyticsFast(participants));
-
-// Additional derived state for presenter features
-export const isActive = $derived(currentSession?.isActive || false);
-export const hasParticipants = $derived(participants.length > 0);
-export const hasCompletedParticipants = $derived(participants.some(p => p.completed));
-export const completionPercentage = $derived.by(() => {
-    if (participants.length === 0) return 0;
-    const completed = participants.filter(p => p.completed).length;
-    return Math.round((completed / participants.length) * 100);
+// Mutable state object for primitives
+const mutableState = $state({
+	currentSession: null as Session | null,
+	isLoading: false,
+	error: null as string | null,
+	connectionStatus: 'connecting' as ConnectionStatus,
+	lastUpdate: new Date(),
+	sessionUrl: '',
+	networkUrl: '',
+	sessionCode: '',
+	slug: ''
 });
+
+// Export getter functions for read-only access
+export const sessions = () => sessionsArray;
+export const participants = () => participantsArray;
+export const updateQueue = () => updateQueueArray;
+export const currentSession = () => mutableState.currentSession;
+export const isLoading = () => mutableState.isLoading;
+export const error = () => mutableState.error;
+export const connectionStatus = () => mutableState.connectionStatus;
+export const lastUpdate = () => mutableState.lastUpdate;
+export const sessionUrl = () => mutableState.sessionUrl;
+export const networkUrl = () => mutableState.networkUrl;
+export const sessionCode = () => mutableState.sessionCode;
+export const slug = () => mutableState.slug;
+
+// Analytics getter function
+export const analytics = () => computeAnalyticsFast(participantsArray);
+
+// Additional getter functions for presenter features
+export const isActive = () => mutableState.currentSession?.isActive || false;
+export const hasParticipants = () => participantsArray.length > 0;
+export const hasCompletedParticipants = () => participantsArray.some(p => p.completed);
+
+export const completionPercentage = () => {
+	if (participantsArray.length === 0) return 0;
+	const completed = participantsArray.filter(p => p.completed).length;
+	return Math.round((completed / participantsArray.length) * 100);
+};
 
 // Most active generation
-export const mostActiveGeneration = $derived.by(() => {
-    const dist = analytics.generationDistribution;
-    const entries = Object.entries(dist).filter(([_, count]) => count > 0);
-    if (entries.length === 0) return null;
-    return entries.reduce((a, b) => a[1] > b[1] ? a : b)[0];
-});
+export const mostActiveGeneration = () => {
+	const dist = analytics().generationDistribution;
+	const entries = Object.entries(dist).filter(([_, count]) => count > 0);
+	if (entries.length === 0) return null;
+	return entries.reduce((a, b) => a[1] > b[1] ? a : b)[0];
+};
 
 // Dominant preference
-export const dominantPreference = $derived.by(() => {
-    const scores = analytics.preferenceScores;
-    const entries = Object.entries(scores);
-    if (entries.length === 0) return null;
-    const [pref, score] = entries.reduce((a, b) => a[1] > b[1] ? a : b);
-    return { preference: pref, score };
-});
+export const dominantPreference = () => {
+	const scores = analytics().preferenceScores;
+	const entries = Object.entries(scores);
+	if (entries.length === 0) return null;
+	const [pref, score] = entries.reduce((a, b) => a[1] > b[1] ? a : b);
+	return { preference: pref, score };
+};
 
-// Derived state using $derived rune
-export const hasActiveSessions = $derived(sessions.some(s => s.isActive));
-export const totalParticipants = $derived(sessions.reduce((sum, s) => sum + s.activeCount + s.completedCount, 0));
+// Derived state getter functions
+export const hasActiveSessions = () => sessionsArray.some(s => s.isActive);
+export const totalParticipants = () => sessionsArray.reduce((sum, s) => sum + s.activeCount + s.completedCount, 0);
 
-export const averageResponseRate = $derived.by(() => {
-    const completed = sessions.reduce((sum, s) => sum + s.completedCount, 0);
-    const total = totalParticipants;
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-});
+export const averageResponseRate = () => {
+	const completed = sessionsArray.reduce((sum, s) => sum + s.completedCount, 0);
+	const total = totalParticipants();
+	return total > 0 ? Math.round((completed / total) * 100) : 0;
+};
 
 /**
- * Set sessions list
+ * Set loading state
+ */
+export function setLoading(loading: boolean) {
+	mutableState.isLoading = loading;
+}
+
+/**
+ * Set error state
+ */
+export function setError(errorMsg: string | null) {
+	mutableState.error = errorMsg;
+}
+
+/**
+ * Set connection status
+ */
+export function setConnectionStatus(status: ConnectionStatus) {
+	mutableState.connectionStatus = status;
+}
+
+/**
+ * Set session URL
+ */
+export function setSessionUrl(url: string) {
+	mutableState.sessionUrl = url;
+}
+
+/**
+ * Set network URL
+ */
+export function setNetworkUrl(url: string) {
+	mutableState.networkUrl = url;
+}
+
+/**
+ * Set sessions list - use array mutation
  */
 export function setSessions(newSessions: SessionWithCounts[]) {
-    sessions = newSessions;
+	sessionsArray.splice(0, sessionsArray.length, ...newSessions);
 }
 
 /**
  * Initialize session with data
  */
 export function initSession(session: Session, newParticipants: Participant[] = []) {
-    currentSession = session;
-    slug = session.slug;
-    sessionCode = session.code;
-    participants = newParticipants;
-    connectionStatus = 'connected';
+	mutableState.currentSession = session;
+	mutableState.slug = session.slug;
+	mutableState.sessionCode = session.code;
+	participantsArray.splice(0, participantsArray.length, ...newParticipants);
+	mutableState.connectionStatus = 'connected';
 }
 
 /**
  * Set current session
  */
 export function setCurrentSession(session: Session | null) {
-    currentSession = session;
-    if (session) {
-        slug = session.slug;
-        sessionCode = session.code;
-    }
+	mutableState.currentSession = session;
+	if (session) {
+		mutableState.slug = session.slug;
+		mutableState.sessionCode = session.code;
+	}
 }
 
 /**
  * Update session data
  */
 export function updateCurrentSession(updates: Partial<Session>) {
-    if (currentSession) {
-        currentSession = { ...currentSession, ...updates };
-    }
+	if (mutableState.currentSession) {
+		mutableState.currentSession = { ...mutableState.currentSession, ...updates };
+	}
 }
 
 /**
  * Update participants list (analytics will auto-recompute)
  */
 export function setParticipants(newParticipants: Participant[]) {
-    participants = newParticipants;
-    lastUpdate = new Date();
+	participantsArray.splice(0, participantsArray.length, ...newParticipants);
+	mutableState.lastUpdate = new Date();
 }
 
 
@@ -133,71 +181,74 @@ export function setParticipants(newParticipants: Participant[]) {
  * Add or update a participant
  */
 export function upsertParticipant(participant: Participant) {
-    const index = participants.findIndex(p => p.id === participant.id);
-    if (index >= 0) {
-        // Update existing
-        participants[index] = participant;
-        addToUpdateQueue('update', participant);
-    } else {
-        // Add new
-        participants = [...participants, participant];
-        addToUpdateQueue('join', participant);
-    }
+	const index = participantsArray.findIndex(p => p.id === participant.id);
+	if (index >= 0) {
+		// Update existing using splice
+		participantsArray.splice(index, 1, participant);
+		addToUpdateQueue('update', participant);
+	} else {
+		// Add new
+		participantsArray.push(participant);
+		addToUpdateQueue('join', participant);
+	}
 }
 
 /**
  * Add a new participant (analytics will auto-recompute)
  */
 export function addParticipant(participant: Participant) {
-    participants = [...participants, participant];
-    addToUpdateQueue('join', participant);
+	participantsArray.push(participant);
+	addToUpdateQueue('join', participant);
 }
 
 /**
  * Update an existing participant (analytics will auto-recompute)
  */
 export function updateParticipant(id: string, updates: Partial<Participant>) {
-    participants = participants.map(p =>
-        p.id === id ? { ...p, ...updates } : p
-    );
+	const index = participantsArray.findIndex(p => p.id === id);
+	if (index !== -1) {
+		const updated = { ...participantsArray[index], ...updates };
+		participantsArray.splice(index, 1, updated);
+	}
 }
 
 /**
  * Remove a participant (analytics will auto-recompute)
  */
 export function removeParticipant(id: string) {
-    const participant = participants.find(p => p.id === id);
-    if (participant) {
-        participants = participants.filter(p => p.id !== id);
-        addToUpdateQueue('leave', participant);
-    }
+	const index = participantsArray.findIndex(p => p.id === id);
+	if (index !== -1) {
+		const participant = participantsArray[index];
+		participantsArray.splice(index, 1);
+		addToUpdateQueue('leave', participant);
+	}
 }
 
 /**
  * Mark participant as completed
  */
 export function completeParticipant(id: string, preferenceScores: PreferenceScores) {
-    const participant = participants.find(p => p.id === id);
-    if (participant) {
-        const updated = {
-            ...participant,
-            completed: true,
-            completedAt: new Date().toISOString(),
-            preferenceScores
-        };
-        upsertParticipant(updated);
-        addToUpdateQueue('complete', updated);
-    }
+	const participant = participantsArray.find(p => p.id === id);
+	if (participant) {
+		const updated = {
+			...participant,
+			completed: true,
+			completedAt: new Date().toISOString(),
+			preferenceScores
+		};
+		upsertParticipant(updated);
+		addToUpdateQueue('complete', updated);
+	}
 }
 
 /**
  * Add update to queue for animation/notification
  */
 function addToUpdateQueue(type: ParticipantUpdate['type'], participant: Participant) {
-    updateQueue = [
-        ...updateQueue.slice(-9), // Keep last 10 updates
-        { type, participant: participant as any, timestamp: new Date() }
-    ];
+	updateQueueArray.push({ type, participant: participant as any, timestamp: new Date() });
+	if (updateQueueArray.length > 10) {
+		updateQueueArray.shift();
+	}
 }
 
 /**
@@ -377,16 +428,16 @@ export function generateWordCloudData(scores: PreferenceScores, generations: Rec
 }
 
 export function resetState() {
-    sessions = [];
-    currentSession = null;
-    participants = [];
-    connectionStatus = 'disconnected';
-    isLoading = false;
-    error = null;
-    sessionUrl = '';
-    networkUrl = '';
-    sessionCode = '';
-    slug = '';
-    lastUpdate = new Date();
-    updateQueue = [];
+	sessionsArray.splice(0, sessionsArray.length);
+	mutableState.currentSession = null;
+	participantsArray.splice(0, participantsArray.length);
+	mutableState.connectionStatus = 'disconnected';
+	mutableState.isLoading = false;
+	mutableState.error = null;
+	mutableState.sessionUrl = '';
+	mutableState.networkUrl = '';
+	mutableState.sessionCode = '';
+	mutableState.slug = '';
+	mutableState.lastUpdate = new Date();
+	updateQueueArray.splice(0, updateQueueArray.length);
 }
