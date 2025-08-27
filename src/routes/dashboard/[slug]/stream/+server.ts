@@ -2,6 +2,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { sessions, attendees } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import type { Generation } from '$lib/types';
 
 // Helper to format SSE message
 function formatSSE(event: string, data: any): string {

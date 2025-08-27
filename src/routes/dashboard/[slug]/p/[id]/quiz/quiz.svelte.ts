@@ -1,7 +1,12 @@
 import type { Participant, PreferenceScores } from '$lib/server/db/schema';
 import type { Question, Option } from '$lib/questions';
 import type { Generation } from '$lib/types';
-import { questions as defaultQuestions } from '$lib/questions';
+import { 
+	questions as defaultQuestions, 
+	getGenerationFromResponse, 
+	isGenerationQuestion,
+	GENERATION_QUESTION_INDEX 
+} from '$lib/questions';
 
 /**
  * Quiz State Management Class
@@ -84,18 +89,12 @@ export class QuizState {
 	});
 	
 	generation = $derived.by(() => {
-		// Get generation from first question response
-		const genResponse = this._responses[0];
-		if (!genResponse) return null;
-
-		const generationMap: Record<string, Generation> = {
-			'baby_boomer': 'Baby Boomer',
-			'gen_x': 'Gen X',
-			'millennial': 'Millennial',
-			'gen_z': 'Gen Z'
-		};
-
-		return generationMap[genResponse] || null;
+		// Convert responses object to array format for the utility function
+		const responsesArray: string[] = [];
+		for (let i = 0; i < this._questions.length; i++) {
+			responsesArray[i] = this._responses[i] || '';
+		}
+		return getGenerationFromResponse(responsesArray);
 	});
 	
 	preferenceScores = $derived.by(() => this.calculateScores());
@@ -217,7 +216,7 @@ export class QuizState {
 				return;
 			}
 
-			// Skip questions without values (like generation question at index 0)
+			// Skip questions without values (like generation question)
 			if (!selectedOption.values) {
 				return;
 			}

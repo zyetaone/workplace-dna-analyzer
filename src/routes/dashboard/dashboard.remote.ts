@@ -11,23 +11,9 @@ import { db } from '$lib/server/db/index';
 import { sessions, attendees } from '$lib/server/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { DashboardState } from './dashboard.svelte';
+import type { Generation, WordCloudItem, PreferenceScores } from '$lib/types';
 
-// Type definitions
-type PreferenceScores = {
-	collaboration: number;
-	formality: number;
-	tech: number;
-	technology?: number;
-	wellness: number;
-};
-
-type Generation = 'gen-z' | 'millennial' | 'gen-x' | 'baby-boomer';
-
-interface WordCloudItem {
-	text: string;
-	value?: number;
-	size: number; // Make size required to match WordCloud component
-}
+// Using centralized types from $lib/types
 
 // ============= VALIDATION SCHEMAS =============
 

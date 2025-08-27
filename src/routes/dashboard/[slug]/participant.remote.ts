@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 // Remote functions run on server - no client state access
 import type { RequestEvent } from '@sveltejs/kit';
 import { and } from 'drizzle-orm';
-import { questions } from '$lib/questions';
+import { questions, isGenerationQuestion, GENERATION_QUESTION_INDEX } from '$lib/questions';
 
 // Validation schemas
 const JoinSessionSchema = v.object({
@@ -123,15 +123,9 @@ export const saveResponse = command(SaveResponseSchema, async ({ sessionSlug, pa
 			responses: currentResponses 
 		};
 		
-		// If this is the generation question (index 0), update generation
-		if (generation && questionIndex === 0) {
-			const generationMap: Record<string, string> = {
-				'baby_boomer': 'Baby Boomer',
-				'gen_x': 'Gen X',
-				'millennial': 'Millennial',
-				'gen_z': 'Gen Z'
-			};
-			updateData.generation = generationMap[generation] || generation;
+		// If this is the generation question, update generation directly
+		if (generation && isGenerationQuestion(questionIndex)) {
+			updateData.generation = generation;
 		}
 
 		
