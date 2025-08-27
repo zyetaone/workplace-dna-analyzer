@@ -3,7 +3,7 @@
  */
 
 // Import Drizzle types for internal use
-import type { Session as _Session, Attendee as _Attendee, PreferenceScores as _PreferenceScores } from '$lib/server/db/schema';
+import type { Session as _Session, Participant as _Participant, PreferenceScores as _PreferenceScores } from '$lib/server/db/schema';
 
 // Import GenerationOption from questions.ts as the single source of truth
 import type { GenerationOption } from '$lib/questions';
@@ -46,7 +46,7 @@ export interface WordCloudItem {
 }
 
 // Connection status for real-time features
-export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected';
+export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'error';
 
 // Analytics interfaces for dashboard and presenter views
 export interface SessionAnalytics {
@@ -70,17 +70,17 @@ export interface LiveAnalytics {
 	responseRate: number;
 	generationDistribution: Record<Generation, number>;
 	preferenceScores: _PreferenceScores;
-	generationPreferences: GenerationPreferences;
+	generationPreferences?: GenerationPreferences;
 	workplaceDNA: string;
 	wordCloudData: WordCloudItem[];
-	aiInsights: string[];
+	aiInsights?: string[];
 	lastUpdated: Date;
 }
 
 // Participant update event for real-time notifications
 export interface ParticipantUpdate {
 	type: 'join' | 'update' | 'complete' | 'leave';
-	participant: _Attendee;
+	participant: _Participant;
 	timestamp: Date;
 }
 
@@ -94,6 +94,6 @@ export interface WorkspaceConcept {
 // Re-export Drizzle types for external use
 export type { 
 	Session, 
-	Attendee,
+	Participant,
 	PreferenceScores 
 } from '$lib/server/db/schema';

@@ -1,54 +1,45 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { createSession, deleteSession, getDashboardSessions } from './dashboard.remote.js';
 	import { logout } from '../auth.remote';
-	import { state, setSessions } from './dashboard.svelte.ts';
-	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
+	import { handleError } from '$lib/utils/error-utils';
+import { formatDate, copyToClipboard } from '$lib/utils/common';
+	import { state as dashboardState, setSessions } from './dashboard.svelte.ts';
+	
 	
 	// Local reactive state
 	let sessionName = $state('');
 	let isCreating = $state(false);
 	let isDeletingSession = $state<string | null>(null);
-	let error = $state('');
 	let showCreateForm = $state(false);
-	let isLoading = $state(true);
 	
-	// Get presenterId from cookies (set by hooks.ts)
-	let presenterId = $state<string | null>(null);
+	// Presenter ID is managed by hooks.ts authentication
+	const presenterId = 'presenter';
 	
 	// Load sessions on mount
-	onMount(async () => {
-		// Use a simple UUID as presenterId (hooks.ts ensures auth)
-		// The actual presenterId is in the cookie but we don't need it for queries
-		presenterId = 'presenter'; // Simple static ID since we have single presenter
-		
-		try {
-			const sessionData = await getDashboardSessions({ presenterId });
-			setSessions(sessionData);
-		} catch (err) {
-			console.error('Failed to load sessions:', err);
-			error = 'Failed to load sessions';
-		}
-		
-		isLoading = false;
+	$effect(() => {
+		dashboardState.isLoading = true;
+		getDashboardSessions({ presenterId })
+			.then(sessionData => setSessions(sessionData))
+			.catch(err => {
+				console.error('Failed to load sessions:', err);
+				dashboardState.error = 'Failed to load sessions';
+			})
+			.finally(() => {
+				dashboardState.isLoading = false;
+			});
 	});
 	
 	// Create new session
 	async function handleCreateSession() {
 		if (!sessionName.trim()) {
-			error = 'Please enter a session name';
+			dashboardState.error = 'Please enter a session name';
 			return;
 		}
 		
-		if (!presenterId) {
-			error = 'Not authenticated. Please refresh the page.';
-			return;
-		}
 		
 		isCreating = true;
-		error = '';
+		dashboardState.error = null;
 		
 		try {
 			const result = await createSession({
@@ -71,10 +62,8 @@
 				}
 			}
 		} catch (err) {
-			error = 'Failed to create session';
-			if (import.meta.env.DEV) {
+			dashboardState.error = 'Failed to create session';
 			console.error('Create session error:', err);
-		}
 		} finally {
 			isCreating = false;
 		}
@@ -88,26 +77,23 @@
 		
 		isDeletingSession = slug;
 		try {
-			await deleteSession({ slug, presenterId: presenterId! });
+			await deleteSession({ slug, presenterId });
 			
 			// Update global state by removing the session
-			const updatedSessions = await getDashboardSessions({ presenterId: presenterId! });
+			const updatedSessions = await getDashboardSessions({ presenterId });
 			setSessions(updatedSessions);
 		} catch (err) {
-			if (import.meta.env.DEV) {
 			console.error('Failed to delete session:', err);
-		}
 			alert('Failed to delete session');
 		} finally {
 			isDeletingSession = null;
 		}
 	}
 	
-	// Copy participant join link
-	function copyParticipantLink(slug: string) {
+	// Copy participant join link  
+	function handleCopyLink(slug: string) {
 		const link = `${window.location.origin}/dashboard/${slug}/join`;
-		navigator.clipboard.writeText(link);
-		// Could add a toast notification here
+		copyToClipboard(link);
 	}
 	
 	// Navigate to session dashboard
@@ -121,22 +107,11 @@
 			await logout({});
 			goto('/');
 		} catch (err) {
-			if (import.meta.env.DEV) {
 			console.error('Logout failed:', err);
-		}
 		}
 	}
 	
-	// Format date
-	function formatDate(date: Date | string): string {
-		const d = typeof date === 'string' ? new Date(date) : date;
-		return d.toLocaleDateString('en-US', { 
-			month: 'short', 
-			day: 'numeric', 
-			hour: '2-digit', 
-			minute: '2-digit' 
-		});
-	}
+
 	
 	// Allow Enter key to create session
 	function handleKeydown(e: KeyboardEvent) {
@@ -145,7 +120,6 @@
 		}
 	}
 	
-	// Authentication is handled by hooks.ts, no need for client-side redirect
 </script>
 
 <div class="min-h-screen animated-gradient">
@@ -196,44 +170,47 @@
 							{isCreating ? 'Creating...' : 'Create'}
 						</button>
 						<button
-							onclick={() => { showCreateForm = false; sessionName = ''; error = ''; }}
+							onclick={() => { showCreateForm = false; sessionName = ''; dashboardState.error = null; }}
 							class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
 						>
 							Cancel
 						</button>
 					</div>
-					{#if error}
-						<p class="text-red-500 text-sm">{error}</p>
+					{#if dashboardState.error}
+						<p class="text-red-500 text-sm">{dashboardState.error}</p>
 					{/if}
 				</div>
 			{/if}
 		</div>
 		
 		<!-- Sessions Grid/List -->
-		{#if isLoading}
-			<div class="bg-white rounded-lg shadow-lg p-12 text-center">
-				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 mx-auto"></div>
+		{#if dashboardState.isLoading}
+			<div class="bg-white rounded-lg shadow-lg p-12 flex justify-center">
+				<div class="text-center">
+					<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 mx-auto"></div>
 				<p class="mt-4 text-gray-600">Loading sessions...</p>
+				</div>
 			</div>
-		{:else if state.sessions.length === 0}
-			<div class="bg-white rounded-lg shadow-lg p-12 text-center">
-				<div class="text-6xl mb-4">📋</div>
-				<h3 class="text-2xl font-semibold text-gray-800 mb-2">No Sessions Yet</h3>
-				<p class="text-gray-600 mb-6">Create your first session to get started</p>
-				{#if !showCreateForm}
-					<button
-						onclick={() => showCreateForm = true}
-						class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold"
-					>
-						Create First Session
-					</button>
-				{/if}
+		{:else if dashboardState.sessions.length === 0}
+			<div class="bg-white rounded-lg shadow-lg p-12">
+				<div class="text-center">
+					<div class="text-6xl mb-4">📋</div>
+					<h3 class="text-2xl font-semibold text-gray-800 mb-2">No Sessions Yet</h3>
+					<p class="text-gray-600 mb-6">Create your first session to get started</p>
+					{#if !showCreateForm}
+						<button
+							onclick={() => showCreateForm = true}
+							class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold"
+						>
+							Create First Session
+						</button>
+					{/if}
+				</div>
 			</div>
 		{:else}
 			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{#snippet sessionCard(session: typeof state.sessions[0])}
+				{#each dashboardState.sessions as session}
 					<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-						<!-- Card Header with Status -->
 						<div class="p-6 border-b border-gray-100">
 							<div class="flex justify-between items-start mb-3">
 								<h3 class="text-xl font-semibold text-gray-800 truncate pr-2">
@@ -247,43 +224,33 @@
 										</span>
 										<span class="text-xs font-medium text-green-600">Active</span>
 									{:else}
-										<span class="relative flex h-3 w-3">
-											<span class="relative inline-flex rounded-full h-3 w-3 bg-gray-400"></span>
-										</span>
+										<span class="relative inline-flex rounded-full h-3 w-3 bg-gray-400"></span>
 										<span class="text-xs font-medium text-gray-500">Inactive</span>
 									{/if}
 								</div>
 							</div>
 							
-							<!-- Session Code -->
 							<div class="mb-4">
 								<span class="text-sm text-gray-500">Session Code:</span>
 								<span class="ml-2 font-mono text-lg text-gray-700">{session.code}</span>
 							</div>
 							
-							<!-- Stats -->
 							<div class="grid grid-cols-2 gap-4">
 								<div class="text-center p-2 bg-gray-50 rounded">
-									<div class="text-2xl font-bold text-gray-700">
-										{session.activeCount || 0}
-									</div>
+									<div class="text-2xl font-bold text-gray-700">{session.activeCount || 0}</div>
 									<div class="text-xs text-gray-500">Active</div>
 								</div>
 								<div class="text-center p-2 bg-green-50 rounded">
-									<div class="text-2xl font-bold text-green-600">
-										{session.completedCount || 0}
-									</div>
+									<div class="text-2xl font-bold text-green-600">{session.completedCount || 0}</div>
 									<div class="text-xs text-gray-500">Completed</div>
 								</div>
 							</div>
 							
-							<!-- Created Date -->
 							<div class="mt-4 text-sm text-gray-500">
 								Created: {formatDate(session.createdAt)}
 							</div>
 						</div>
 						
-						<!-- Card Actions -->
 						<div class="p-4 bg-gray-50">
 							<div class="grid grid-cols-3 gap-2">
 								<button
@@ -293,55 +260,50 @@
 									Open
 								</button>
 								<button
-									onclick={() => copyParticipantLink(session.slug)}
+									onclick={() => handleCopyLink(session.slug)}
 									class="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition text-sm font-medium"
-									title="Copy participant link"
 								>
 									Copy Link
 								</button>
 								<button
 									onclick={() => handleDeleteSession(session.slug)}
 									disabled={isDeletingSession === session.slug}
-									class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+									class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm font-medium disabled:opacity-50"
 								>
 									{isDeletingSession === session.slug ? '...' : 'Delete'}
 								</button>
 							</div>
 						</div>
 					</div>
-				{/snippet}
-				
-				{#each state.sessions as session}
-					{@render sessionCard(session)}
 				{/each}
 			</div>
 		{/if}
 		
 		<!-- Footer Stats -->
-		{#if state.sessions.length > 0}
+		{#if dashboardState.sessions.length > 0}
 			<div class="mt-12 bg-white rounded-lg shadow-lg p-6">
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{state.sessions.length}
+							{dashboardState.sessions.length}
 						</div>
 						<div class="text-sm text-gray-500">Total Sessions</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-green-600">
-							{state.sessions.filter(s => s.isActive).length}
+							{dashboardState.sessions.filter(s => s.isActive).length}
 						</div>
 						<div class="text-sm text-gray-500">Active Sessions</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{state.sessions.reduce((sum, s) => sum + ((s.activeCount || 0) + (s.completedCount || 0)), 0)}
+							{dashboardState.sessions.reduce((sum, s) => sum + (s.activeCount || 0) + (s.completedCount || 0), 0)}
 						</div>
 						<div class="text-sm text-gray-500">Total Participants</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{state.sessions.reduce((sum, s) => sum + (s.completedCount || 0), 0)}
+							{dashboardState.sessions.reduce((sum, s) => sum + (s.completedCount || 0), 0)}
 						</div>
 						<div class="text-sm text-gray-500">Completed Surveys</div>
 					</div>
@@ -351,23 +313,4 @@
 	</div>
 </div>
 
-<style>
-	/* Ensure animated gradient is defined in global CSS */
-	.animated-gradient {
-		background: linear-gradient(-45deg, #f3f4f6, #e5e7eb, #d1d5db, #9ca3af);
-		background-size: 400% 400%;
-		animation: gradient 15s ease infinite;
-	}
-	
-	@keyframes gradient {
-		0% {
-			background-position: 0% 50%;
-		}
-		50% {
-			background-position: 100% 50%;
-		}
-		100% {
-			background-position: 0% 50%;
-		}
-	}
-</style>
+<!-- Styles moved to global app.css -->

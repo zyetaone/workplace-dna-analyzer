@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 	
-	onMount(() => {
+	$effect(() => {
 		// Redirect to quiz page
 		goto(`/dashboard/${$page.params.slug}/p/${$page.params.id}/quiz`);
 	});

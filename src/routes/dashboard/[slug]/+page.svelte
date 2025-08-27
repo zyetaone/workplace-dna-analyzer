@@ -1,34 +1,35 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { onMount, onDestroy } from 'svelte';
 	import QRCode from '$lib/components/QRCode.svelte';
 	import LoadingScreen from '$lib/components/LoadingScreen.svelte';
 	import WordCloud from '$lib/components/charts/WordCloud.svelte';
 	import Chart from '$lib/components/charts/Chart.svelte';
 	import { getSessionAnalytics, generateAIInsights, endSession as endSessionRemote, deleteParticipant, updateSession } from '../dashboard.remote';
 	import {
-		state,
-		analytics,
-		completionPercentage,
+		state as dashboardState,
+		getAnalytics,
+		initSession,
 		hasParticipants,
 		isActive,
 		setParticipants,
 		removeParticipant,
 		setConnectionStatus,
-		initSession,
 		updateCurrentSession,
 		setLoading,
 		setError
 	} from '../dashboard.svelte.ts';
 	import ZyetaAssistant from '$lib/components/ZyetaAssistant.svelte';
 	import ParticipantList from '$lib/components/ParticipantList.svelte';
-	import { createChartConfig, createGenerationChartConfig, createPreferenceRadarConfig } from '$lib/components/ChartConfig.svelte';
+	import { createChartConfig, createGenerationChartConfig, createPreferenceRadarConfig } from '$lib/utils/chart-config';
+	
+import { copyToClipboard } from '$lib/utils/common';
 
-
-	let eventSource: EventSource | null = null;
 	let isClient = $state(false);
 	let aiInsights = $state<string[]>([]);
+
+	// Compute analytics locally from dashboardState
+	let analytics = $derived(getAnalytics());
 
 	// Chart configurations are derived from analytics
 	let preferenceChartConfig = $derived(createChartConfig(analytics.preferenceScores));
@@ -39,7 +40,7 @@
 	const slug = $page.params.slug;
 
 	// Load initial data on mount
-	onMount(() => {
+	$effect(() => {
 		isClient = true; // Set client flag for QR code display
 		setLoading(true);
 		
@@ -57,39 +58,36 @@
 		}).finally(() => {
 			setLoading(false);
 		});
+	});
 
-		// Cleanup on unmount
+	// Set up SSE connection for real-time updates
+	let pollInterval: number | undefined;
+	function setupSSE() {
+		if (!slug) return;
+
+		// For POC, we'll skip SSE setup since it requires additional backend setup
+		// Just poll periodically instead
+		pollInterval = setInterval(() => {
+			getSessionAnalytics(slug).then(data => {
+				setParticipants(data.participants);
+			}).catch(console.error);
+		}, 5000); // Poll every 5 seconds
+	}
+	
+	// Cleanup polling on unmount
+	$effect(() => {
 		return () => {
-			if (eventSource) {
-				eventSource.close();
+			if (pollInterval) {
+				clearInterval(pollInterval);
 			}
 		};
 	});
 
-	// Set up SSE connection for real-time updates
-	function setupSSE() {
-		if (!slug) return;
-
-		const sseUrl = `/dashboard/${slug}/stream`;
-		eventSource = new EventSource(sseUrl);
-
-		eventSource.onopen = () => setConnectionStatus('connected');
-		eventSource.addEventListener('update', (event) => {
-			const data = JSON.parse(event.data);
-			if (data.participants) {
-				setParticipants(data.participants);
-			}
-		});
-		eventSource.onerror = () => {
-			setConnectionStatus(eventSource?.readyState === EventSource.CONNECTING ? 'connecting' : 'disconnected');
-		};
-	}
-
 	// Toggle session active status
 	async function toggleSessionActive() {
-		if (!state.currentSession) return;
+		if (!dashboardState.currentSession) return;
 
-		const newStatus = !state.currentSession.isActive;
+		const newStatus = !dashboardState.currentSession.isActive;
 		try {
 			const result = await updateSession({ slug, isActive: newStatus });
 			if (result.success) {
@@ -113,21 +111,14 @@
 	}
 
 	// Copy participant link
-	function copyParticipantLink(id: string) {
-		const link = `${window.location.origin}/dashboard/${slug}/p/${id}/join`;
-		navigator.clipboard.writeText(link);
-		// Consider adding a toast notification
-	}
-
-	// Copy main join link
-	function copyJoinLink() {
-		const link = `${window.location.origin}/dashboard/${slug}/join`;
-		navigator.clipboard.writeText(link);
+	function handleCopyLink(id: string) {
+		const link = `${window.location.origin}/dashboard/${slug}/p/${id}/quiz`;
+		copyToClipboard(link);
 	}
 
 	// End the current session
 	async function endSession() {
-		if (!state.currentSession) return;
+		if (!dashboardState.currentSession) return;
 		
 		if (!confirm('Are you sure you want to end this session?')) return;
 		
@@ -154,27 +145,27 @@
 			<div class="flex justify-between items-start">
 				<div>
 					<h1 class="text-4xl font-bold text-gray-800 mb-2">Presenter Dashboard</h1>
-					<p class="text-gray-600">Session Code: <span class="font-mono text-2xl text-gray-700">{state.sessionCode}</span></p>
+					<p class="text-gray-600">Session Code: <span class="font-mono text-2xl text-gray-700">{dashboardState.sessionCode}</span></p>
 				</div>
 				<div class="flex items-center gap-2">
-					<span class="relative flex h-3 w-3">
-						{#if state.connectionStatus === 'connected'}
-							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-							<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-						{:else if state.connectionStatus === 'connecting'}
-							<span class="animate-pulse relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-						{:else}
-							<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-						{/if}
-					</span>
-					<span class="text-sm font-medium text-gray-700 capitalize">
-						{state.connectionStatus}
-					</span>
-				</div>
+				<span class="relative flex h-3 w-3">
+					{#if dashboardState.connectionStatus === 'connected'}
+						<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+						<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+					{:else if dashboardState.connectionStatus === 'connecting'}
+						<span class="animate-pulse relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+					{:else}
+						<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+					{/if}
+				</span>
+				<span class="text-sm font-medium text-gray-700 capitalize">
+					{dashboardState.connectionStatus}
+				</span>
+			</div>
 			</div>
 		</div>
 		
-		{#if state.isLoading}
+		{#if dashboardState.isLoading}
 			<LoadingScreen 
 				variant="inline"
 				message="Loading session data..."
@@ -185,13 +176,13 @@
 				<!-- QR Code -->
 				<div class="bg-white rounded-lg shadow-lg p-8">
 					<h2 class="text-2xl font-semibold text-gray-800 mb-4">Join Session</h2>
-					{#if isClient && state.sessionUrl}
+					{#if isClient && dashboardState.sessionUrl}
 						<div class="flex justify-center mb-4">
-							<QRCode url={state.sessionUrl} />
+							<QRCode url={dashboardState.sessionUrl} />
 						</div>
 						<p class="text-center text-sm text-gray-600">
 							Scan to join or visit:<br>
-							<a href={state.sessionUrl} target="_blank" class="text-gray-500 hover:text-gray-700 break-all">{state.sessionUrl}</a>
+							<a href={dashboardState.sessionUrl} target="_blank" class="text-gray-500 hover:text-gray-700 break-all">{dashboardState.sessionUrl}</a>
 						</p>
 					{:else}
 						<div class="animate-pulse bg-gray-200 h-64 rounded"></div>
@@ -218,7 +209,7 @@
 				</div>
 			</div>
 			
-			<!-- Charts -->
+			<!-- Charts using shared container snippet -->
 			<div class="grid md:grid-cols-2 gap-8 mb-8">
 				<div class="bg-white rounded-lg shadow-lg p-8">
 					<h2 class="text-2xl font-semibold text-gray-800 mb-4">Generation Distribution</h2>
@@ -240,18 +231,23 @@
 							<div class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
 								{analytics.workplaceDNA}
 							</div>
-							{#snippet scoreCard(score, label, colorClass)}
-								<div class="bg-white rounded-lg p-4 shadow">
-									<div class="text-3xl font-bold {colorClass}">{score}</div>
-									<div class="text-sm text-gray-600">{label}</div>
-								</div>
-							{/snippet}
-							
 							<div class="grid grid-cols-2 gap-4 mt-6">
-								{@render scoreCard(analytics.preferenceScores.collaboration, "Collaboration", "text-blue-600")}
-								{@render scoreCard(analytics.preferenceScores.formality, "Formality", "text-amber-600")}
-								{@render scoreCard(analytics.preferenceScores.tech, "Technology", "text-green-600")}
-								{@render scoreCard(analytics.preferenceScores.wellness, "Wellness", "text-red-600")}
+								<div class="bg-white rounded-lg shadow p-4">
+									<div class="text-3xl font-bold text-blue-600">{analytics.preferenceScores.collaboration}</div>
+									<div class="text-sm text-gray-600">Collaboration</div>
+								</div>
+								<div class="bg-white rounded-lg shadow p-4">
+									<div class="text-3xl font-bold text-amber-600">{analytics.preferenceScores.formality}</div>
+									<div class="text-sm text-gray-600">Formality</div>
+								</div>
+								<div class="bg-white rounded-lg shadow p-4">
+									<div class="text-3xl font-bold text-green-600">{analytics.preferenceScores.tech}</div>
+									<div class="text-sm text-gray-600">Technology</div>
+								</div>
+								<div class="bg-white rounded-lg shadow p-4">
+									<div class="text-3xl font-bold text-red-600">{analytics.preferenceScores.wellness}</div>
+									<div class="text-sm text-gray-600">Wellness</div>
+								</div>
 							</div>
 						</div>
 					{:else}
@@ -295,9 +291,9 @@
 			<div class="bg-white rounded-lg shadow-lg p-8">
 				<h2 class="text-2xl font-semibold text-gray-800 mb-6">Participants</h2>
 				<ParticipantList
-					participants={state.participants}
+					participants={dashboardState.participants}
 					onDelete={handleDeleteParticipant}
-					onCopyLink={copyParticipantLink}
+					onCopyLink={handleCopyLink}
 					showActions={true}
 					showProgress={true}
 					showStatus={true}

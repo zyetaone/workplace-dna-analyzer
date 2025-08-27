@@ -4,10 +4,10 @@
 	 * This file demonstrates various configurations of the component
 	 */
 	import ParticipantList from './ParticipantList.svelte';
-	import type { Attendee } from '$lib/types';
+	import type { Participant } from '$lib/types';
 	
 	// Sample data for demonstration
-	const sampleParticipants: Attendee[] = [
+	const sampleParticipants: Participant[] = [
 		{
 			id: 'abc123def456',
 			sessionId: 'session-1',

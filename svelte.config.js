@@ -12,7 +12,7 @@ const config = {
 		adapter: adapter(),
 		// CSRF protection - allow requests from the app's origin
 		csrf: {
-			checkOrigin: false // Disable CSRF for remote functions in production
+			trustedOrigins: ['http://localhost:5173']
 		},
 		// Performance optimizations
 		serviceWorker: {

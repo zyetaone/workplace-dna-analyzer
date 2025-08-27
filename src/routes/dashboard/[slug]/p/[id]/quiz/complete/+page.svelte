@@ -1,30 +1,33 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
 	import { getSessionAnalytics } from '../../../../../dashboard.remote';
 	import type { Session, Participant } from '$lib/server/db/schema';
 	
-	let sessionSlug = $state('');
-	let participantId = $state('');
 	let sessionData = $state<{ session: Session; participants: Participant[]; analytics: any } | null>(null);
 	let showConfetti = $state(false);
 	
-	// Initialize params and load data on mount
-	onMount(async () => {
-		const pageData = get(page);
-		sessionSlug = pageData.params.slug;
-		participantId = pageData.params.id;
+	// Get params from page store using derived for Svelte 5 runes mode
+	let sessionSlug = $derived($page.params.slug);
+	let participantId = $derived($page.params.id);
+	
+	// Initialize and load data on mount
+	$effect(() => {
+		// Only run effect when we have valid slug
 		
 		// Validate slug before loading session
 		if (sessionSlug && sessionSlug.trim() !== '') {
-			await fetchSession();
+			fetchSession();
 		}
 		
 		// Show confetti after a short delay
-		setTimeout(() => {
+		const confettiTimer = setTimeout(() => {
 			showConfetti = true;
 		}, 500);
+		
+		// Cleanup timer on unmount
+		return () => {
+			clearTimeout(confettiTimer);
+		};
 	});
 	
 	// Fetch session data using remote function
@@ -38,9 +41,7 @@
 		try {
 			sessionData = await getSessionAnalytics(sessionSlug);
 		} catch (error) {
-			if (import.meta.env.DEV) {
-				console.error('Failed to fetch session:', error);
-			}
+			console.error('Failed to fetch session:', error);
 		}
 	}
 	

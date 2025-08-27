@@ -25,8 +25,8 @@ id: text('id').primaryKey().$defaultFn(() => generateId()),
 	endedAt: text('ended_at')
 });
 
-// Participants table (stored as 'attendees' for database compatibility)
-export const attendees = sqliteTable('attendees', {
+// Participants table
+export const participants = sqliteTable('participants', {
 id: text('id').primaryKey().$defaultFn(() => generateId()),
 	sessionId: text('session_id').notNull().references(() => sessions.id),
 	name: text('name').notNull(),
@@ -46,13 +46,9 @@ id: text('id').primaryKey().$defaultFn(() => generateId()),
 // Type exports for use in application
 export type Session = typeof sessions.$inferSelect;
 
-// Primary participant types (preferred nomenclature)
-export type Participant = typeof attendees.$inferSelect;
-export type NewParticipant = typeof attendees.$inferInsert;
-
-// Legacy attendee types (for backward compatibility)
-export type Attendee = Participant;
-export type NewAttendee = NewParticipant;
+// Participant types
+export type Participant = typeof participants.$inferSelect;
+export type NewParticipant = typeof participants.$inferInsert;
 
 // Preference scores type
 export interface PreferenceScores {

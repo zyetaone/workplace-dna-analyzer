@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
+	import { handleError } from '$lib/utils/error-utils';
 	import { getSessionSummary } from '../../dashboard.remote';
 	import { joinSession as joinSessionRemote } from '../participant.remote.js';
 	
@@ -15,21 +14,20 @@
 	let error = $state('');
 	
 	// Load session data on mount
-	onMount(async () => {
-		const pageData = get(page);
-		const slug = pageData.params.slug;
-		if (!slug || slug.trim() === '') return;
+	$effect(() => {
+		const slug = $page.params.slug;
+		if (!slug?.trim()) return;
 		
-		try {
-			sessionData = await getSessionSummary(slug);
-		} catch (err) {
-			error = 'Session not found or has ended';
-			if (import.meta.env.DEV) {
-				console.error('Failed to load session:', err);
-			}
-		} finally {
-			isLoading = false;
-		}
+		getSessionSummary(slug)
+			.then(data => {
+				sessionData = data;
+			})
+			.catch(err => {
+				error = handleError(err, 'session loading');
+			})
+			.finally(() => {
+				isLoading = false;
+			});
 	});
 	
 	async function joinSession(e: Event) {
@@ -49,10 +47,7 @@
 				goto(result.redirect);
 			}
 		} catch (err) {
-			if (import.meta.env.DEV) {
-				console.error('Failed to join:', err);
-			}
-			error = 'Failed to join session. Please try again.';
+			error = handleError(err, 'joining session');
 		} finally {
 			isJoining = false;
 		}

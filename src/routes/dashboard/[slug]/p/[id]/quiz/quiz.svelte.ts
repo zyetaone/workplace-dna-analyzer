@@ -105,6 +105,12 @@ export class QuizState {
 			: 0
 	);
 
+	// Additional derived states for UI
+	isFirstQuestion = $derived(this._currentQuestionIndex === 0);
+	canGoBack = $derived(this._currentQuestionIndex > 0 && !this._isSubmitting);
+	canSubmit = $derived(this.isQuizComplete() && !this._isSubmitting);
+	currentQuestionNumber = $derived(this._currentQuestionIndex + 1);
+
 	// Initialization
 	initialize(participant: Participant, sessionId: string, sessionSlug: string, questions?: Question[]) {
 		this._participant = participant;

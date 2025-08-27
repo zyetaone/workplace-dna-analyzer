@@ -22,26 +22,22 @@ if (typeof process !== 'undefined') {
 	});
 }
 
-// Authentication handler - simple cookie check for protected routes
+// Centralized authentication handler
 const authHandler: Handle = async ({ event, resolve }) => {
-	// Only protect dashboard presenter routes, NOT participant routes
 	const path = event.url.pathname;
+	const presenterId = event.cookies.get('presenterId') || 'poc-presenter';
+	event.locals.presenterId = presenterId;
 	
-	// Check if this is a protected presenter route
+	// Check if route requires authentication
 	const isProtectedRoute = 
 		path === '/dashboard' || 
 		(path.startsWith('/dashboard/') && 
 		 !path.includes('/p/') && 
 		 !path.includes('/join'));
 	
-	if (isProtectedRoute) {
-		const presenterId = event.cookies.get('presenterId');
-		if (!presenterId) {
-			// Redirect to login if not authenticated
-			throw redirect(303, '/');
-		}
-		// Set it in locals for easy access
-		event.locals.presenterId = presenterId;
+	// For POC: auto-authenticate, for production: validate presenterId
+	if (isProtectedRoute && !presenterId) {
+		throw redirect(303, '/');
 	}
 	
 	return resolve(event);

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Attendee } from '$lib/types';
+	import type { Participant } from '$lib/types';
 	
 	interface Props {
-		participants: Attendee[];
+		participants: Participant[];
 		onDelete?: (id: string, name: string) => void;
 		onCopyLink?: (id: string) => void;
 		showActions?: boolean;
@@ -95,7 +95,7 @@
 					{/if}
 				</thead>
 				
-				{#snippet participantRow(participant: Attendee)}
+				{#snippet participantRow(participant: Participant)}
 					{@const progress = getProgress(participant.responses)}
 					<tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
 						<!-- Name -->

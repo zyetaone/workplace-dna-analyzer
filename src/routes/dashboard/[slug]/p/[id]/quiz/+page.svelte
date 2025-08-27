@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { page } from '$app/state';
+	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { get } from 'svelte/store';
+	import { questions } from '$lib/questions';
 	import type { Session, Participant } from '$lib/server/db/schema';
-	// Removed sessionState - using remote functions directly
 	import { 
 		loadParticipantData, 
 		saveResponse, 
@@ -11,16 +10,16 @@
 	} from '../../../participant.remote';
 	import LoadingScreen from '$lib/components/LoadingScreen.svelte';
 	import ErrorScreen from '$lib/components/ErrorScreen.svelte';
+	import QuestionCard from '$lib/components/QuestionCard.svelte';
 	
-	// Get IDs from URL
-	const pageData = get(page);
-	let slug = $state(pageData.params.slug);
-	let participantId = $state(pageData.params.id);
+	// Get IDs from URL - use derived for Svelte 5 runes mode
+	let slug = $derived($page.params.slug);
+	let participantId = $derived($page.params.id);
 	
 	// State
 	let session = $state<Session | null>(null);
 	let participant = $state<Participant | null>(null);
-	let questions = $state<any[]>([]);
+	let loadedQuestions = $state<any[]>([]);
 	let sessionCode = $state('');
 	let currentQuestion = $state(0);
 	let responses: Record<number, string> = $state({});
@@ -28,8 +27,8 @@
 	let isLoading = $state(true);
 	
 	// Derived values
-	let question = $derived(questions[currentQuestion]);
-	let progress = $derived(questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0);
+	let question = $derived(loadedQuestions[currentQuestion]);
+	let progress = $derived(loadedQuestions.length > 0 ? ((currentQuestion + 1) / loadedQuestions.length) * 100 : 0);
 	
 	
 	// Load initial data
@@ -48,14 +47,14 @@
 		loadParticipantData({ sessionSlug: slug, participantId: participantId }).then(data => {
 			session = data.session;
 			participant = data.participant;
-			questions = data.questions;
+			loadedQuestions = data.questions;
 			sessionCode = data.sessionCode;
 			
 			// Restore previous responses
 			if (participant?.responses) {
 				responses = participant.responses as Record<number, string>;
 				// Find where they left off
-				for (let i = 0; i < questions.length; i++) {
+				for (let i = 0; i < loadedQuestions.length; i++) {
 					if (!responses[i]) {
 						currentQuestion = i;
 						break;
@@ -85,7 +84,7 @@
 			await saveResponse({ sessionSlug: slug, participantId, questionIndex: currentQuestion, response: optionId, generation });
 			
 			// Move to next question or complete
-			if (currentQuestion < questions.length - 1) {
+			if (currentQuestion < loadedQuestions.length - 1) {
 				currentQuestion++;
 			} else {
 				// Complete the quiz
@@ -116,7 +115,7 @@
 			
 			// Map responses to preference categories using actual option values
 			Object.entries(responses).forEach(([qIndex, optionId]) => {
-				const question = questions[parseInt(qIndex)];
+				const question = loadedQuestions[parseInt(qIndex)];
 				if (!question || !question.options) {
 					return;
 				}
@@ -181,7 +180,6 @@
 	/>
 {:else if question}
 	<div class="min-h-screen animated-gradient flex items-center justify-center px-4">
-		<!-- Question Display -->
 		<div class="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
 			<!-- Header with name -->
 			<div class="mb-4">
@@ -190,47 +188,19 @@
 				</div>
 			</div>
 			
-			<!-- Progress Bar -->
-			<div class="mb-6">
-				<div class="flex justify-between text-sm text-gray-600 mb-2">
-					<span>Question {currentQuestion + 1} of {questions.length}</span>
-					<span>{Math.round(progress)}% Complete</span>
-				</div>
-				<div class="w-full bg-gray-200 rounded-full h-2">
-					<div 
-						class="bg-gray-600 h-2 rounded-full transition-all duration-300"
-						style="width: {progress}%"
-					></div>
-				</div>
-			</div>
-			
-			<!-- Question -->
-			<h2 class="text-2xl font-bold text-gray-800 mb-6">{question.title}</h2>
-			
-			<!-- Options -->
-			<div class="space-y-3">
-				{#each question.options as option}
-					<button
-						onclick={() => selectOption(option.id)}
-						disabled={isSubmitting}
-						class="w-full p-4 text-left border-2 border-gray-200 rounded-lg transition
-						       {responses[currentQuestion] === option.id ? 'border-gray-600 bg-gray-50' : ''}
-						       {isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400 hover:bg-gray-50'}"
-					>
-						<div class="font-semibold text-gray-700">{option.label}</div>
-						{#if option.description}
-							<div class="text-sm text-gray-500 mt-1">{option.description}</div>
-						{/if}
-					</button>
-				{/each}
-			</div>
-			
-			<!-- Loading indicator -->
-			{#if isSubmitting}
-				<div class="mt-4 text-center text-sm text-gray-600">
-					Saving your response...
-				</div>
-			{/if}
+			<!-- Question Card Component -->
+			<QuestionCard
+				title={question.title}
+				options={question.options}
+				selectedId={responses[currentQuestion]}
+				onSelect={selectOption}
+				disabled={isSubmitting}
+				questionNumber={currentQuestion + 1}
+				totalQuestions={loadedQuestions.length}
+				{progress}
+				variant="default"
+				colorScheme="gray"
+			/>
 		</div>
 	</div>
 {/if}

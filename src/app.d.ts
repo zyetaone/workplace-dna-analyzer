@@ -5,16 +5,16 @@ declare global {
 		interface Locals {
 			presenterId?: string | null;
 			sessionId?: string;
-			attendeeId?: string;
+			participantId?: string;
 			isPresenter?: boolean;
-			isAttendee?: boolean;
+			isParticipant?: boolean;
 		}
 		
 		interface PageData {
 			sessionCode?: string;
-			attendeeId?: string;
+			participantId?: string;
 			session?: any;
-			attendees?: any[];
+			participants?: any[];
 			analytics?: any;
 			streamUrl?: string;
 		}

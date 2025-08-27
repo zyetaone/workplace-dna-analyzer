@@ -1,6 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { sessions, attendees } from '$lib/server/db/schema';
+import { sessions, participants } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import type { Generation } from '$lib/types';
 
@@ -46,27 +46,31 @@ export const GET: RequestHandler = async ({ params, setHeaders }) => {
 	const stream = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
-			let lastState: { count: number; completed: number } = { count: 0, completed: 0 };
+			let lastState: { count: number; completed: number; lastParticipantId: string | null } = { 
+				count: 0, 
+				completed: 0,
+				lastParticipantId: null
+			};
 			let isActive = true;
 			
 			// Query function to get current participant state
 			async function getParticipantState() {
 				try {
-					const participants = await db.select({
-						id: attendees.id,
-						name: attendees.name,
-						generation: attendees.generation,
-						completed: attendees.completed,
-						completedAt: attendees.completedAt,
-						preferenceScores: attendees.preferenceScores
+					const participantList = await db.select({
+						id: participants.id,
+						name: participants.name,
+						generation: participants.generation,
+						completed: participants.completed,
+						completedAt: participants.completedAt,
+						preferenceScores: participants.preferenceScores
 					})
-					.from(attendees)
-					.where(eq(attendees.sessionId, sessionData.id));
+					.from(participants)
+					.where(eq(participants.sessionId, sessionData.id));
 					
 					return {
-						count: participants.length,
-						completed: participants.filter(p => p.completed).length,
-						participants: participants.map(p => ({
+						count: participantList.length,
+						completed: participantList.filter(p => p.completed).length,
+						participants: participantList.map(p => ({
 							id: p.id,
 							name: p.name,
 							generation: p.generation,
@@ -91,11 +95,15 @@ export const GET: RequestHandler = async ({ params, setHeaders }) => {
 			// Send initial state
 			const initialState = await getParticipantState();
 			if (initialState) {
-				lastState = { count: initialState.count, completed: initialState.completed };
+				lastState = { 
+					count: initialState.count, 
+					completed: initialState.completed,
+					lastParticipantId: initialState.participants[initialState.participants.length - 1]?.id || null
+				};
 				controller.enqueue(encoder.encode(formatSSE('update', initialState)));
 			}
 			
-			// Polling interval (500ms)
+			// Polling interval optimized to 2 seconds
 			const pollInterval = setInterval(async () => {
 				if (!isActive) {
 					clearInterval(pollInterval);
@@ -105,13 +113,29 @@ export const GET: RequestHandler = async ({ params, setHeaders }) => {
 				const currentState = await getParticipantState();
 				if (!currentState) return;
 				
-				// Check if state has changed
+				// Check if state has changed - send only delta
+				const lastId = currentState.participants[currentState.participants.length - 1]?.id || null;
 				if (currentState.count !== lastState.count || 
-				    currentState.completed !== lastState.completed) {
-					lastState = { count: currentState.count, completed: currentState.completed };
-					controller.enqueue(encoder.encode(formatSSE('update', currentState)));
+				    currentState.completed !== lastState.completed ||
+				    lastId !== lastState.lastParticipantId) {
+					
+					// Send only the changed participants (delta)
+					const delta = {
+						count: currentState.count,
+						completed: currentState.completed,
+						participants: currentState.count > lastState.count 
+							? currentState.participants.slice(-1) // Only new participant
+							: currentState.participants // Full list if count decreased
+					};
+					
+					lastState = { 
+						count: currentState.count, 
+						completed: currentState.completed,
+						lastParticipantId: lastId
+					};
+					controller.enqueue(encoder.encode(formatSSE('update', delta)));
 				}
-			}, 500);
+			}, 2000); // Increased to 2 seconds
 			
 			// Heartbeat interval (30 seconds)
 			const heartbeatInterval = setInterval(() => {
@@ -139,7 +163,7 @@ export const GET: RequestHandler = async ({ params, setHeaders }) => {
 		
 		cancel() {
 			// Stream was cancelled (client disconnected)
-			console.log(`SSE connection closed for session ${slug}`);
+			// SSE connection closed for session
 		}
 	});
 	
