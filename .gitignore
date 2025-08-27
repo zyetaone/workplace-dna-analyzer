@@ -1,35 +1,31 @@
 # Dependencies
 node_modules/
-.pnp
-.pnp.js
 
-# Build outputs
+# SvelteKit
 .svelte-kit/
 build/
-dist/
-/build
+.vercel/
 
-# Environment files
+# Environment
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
+# Database
+*.db
+*.db-shm
+*.db-wal
 
 # Logs
-logs/
 *.log
-npm-debug.log*
 
 # OS files
 .DS_Store
 Thumbs.db
 
-
 # IDE
 .vscode/
 .idea/
-*.sublime-project
-*.sublime-workspace
 
 # Testing
 coverage/
@@ -37,10 +33,4 @@ coverage/
 # Misc
 .cache/
 .temp/
-.tmp/
 *.pid
-*.seed
-*.pid.lock
-
-# Bun
-# Keep bun.lock for reproducible builds

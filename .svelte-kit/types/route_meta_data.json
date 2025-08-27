@@ -1,11 +1,12 @@
 {
 	"/": [],
-	"/session/[slug]": [],
-	"/session/[slug]/attendee/[attendeeId]": [],
-	"/session/[slug]/attendee/[attendeeId]/complete": [],
-	"/session/[slug]/join": [],
-	"/session/[slug]/presenter": [],
-	"/session/[slug]/stream": [
-		"src/routes/session/[slug]/stream/+server.ts"
+	"/dashboard": [],
+	"/dashboard/[slug]": [],
+	"/dashboard/[slug]/join": [],
+	"/dashboard/[slug]/p/[id]": [],
+	"/dashboard/[slug]/p/[id]/quiz": [],
+	"/dashboard/[slug]/p/[id]/quiz/complete": [],
+	"/dashboard/[slug]/stream": [
+		"src/routes/dashboard/[slug]/stream/+server.ts"
 	]
 }

@@ -47,7 +47,7 @@
 
 /* Classy grey gradient */
 .animated-gradient {
-  background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 25%, #6b7280 50%, #9ca3af 75%, #e5e7eb 100%);
+  background: linear-gradient(135deg, #e5e7eb 0%, #d4af99ff 25%, #40495aff 50%, #9ca3af 75%, #e5e7eb 100%);
   background-size: 400% 400%;
   animation: var(--animate-gradient);
 }

@@ -1,58 +1,37 @@
 # Git
-.git
+.git/
 .gitignore
-.gitattributes
 
-# Documentation
-README.md
-*.md
+# Dependencies
+node_modules/
 
-# Development configs
-.npmrc
-.prettierrc
-.eslintrc.cjs
-.graphqlrc
-.editorconfig
+# Build outputs
+# build/ (needed for Docker)
+dist/
 
-# IDE
-.vscode
-.idea
-
-# Dependencies (will be installed fresh)
-node_modules
-
-# Build outputs (will be built fresh)
-build
-.svelte-kit
-dist
-
-# Environment files
+# Environment
 .env
 .env.*
-**/.env
 
-# Database files (will be created in volume)
-*.db
+# Database
+# *.db (might need local.db)
 *.db-shm
 *.db-wal
-local.db*
-data/
 
 # Logs
-logs/
 *.log
 
 # OS files
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
+
+# IDE
+.vscode/
+.idea/
+
+# Docs
+README.md
+*.md
 
 # Testing
 coverage/
-.nyc_output/
-
-# Misc
-.cache/
-.temp/
-.tmp/

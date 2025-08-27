@@ -27,13 +27,15 @@
  */
 declare module '$env/static/private' {
 	export const DATABASE_URL: string;
-	export const OPENAI_API_KEY: string;
 	export const HOST: string;
 	export const PORT: string;
 	export const NODE_ENV: string;
+	export const OPENAI_API_KEY: string;
 	export const CONDA_PROMPT_MODIFIER: string;
 	export const USER: string;
+	export const CLAUDE_CODE_ENTRYPOINT: string;
 	export const npm_config_user_agent: string;
+	export const GIT_EDITOR: string;
 	export const BUN_INSTALL: string;
 	export const OBSIDIAN_API_URL: string;
 	export const npm_node_execpath: string;
@@ -61,6 +63,7 @@ declare module '$env/static/private' {
 	export const npm_config_prefix: string;
 	export const npm_config_npm_version: string;
 	export const TERM: string;
+	export const OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: string;
 	export const npm_config_cache: string;
 	export const POSH_SHELL_VERSION: string;
 	export const CLAUDE_AGENT_DIR: string;
@@ -71,6 +74,7 @@ declare module '$env/static/private' {
 	export const XDG_RUNTIME_DIR: string;
 	export const WT_SESSION: string;
 	export const CLAUDE_HOME: string;
+	export const COREPACK_ENABLE_AUTO_PIN: string;
 	export const DISPLAY: string;
 	export const LANG: string;
 	export const HISTSIZE: string;
@@ -79,6 +83,7 @@ declare module '$env/static/private' {
 	export const npm_package_version: string;
 	export const npm_lifecycle_event: string;
 	export const PYENV_VIRTUALENV_DISABLE_PROMPT: string;
+	export const CLAUDECODE: string;
 	export const SAVEHIST: string;
 	export const POSH_THEME: string;
 	export const ZLE_RPROMPT_INDENT: string;
@@ -129,13 +134,15 @@ declare module '$env/static/public' {
 declare module '$env/dynamic/private' {
 	export const env: {
 		DATABASE_URL: string;
-		OPENAI_API_KEY: string;
 		HOST: string;
 		PORT: string;
 		NODE_ENV: string;
+		OPENAI_API_KEY: string;
 		CONDA_PROMPT_MODIFIER: string;
 		USER: string;
+		CLAUDE_CODE_ENTRYPOINT: string;
 		npm_config_user_agent: string;
+		GIT_EDITOR: string;
 		BUN_INSTALL: string;
 		OBSIDIAN_API_URL: string;
 		npm_node_execpath: string;
@@ -163,6 +170,7 @@ declare module '$env/dynamic/private' {
 		npm_config_prefix: string;
 		npm_config_npm_version: string;
 		TERM: string;
+		OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: string;
 		npm_config_cache: string;
 		POSH_SHELL_VERSION: string;
 		CLAUDE_AGENT_DIR: string;
@@ -173,6 +181,7 @@ declare module '$env/dynamic/private' {
 		XDG_RUNTIME_DIR: string;
 		WT_SESSION: string;
 		CLAUDE_HOME: string;
+		COREPACK_ENABLE_AUTO_PIN: string;
 		DISPLAY: string;
 		LANG: string;
 		HISTSIZE: string;
@@ -181,6 +190,7 @@ declare module '$env/dynamic/private' {
 		npm_package_version: string;
 		npm_lifecycle_event: string;
 		PYENV_VIRTUALENV_DISABLE_PROMPT: string;
+		CLAUDECODE: string;
 		SAVEHIST: string;
 		POSH_THEME: string;
 		ZLE_RPROMPT_INDENT: string;

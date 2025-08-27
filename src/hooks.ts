@@ -1,14 +1,19 @@
-import type { Handle, HandleClientError, HandleServerError } from '@sveltejs/kit';
+import type { Handle, HandleServerError, HandleClientError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
+import { redirect } from '@sveltejs/kit';
 
 // Global error handlers for SSE and streaming (server-side only)
 if (typeof process !== 'undefined') {
 	process.on('unhandledRejection', (reason, promise) => {
-		console.error('[Unhandled Rejection]:', reason);
+		if (import.meta.env.DEV) {
+			console.error('[Unhandled Rejection]:', reason);
+		}
 	});
 	
 	process.on('uncaughtException', (error) => {
-		console.error('[Uncaught Exception]:', error);
+		if (import.meta.env.DEV) {
+			console.error('[Uncaught Exception]:', error);
+		}
 		// Ignore stream errors (SSE connections closing)
 		if (error.message?.includes('write') || error.message?.includes('stream')) {
 			return;
@@ -17,7 +22,32 @@ if (typeof process !== 'undefined') {
 	});
 }
 
-// Performance monitoring hook (server-side)
+// Authentication handler - simple cookie check for protected routes
+const authHandler: Handle = async ({ event, resolve }) => {
+	// Only protect dashboard presenter routes, NOT participant routes
+	const path = event.url.pathname;
+	
+	// Check if this is a protected presenter route
+	const isProtectedRoute = 
+		path === '/dashboard' || 
+		(path.startsWith('/dashboard/') && 
+		 !path.includes('/p/') && 
+		 !path.includes('/join'));
+	
+	if (isProtectedRoute) {
+		const presenterId = event.cookies.get('presenterId');
+		if (!presenterId) {
+			// Redirect to login if not authenticated
+			throw redirect(303, '/');
+		}
+		// Set it in locals for easy access
+		event.locals.presenterId = presenterId;
+	}
+	
+	return resolve(event);
+};
+
+// Performance monitoring handler
 const performanceHandler: Handle = async ({ event, resolve }) => {
 	const start = Date.now();
 	const response = await resolve(event);
@@ -25,19 +55,28 @@ const performanceHandler: Handle = async ({ event, resolve }) => {
 	
 	// Log slow requests (over 1 second)
 	if (duration > 1000 && !event.url.pathname.includes('/stream')) {
-		console.warn(`Slow request: ${event.url.pathname} took ${duration}ms`);
+		if (import.meta.env.DEV) {
+			console.warn(`Slow request: ${event.url.pathname} took ${duration}ms`);
+		}
 	}
 	
 	response.headers.set('X-Response-Time', `${duration}ms`);
 	return response;
 };
 
-// Error handling hook (server-side)
+// Error handling handler
 const errorHandler: Handle = async ({ event, resolve }) => {
 	try {
 		return await resolve(event);
 	} catch (error) {
-		console.error(`Request error on ${event.url.pathname}:`, error);
+		if (import.meta.env.DEV) {
+			console.error(`Request error on ${event.url.pathname}:`, error);
+		}
+		
+		// Re-throw redirects
+		if (error instanceof Response && error.status >= 300 && error.status < 400) {
+			throw error;
+		}
 		
 		return new Response('Internal Server Error', {
 			status: 500,
@@ -46,10 +85,10 @@ const errorHandler: Handle = async ({ event, resolve }) => {
 	}
 };
 
-// Server-side handle - will be used on server side only
-export const handle = sequence(errorHandler, performanceHandler);
+// Server-side handle - combines all handlers in sequence
+export const handle = sequence(errorHandler, authHandler, performanceHandler);
 
-// Client-side error handling - will be used on client side only
+// Client-side error handling
 export const handleError: HandleClientError = ({ error, event }) => {
 	// Log errors in development
 	if (import.meta.env.DEV) {
@@ -65,7 +104,9 @@ export const handleError: HandleClientError = ({ error, event }) => {
 
 // Server-side error handling
 export const handleServerError: HandleServerError = ({ error, event }) => {
-	console.error('Server error:', error);
+	if (import.meta.env.DEV) {
+		console.error('Server error:', error);
+	}
 	
 	return {
 		message: 'A server error occurred',

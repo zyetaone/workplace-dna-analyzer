@@ -3,6 +3,7 @@
 declare global {
 	namespace App {
 		interface Locals {
+			presenterId?: string | null;
 			sessionId?: string;
 			attendeeId?: string;
 			isPresenter?: boolean;

@@ -27,28 +27,28 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/session" | "/session/[slug]" | "/session/[slug]/attendee" | "/session/[slug]/attendee/[attendeeId]" | "/session/[slug]/attendee/[attendeeId]/complete" | "/session/[slug]/join" | "/session/[slug]/presenter" | "/session/[slug]/stream";
+		RouteId(): "/" | "/dashboard" | "/dashboard/[slug]" | "/dashboard/[slug]/join" | "/dashboard/[slug]/p" | "/dashboard/[slug]/p/[id]" | "/dashboard/[slug]/p/[id]/quiz" | "/dashboard/[slug]/p/[id]/quiz/complete" | "/dashboard/[slug]/stream";
 		RouteParams(): {
-			"/session/[slug]": { slug: string };
-			"/session/[slug]/attendee": { slug: string };
-			"/session/[slug]/attendee/[attendeeId]": { slug: string; attendeeId: string };
-			"/session/[slug]/attendee/[attendeeId]/complete": { slug: string; attendeeId: string };
-			"/session/[slug]/join": { slug: string };
-			"/session/[slug]/presenter": { slug: string };
-			"/session/[slug]/stream": { slug: string }
+			"/dashboard/[slug]": { slug: string };
+			"/dashboard/[slug]/join": { slug: string };
+			"/dashboard/[slug]/p": { slug: string };
+			"/dashboard/[slug]/p/[id]": { slug: string; id: string };
+			"/dashboard/[slug]/p/[id]/quiz": { slug: string; id: string };
+			"/dashboard/[slug]/p/[id]/quiz/complete": { slug: string; id: string };
+			"/dashboard/[slug]/stream": { slug: string }
 		};
 		LayoutParams(): {
-			"/": { slug?: string; attendeeId?: string };
-			"/session": { slug?: string; attendeeId?: string };
-			"/session/[slug]": { slug: string; attendeeId?: string };
-			"/session/[slug]/attendee": { slug: string; attendeeId?: string };
-			"/session/[slug]/attendee/[attendeeId]": { slug: string; attendeeId: string };
-			"/session/[slug]/attendee/[attendeeId]/complete": { slug: string; attendeeId: string };
-			"/session/[slug]/join": { slug: string };
-			"/session/[slug]/presenter": { slug: string };
-			"/session/[slug]/stream": { slug: string }
+			"/": { slug?: string; id?: string };
+			"/dashboard": { slug?: string; id?: string };
+			"/dashboard/[slug]": { slug: string; id?: string };
+			"/dashboard/[slug]/join": { slug: string };
+			"/dashboard/[slug]/p": { slug: string; id?: string };
+			"/dashboard/[slug]/p/[id]": { slug: string; id: string };
+			"/dashboard/[slug]/p/[id]/quiz": { slug: string; id: string };
+			"/dashboard/[slug]/p/[id]/quiz/complete": { slug: string; id: string };
+			"/dashboard/[slug]/stream": { slug: string }
 		};
-		Pathname(): "/" | "/session" | "/session/" | `/session/${string}` & {} | `/session/${string}/` & {} | `/session/${string}/attendee` & {} | `/session/${string}/attendee/` & {} | `/session/${string}/attendee/${string}` & {} | `/session/${string}/attendee/${string}/` & {} | `/session/${string}/attendee/${string}/complete` & {} | `/session/${string}/attendee/${string}/complete/` & {} | `/session/${string}/join` & {} | `/session/${string}/join/` & {} | `/session/${string}/presenter` & {} | `/session/${string}/presenter/` & {} | `/session/${string}/stream` & {} | `/session/${string}/stream/` & {};
+		Pathname(): "/" | "/dashboard" | "/dashboard/" | `/dashboard/${string}` & {} | `/dashboard/${string}/` & {} | `/dashboard/${string}/join` & {} | `/dashboard/${string}/join/` & {} | `/dashboard/${string}/p` & {} | `/dashboard/${string}/p/` & {} | `/dashboard/${string}/p/${string}` & {} | `/dashboard/${string}/p/${string}/` & {} | `/dashboard/${string}/p/${string}/quiz` & {} | `/dashboard/${string}/p/${string}/quiz/` & {} | `/dashboard/${string}/p/${string}/quiz/complete` & {} | `/dashboard/${string}/p/${string}/quiz/complete/` & {} | `/dashboard/${string}/stream` & {} | `/dashboard/${string}/stream/` & {};
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): "/Zyeta_Black_SVG.svg" | "/favicon.svg" | "/robots.txt" | "/zyeta-dx-logo.svg" | string & {};
 	}
