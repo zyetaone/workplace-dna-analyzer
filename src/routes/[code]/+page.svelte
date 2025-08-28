@@ -1,17 +1,20 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { navigating } from '$app/stores';
 	import { handleError } from '$lib/utils/error-utils';
-	import { getSessionSummary, joinSession as joinSessionRemote } from '../admin/admin.remote';
+	import { getSessionInfo, joinSession as joinSessionRemote } from './participant.remote';
 	import type { PageData } from './$types';
 	
 	let { data }: { data: PageData } = $props();
 	
 	let participantName = $state('');
+	let selectedGeneration = $state('Gen Z');
 	let isJoining = $state(false);
 	let isLoading = $state(true);
+	let isNavigating = $derived(!!$navigating);
 	import type { Session } from '$lib/server/db/schema';
-	
+
 	let sessionData = $state<Session | null>(null);
 	let error = $state('');
 	
@@ -19,10 +22,14 @@
 	$effect(() => {
 		const code = page.params.code;
 		if (!code?.trim()) return;
-		
-		getSessionSummary({ slug: code })
+
+		getSessionInfo({ code })
 			.then(data => {
-				sessionData = data.session;
+				if (data.error) {
+					error = data.error;
+				} else {
+					sessionData = data.session;
+				}
 			})
 			.catch(err => {
 				error = handleError(err, 'session loading');
@@ -42,11 +49,14 @@
 		try {
 			const result = await joinSessionRemote({
 				sessionCode: sessionData.code,
-				name: participantName.trim()
+				name: participantName.trim(),
+				generation: selectedGeneration as any
 			});
-			
+
 			if (result.success && result.redirect) {
 				goto(result.redirect);
+			} else if (!result.success) {
+				error = result.error || 'Failed to join session';
 			}
 		} catch (err) {
 			error = handleError(err, 'joining session');
@@ -90,16 +100,38 @@
 					class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
 					placeholder="Enter your name"
 					required
-					disabled={isJoining}
+					disabled={isJoining || isNavigating}
 				/>
+			</div>
+
+			<div class="mb-6">
+				<label for="generation" class="block text-sm font-medium text-gray-700 mb-2">
+					Your Generation
+				</label>
+				<select
+					id="generation"
+					bind:value={selectedGeneration}
+					class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+					disabled={isJoining || isNavigating}
+				>
+					<option value="Baby Boomer">Baby Boomer (1946-1964)</option>
+					<option value="Gen X">Generation X (1965-1980)</option>
+					<option value="Millennial">Millennial (1981-1996)</option>
+					<option value="Gen Z">Gen Z (1997-2012)</option>
+				</select>
 			</div>
 			
 			<button
 				type="submit"
-				disabled={isJoining || !participantName.trim()}
-				class="w-full py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+				disabled={isJoining || !participantName.trim() || isNavigating}
+				class="w-full py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 			>
-				{isJoining ? 'Joining...' : 'Join Session'}
+				{#if isJoining || isNavigating}
+					<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+					<span>{isNavigating ? 'Navigating...' : 'Joining...'}</span>
+				{:else}
+					<span>Join Session</span>
+				{/if}
 			</button>
 		</form>
 		{/if}

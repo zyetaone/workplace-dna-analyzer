@@ -1,18 +1,10 @@
 {
 	"/": [],
-	"/admin": [
-		"src/routes/admin/+page.server.ts"
-	],
-	"/admin/[code]": [
-		"src/routes/admin/[code]/+page.server.ts"
-	],
+	"/admin": [],
+	"/admin/[code]": [],
 	"/[code]": [
-		"src/routes/[code]/+page.server.ts"
+		"src/routes/[code]/+page.ts"
 	],
-	"/[code]/complete": [
-		"src/routes/[code]/complete/+page.server.ts"
-	],
-	"/[code]/quiz": [
-		"src/routes/[code]/quiz/+page.server.ts"
-	]
+	"/[code]/complete": [],
+	"/[code]/quiz": []
 }

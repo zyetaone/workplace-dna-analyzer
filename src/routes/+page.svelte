@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { navigating } from '$app/stores';
+	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 	
 	let isLoggingIn = $state(false);
+	
+	// Derived loading state that combines navigation and local loading
+	let isLoading = $derived(!!$navigating || isLoggingIn);
 	
 	// Navigate to admin dashboard
 	async function enterDashboard() {
@@ -29,12 +34,12 @@
 		<div class="space-y-4">
 			<button
 				onclick={enterDashboard}
-				disabled={isLoggingIn}
+				disabled={isLoading}
 				class="w-full py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg flex items-center justify-center gap-3"
 			>
-				{#if isLoggingIn}
-					<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-					<span>Entering Dashboard...</span>
+				{#if isLoading}
+					<LoadingSpinner size="md" color="white" />
+					<span>{$navigating ? 'Navigating...' : 'Entering Dashboard...'}</span>
 				{:else}
 					<span class="text-xl">🚀</span>
 					<span>Sign In / Register</span>

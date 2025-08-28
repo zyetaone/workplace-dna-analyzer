@@ -5,48 +5,23 @@
 import * as v from 'valibot';
 import { query, command } from '$app/server';
 import { db } from '$lib/server/db';
-import { sessions, participants, type NewSession, type NewParticipant } from '$lib/server/db/schema';
+import { sessions, participants } from '$lib/server/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
-import type { RequestEvent } from '@sveltejs/kit';
-import { generateId } from '$lib/utils/id';
-
-// Validation schemas
-const SessionCodeSchema = v.pipe(
-	v.string(),
-	v.regex(/^[A-Z0-9]{6}$/, 'Invalid session code format')
-);
-
-const SessionSlugSchema = v.pipe(
-	v.string(),
-	v.minLength(1, 'Session slug is required')
-);
-
-const ParticipantIdSchema = v.pipe(
-	v.string(),
-	v.uuid('Invalid participant ID')
-);
-
-const ParticipantNameSchema = v.pipe(
-	v.string(),
-	v.minLength(1, 'Name is required'),
-	v.maxLength(100, 'Name is too long')
-);
+import { sessionCodeSchema, participantIdSchema, sessionNameSchema } from '$lib/validation';
 
 /**
  * Get session summary (basic info without participants)
  */
 export const getSessionSummary = query(
-	v.object({ slug: SessionSlugSchema }),
+	v.object({ code: sessionCodeSchema }),
 	async (params) => {
-	
-	// Get session by code (slug is actually the code)
-	const [session] = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.code, params.slug))
-		.limit(1);
+		const [session] = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.code, params.code))
+			.limit(1);
 
-	return { session };
+		return session;
 	}
 );
 
@@ -54,65 +29,56 @@ export const getSessionSummary = query(
  * Get session analytics data
  */
 export const getSessionAnalytics = query(
-	v.object({ 
-		code: SessionCodeSchema,
-		slug: v.optional(v.string())
-	}),
-	async (params) => {	// Get session by code
-	const [session] = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.code, params.code))
-		.limit(1);
+	v.object({ code: sessionCodeSchema }),
+	async (params) => {
+		const [session] = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.code, params.code))
+			.limit(1);
 
-	if (!session) {
-		return { session: null, participants: [] };
-	}
+		if (!session) {
+			return { session: null, participants: [] };
+		}
 
-	// Get all participants for this session
-	const sessionParticipants = await db
-		.select()
-		.from(participants)
-		.where(eq(participants.sessionId, session.id))
-		.orderBy(desc(participants.joinedAt));
+		const sessionParticipants = await db
+			.select()
+			.from(participants)
+			.where(eq(participants.sessionId, session.id))
+			.orderBy(desc(participants.joinedAt));
 
-	return {
-		session,
-		participants: sessionParticipants
-	};
+		return {
+			session,
+			participants: sessionParticipants
+		};
 	}
 );
 
 /**
  * Update session status
  */
-const UpdateSessionSchema = v.object({
-	slug: SessionSlugSchema,
-	isActive: v.boolean()
-});
-
 export const updateSession = command(
-	UpdateSessionSchema,
+	v.object({
+		code: sessionCodeSchema,
+		isActive: v.boolean()
+	}),
 	async (params) => {
-	
-	// Find session by slug
-	const [session] = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.slug, params.slug))
-		.limit(1);
+		const [session] = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.code, params.code))
+			.limit(1);
 
-	if (!session) {
-		throw new Error('Session not found');
-	}
+		if (!session) {
+			throw new Error('Session not found');
+		}
 
-	// Update session status
-	await db
-		.update(sessions)
-		.set({ isActive: params.isActive } as any)
-		.where(eq(sessions.id, session.id));
+		await db
+			.update(sessions)
+			.set({ isActive: params.isActive } as any)
+			.where(eq(sessions.id, session.id));
 
-	return { success: true };
+		return { success: true };
 	}
 );
 
@@ -120,63 +86,57 @@ export const updateSession = command(
  * End a session
  */
 export const endSession = command(
-	v.object({ slug: SessionSlugSchema }),
+	v.object({ code: sessionCodeSchema }),
 	async (params) => {
-	
-	const [session] = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.slug, params.slug))
-		.limit(1);
+		const [session] = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.code, params.code))
+			.limit(1);
 
-	if (!session) {
-		throw new Error('Session not found');
-	}
+		if (!session) {
+			throw new Error('Session not found');
+		}
 
-	await db
-		.update(sessions)
-		.set({ 
-			isActive: false,
-			endedAt: new Date().toISOString()
-		} as any)
-		.where(eq(sessions.id, session.id));
+		await db
+			.update(sessions)
+			.set({ 
+				isActive: false,
+				endedAt: new Date().toISOString()
+			} as any)
+			.where(eq(sessions.id, session.id));
 
-	return { success: true, slug: params.slug };
+		return { success: true, code: params.code };
 	}
 );
 
 /**
  * Delete a participant
  */
-const DeleteParticipantSchema = v.object({
-	slug: SessionSlugSchema,
-	participantId: ParticipantIdSchema
-});
-
 export const deleteParticipant = command(
-	DeleteParticipantSchema,
+	v.object({
+		code: sessionCodeSchema,
+		participantId: participantIdSchema
+	}),
 	async (params) => {
-	
-	// Verify session exists
-	const [session] = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.slug, params.slug))
-		.limit(1);
+		const [session] = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.code, params.code))
+			.limit(1);
 
-	if (!session) {
-		throw new Error('Session not found');
-	}
+		if (!session) {
+			throw new Error('Session not found');
+		}
 
-	// Delete participant
-	await db
-		.delete(participants)
-		.where(and(
-			eq(participants.id, params.participantId),
-			eq(participants.sessionId, session.id)
-		));
+		await db
+			.delete(participants)
+			.where(and(
+				eq(participants.id, params.participantId),
+				eq(participants.sessionId, session.id)
+			));
 
-	return { success: true };
+		return { success: true };
 	}
 );
 
@@ -184,19 +144,17 @@ export const deleteParticipant = command(
  * Generate AI insights (mock for now)
  */
 export const generateAIInsights = query(
-	v.object({ slug: SessionSlugSchema }),
+	v.object({ code: sessionCodeSchema }),
 	async (params) => {
-	
-	// Get session and participants
-	const [session] = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.slug, params.slug))
-		.limit(1);
+		const [session] = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.code, params.code))
+			.limit(1);
 
-	if (!session) {
-		throw new Error('Session not found');
-	}
+		if (!session) {
+			throw new Error('Session not found');
+		}
 
 		const sessionParticipants = await db
 			.select()
@@ -286,74 +244,87 @@ export const generateAIInsights = query(
 	}
 );
 
-/**
- * Join a session as a participant
- */
-const JoinSessionSchema = v.object({
-	sessionCode: SessionCodeSchema,
-	name: ParticipantNameSchema,
-	participantId: v.optional(ParticipantIdSchema)
-});
 
-export const joinSession = command(
-	JoinSessionSchema,
+
+/**
+ * Get all sessions with participant counts
+ */
+export const getAllSessions = query(
+	v.object({}),
+	async () => {
+		const { sql } = await import('drizzle-orm');
+
+		// Get all sessions with participant counts
+		const allSessions = await db
+			.select({
+				id: sessions.id,
+				slug: sessions.slug,
+				name: sessions.name,
+				code: sessions.code,
+				presenterId: sessions.presenterId,
+				isActive: sessions.isActive,
+				createdAt: sessions.createdAt,
+				activeCount: sql<number>`
+					COUNT(CASE WHEN ${participants.completed} = 0 THEN 1 END)
+				`.as('activeCount'),
+				completedCount: sql<number>`
+					COUNT(CASE WHEN ${participants.completed} = 1 THEN 1 END)
+				`.as('completedCount')
+			})
+			.from(sessions)
+			.leftJoin(participants, eq(sessions.id, participants.sessionId))
+			.groupBy(sessions.id)
+			.orderBy(desc(sessions.createdAt));
+
+		return allSessions;
+	}
+);
+
+/**
+ * Create a new session
+ */
+export const createSession = command(
+	v.object({ name: sessionNameSchema }),
 	async (params) => {
-	
-	// Find session by code
-	const [session] = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.code, params.sessionCode))
-		.limit(1);
-	
-	if (!session) {
-		return { success: false, error: 'Session not found' };
+		// Generate session code
+		const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+		await db.insert(sessions).values({
+			slug: code,
+			name: params.name,
+			code,
+			presenterId: 'default-admin'
+		} as any);
+
+		return {
+			success: true,
+			code,
+			redirect: `/admin/${code}`
+		};
 	}
-	
-	if (!session.isActive) {
-		return { success: false, error: 'Session is not active' };
-	}
-	
-	// Check if participant already exists
-	if (params.participantId) {
-		const [existing] = await db
+);
+
+/**
+ * Delete a session
+ */
+export const deleteSession = command(
+	v.object({ code: sessionCodeSchema }),
+	async (params) => {
+		// Find session
+		const [session] = await db
 			.select()
-			.from(participants)
-			.where(
-				and(
-					eq(participants.id, params.participantId),
-					eq(participants.sessionId, session.id)
-				)
-			)
+			.from(sessions)
+			.where(eq(sessions.code, params.code))
 			.limit(1);
-		
-		if (existing) {
-			// Update name if changed
-			if (existing.name !== params.name) {
-				await db
-					.update(participants)
-					.set({ name: params.name } as any)
-					.where(eq(participants.id, params.participantId));
-			}
-			return { 
-				success: true, 
-				participantId: existing.id,
-				redirect: `/${params.sessionCode}/quiz`
-			};
+
+		if (!session) {
+			return { success: false, error: 'Session not found' };
 		}
-	}
-	
-	// Create new participant
-	const newParticipantId = params.participantId || generateId();
-	const [newParticipant] = await db.insert(participants).values({
-		sessionId: session.id,
-		name: params.name
-	} as any).returning({ id: participants.id });
-	
-	return { 
-		success: true, 
-		participantId: newParticipant.id,
-		redirect: `/${params.sessionCode}/quiz`
-	};
+
+		// Delete participants and session
+		await db.delete(participants).where(eq(participants.sessionId, session.id));
+		await db.delete(sessions).where(eq(sessions.id, session.id));
+
+		return { success: true };
 	}
 );

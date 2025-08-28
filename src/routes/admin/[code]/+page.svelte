@@ -2,6 +2,7 @@
 	import { invalidate } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { navigating } from '$app/stores';
 	import QRCode from '$lib/components/QRCode.svelte';
 	import LoadingScreen from '$lib/components/LoadingScreen.svelte';
 	import WordCloud from '$lib/components/charts/WordCloud.svelte';
@@ -10,42 +11,190 @@
 	import ParticipantList from '$lib/components/ParticipantList.svelte';
 	import { createChartConfig, createGenerationChartConfig, createPreferenceRadarConfig } from '$lib/utils/chart-config';
 	import { copyToClipboard } from '$lib/utils/common';
-	import { adminState } from './admin.svelte';
-	import { sessionStore } from '$lib/stores/session.svelte';
-	import type { PageData } from './$types';
+	import { calculatePreferenceScores, getWorkplaceDNA } from '$lib/utils/scoring';
+	import type { Session, Participant, PreferenceScores } from '$lib/types';
 
-	// Props from +page.server.ts
-	let { data = $bindable() }: { data: PageData } = $props();
+	// Props - simplified since using remote functions
+	let { data = $bindable() }: { data?: { session?: Session; participants?: Participant[] } } = $props();
 	
-	// Local state
+	// Direct reactive state using Svelte 5 runes
+	let session = $state<Session | null>(null);
+	let participants = $state<Participant[]>([]);
+	let loading = $state(false);
+	let error = $state<string | null>(null);
+	let aiInsights = $state<string[]>([]);
 	let isClient = $state(false);
 	let isLoading = $state(false);
 	
+	// Navigation-aware loading states
+	let isNavigatingAway = $derived(!!$navigating && $navigating?.to?.url.pathname === '/admin');
+	let showGlobalLoading = $derived(isLoading || loading);
+	
 	// Get code from page params
 	const code = $page.params.code;
-	const slug = code; // Keep slug variable for compatibility with existing code
 	
-	// Initialize admin state with server data
+	// Initialize state with server data
 	$effect(() => {
 		if (data?.session && data?.participants) {
-			adminState.initialize(data.session, data.participants);
-			// Also sync with session store for shared state
-			sessionStore.setSession(data.session);
-			sessionStore.setParticipants(data.participants);
+			session = data.session;
+			participants = data.participants;
+			error = null;
 		}
 	});
 	
-	// Reactive values from admin state
-	let session = $derived(adminState.session);
-	let participants = $derived(adminState.participants);
-	let analytics = $derived(adminState.analytics);
-	let aiInsights = $derived(adminState.aiInsights);
-	let error = $derived(adminState.error);
-	let sessionCode = $derived(adminState.sessionCode);
-	let sessionUrl = $derived(adminState.sessionUrl);
+	// Derived values
+	let sessionCode = $derived(session?.code || '');
+	let sessionUrl = $derived.by(() => {
+		if (!session || typeof window === 'undefined') return '';
+		return `${window.location.origin}/${session.code}`;
+	});
+	
+	// Analytics calculations
+	let analytics = $derived.by(() => {
+		const activeCount = participants.length;
+		const completedCount = participants.filter(p => p.completed).length;
+		const responseRate = activeCount > 0 ? Math.round((completedCount / activeCount) * 100) : 0;
+		
+		// Calculate average preference scores
+		const preferenceScores = calculateAverageScores();
+		
+		// Generation distribution
+		const generationDistribution = calculateGenerationDistribution();
+		
+		// Word cloud data
+		const wordCloudData = generateWordCloudData();
+		
+		// Workplace DNA
+		const workplaceDNA = completedCount > 0 ? getWorkplaceDNA(preferenceScores) : null;
+		
+		return {
+			activeCount,
+			completedCount,
+			responseRate,
+			preferenceScores,
+			generationDistribution,
+			wordCloudData,
+			workplaceDNA
+		};
+	});
+	
+	// Analytics calculation functions
+	function calculateAverageScores(): PreferenceScores {
+		const completed = participants.filter(p => p.completed);
+		
+		if (completed.length === 0) {
+			return { collaboration: 0, formality: 0, tech: 0, wellness: 0 };
+		}
+		
+		const totals = { collaboration: 0, formality: 0, tech: 0, wellness: 0 };
+		
+		for (const participant of completed) {
+			const responses = typeof participant.responses === 'string' 
+				? JSON.parse(participant.responses) 
+				: participant.responses;
+			
+			if (Array.isArray(responses) && responses.length > 0) {
+				const scores = calculatePreferenceScores(responses);
+				totals.collaboration += scores.collaboration;
+				totals.formality += scores.formality;
+				totals.tech += scores.tech;
+				totals.wellness += scores.wellness;
+			}
+		}
+		
+		return {
+			collaboration: Math.round(totals.collaboration / completed.length),
+			formality: Math.round(totals.formality / completed.length),
+			tech: Math.round(totals.tech / completed.length),
+			wellness: Math.round(totals.wellness / completed.length)
+		};
+	}
+	
+	function calculateGenerationDistribution(): Record<string, number> {
+		const distribution: Record<string, number> = {};
+		
+		for (const participant of participants) {
+			const gen = participant.generation || 'Unknown';
+			distribution[gen] = (distribution[gen] || 0) + 1;
+		}
+		
+		return distribution;
+	}
+	
+	function generateWordCloudData(): Array<{ text: string; size: number }> {
+		const wordFreq: Record<string, number> = {};
+		const completed = participants.filter(p => p.completed);
+		
+		const conceptMap: Record<string, string[]> = {
+			'collaboration': ['teamwork', 'collaboration', 'together', 'cooperative', 'shared'],
+			'independence': ['autonomy', 'independent', 'solo', 'individual', 'freedom'],
+			'structure': ['organized', 'structured', 'formal', 'process', 'systematic'],
+			'flexibility': ['flexible', 'adaptive', 'agile', 'dynamic', 'casual'],
+			'technology': ['digital', 'innovative', 'tech', 'modern', 'automated'],
+			'traditional': ['classic', 'conventional', 'proven', 'established', 'standard'],
+			'wellness': ['wellbeing', 'balance', 'health', 'mindful', 'sustainable'],
+			'performance': ['results', 'achievement', 'productivity', 'excellence', 'growth']
+		};
+		
+		for (const participant of completed) {
+			const responses = typeof participant.responses === 'string' 
+				? JSON.parse(participant.responses) 
+				: participant.responses;
+			
+			if (Array.isArray(responses)) {
+				const scores = calculatePreferenceScores(responses);
+				
+				if (scores.collaboration >= 7) {
+					conceptMap.collaboration.forEach(word => {
+						wordFreq[word] = (wordFreq[word] || 0) + 1;
+					});
+				} else if (scores.collaboration <= 3) {
+					conceptMap.independence.forEach(word => {
+						wordFreq[word] = (wordFreq[word] || 0) + 1;
+					});
+				}
+				
+				if (scores.formality >= 7) {
+					conceptMap.structure.forEach(word => {
+						wordFreq[word] = (wordFreq[word] || 0) + 1;
+					});
+				} else if (scores.formality <= 3) {
+					conceptMap.flexibility.forEach(word => {
+						wordFreq[word] = (wordFreq[word] || 0) + 1;
+					});
+				}
+				
+				if (scores.tech >= 7) {
+					conceptMap.technology.forEach(word => {
+						wordFreq[word] = (wordFreq[word] || 0) + 1;
+					});
+				} else if (scores.tech <= 3) {
+					conceptMap.traditional.forEach(word => {
+						wordFreq[word] = (wordFreq[word] || 0) + 1;
+					});
+				}
+				
+				if (scores.wellness >= 7) {
+					conceptMap.wellness.forEach(word => {
+						wordFreq[word] = (wordFreq[word] || 0) + 1;
+					});
+				} else if (scores.wellness <= 3) {
+					conceptMap.performance.forEach(word => {
+						wordFreq[word] = (wordFreq[word] || 0) + 1;
+					});
+				}
+			}
+		}
+		
+		const words = Object.entries(wordFreq).map(([text, count]) => ({
+			text,
+			size: 20 + (count * 15)
+		}));
+		
+		return words.sort((a, b) => b.size - a.size).slice(0, 30);
+	}
 	
 	// Chart configurations derived from analytics
-	let preferenceChartConfig = $derived.by(() => createChartConfig(analytics.preferenceScores));
 	let generationChartConfig = $derived.by(() => createGenerationChartConfig(analytics.generationDistribution));
 	let radarChartConfig = $derived.by(() => createPreferenceRadarConfig(analytics.preferenceScores));
 	
@@ -57,112 +206,113 @@
 	// Manual refresh function
 	async function refreshData() {
 		isLoading = true;
-		adminState.setLoading(true);
-		adminState.setError(null);
+		loading = true;
+		error = null;
 		try {
 			await invalidate(`session:${code}`);
 		} catch (err) {
 			console.error('Failed to refresh data:', err);
-			adminState.setError('Failed to refresh data');
+			error = 'Failed to refresh data';
 		} finally {
 			isLoading = false;
-			adminState.setLoading(false);
+			loading = false;
 		}
 	}
 	
 	// Toggle session active status
 	async function toggleSessionActive() {
-		if (!session) return;
+		if (!session || showGlobalLoading || !!$navigating) return;
 		
-		const newStatus = !adminState.isActive;
+		const newStatus = !session.isActive;
 		isLoading = true;
-		adminState.setLoading(true);
+		loading = true;
 		try {
-			const result = await updateSession({ slug, isActive: newStatus }) as { success: boolean };
+			const result = await updateSession({ code, isActive: newStatus }) as { success: boolean };
 			if (result.success) {
-				adminState.updateSession({ isActive: newStatus });
+				session = { ...session, isActive: newStatus };
 				await refreshData();
 			}
 		} catch (err) {
 			console.error('Failed to update session status:', err);
-			adminState.setError('Failed to update session status');
+			error = 'Failed to update session status';
 		} finally {
 			isLoading = false;
-			adminState.setLoading(false);
+			loading = false;
 		}
 	}
 	
 	// Delete a participant
 	async function handleDeleteParticipant(id: string, name: string) {
-		if (!confirm(`Are you sure you want to remove ${name}?`)) return;
+		if (!confirm(`Are you sure you want to remove ${name}?`) || showGlobalLoading || !!$navigating) return;
 		
 		isLoading = true;
-		adminState.setLoading(true);
+		loading = true;
 		try {
-			await deleteParticipant({ slug, participantId: id });
-			adminState.removeParticipant(id);
-			sessionStore.removeParticipant(id);
+			await deleteParticipant({ code, participantId: id });
+			participants = participants.filter(p => p.id !== id);
 			await refreshData();
 		} catch (err) {
 			console.error('Failed to delete participant:', err);
-			adminState.setError('Failed to delete participant');
+			error = 'Failed to delete participant';
 		} finally {
 			isLoading = false;
-			adminState.setLoading(false);
+			loading = false;
 		}
 	}
 	
 	// Copy participant link
 	function handleCopyLink(id: string) {
-		// Just use the session code for participant link (same as main join link)
-		const code = $page.params.code;
 		const link = `${window.location.origin}/${code}`;
 		copyToClipboard(link);
 	}
 	
 	// Generate AI insights
 	async function generateInsights() {
-		if (!session || participants.length === 0) return;
+		if (!session || participants.length === 0 || showGlobalLoading || !!$navigating) return;
 		
 		isLoading = true;
-		adminState.setLoading(true);
+		loading = true;
 		try {
-			const result = await generateAIInsights({ slug }) as { success: boolean; insights?: string[] };
+			const result = await generateAIInsights({ code }) as { success: boolean; insights?: string[] };
 			if (result.success && result.insights) {
-				adminState.setAIInsights(result.insights);
+				aiInsights = result.insights;
 			}
 		} catch (err) {
 			console.error('Failed to generate AI insights:', err);
-			adminState.setError('Failed to generate AI insights');
+			error = 'Failed to generate AI insights';
 		} finally {
 			isLoading = false;
-			adminState.setLoading(false);
+			loading = false;
 		}
 	}
 	
 	// End the current session
 	async function endSession() {
-		if (!session) return;
+		if (!session || showGlobalLoading || !!$navigating) return;
 		
 		if (!confirm('Are you sure you want to end this session?')) return;
 		
 		isLoading = true;
-		adminState.setLoading(true);
+		loading = true;
 		try {
-			const result = await endSessionRemote({ slug }) as { success: boolean };
+			const result = await endSessionRemote({ code }) as { success: boolean };
 			if (result.success) {
 				// Clear state before navigation
-				adminState.reset();
-				sessionStore.reset();
-				// Navigate back to admin dashboard
+				session = null;
+				participants = [];
+				aiInsights = [];
+				error = null;
+				// Navigate back to admin dashboard (don't reset loading - let navigation handle it)
 				await goto('/admin');
+			} else {
+				isLoading = false;
+				loading = false;
 			}
 		} catch (err) {
-			adminState.setError('Failed to end session');
+			error = 'Failed to end session';
 			console.error('Failed to end session:', err);
-		} finally {
 			isLoading = false;
-			adminState.setLoading(false);
+			loading = false;
 		}
 	}
 </script>
@@ -303,10 +453,15 @@
 				<div class="bg-gray-50 rounded-lg shadow-lg p-8 mb-8 text-center">
 					<button
 						onclick={generateInsights}
-						disabled={isLoading}
-						class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+						disabled={showGlobalLoading || !!$navigating}
+						class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 					>
-						Generate AI Insights
+						{#if showGlobalLoading}
+							<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+							<span>Generating...</span>
+						{:else}
+							<span>Generate AI Insights</span>
+						{/if}
 					</button>
 				</div>
 			{/if}
@@ -333,24 +488,35 @@
 			<div class="mt-8 flex justify-center gap-4">
 				<button
 					onclick={toggleSessionActive}
-					disabled={isLoading}
-					class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+					disabled={showGlobalLoading || !!$navigating}
+					class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 				>
-					{session?.isActive ? 'Pause Session' : 'Resume Session'}
+					{#if showGlobalLoading}
+						<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+					{/if}
+					<span>{session?.isActive ? 'Pause Session' : 'Resume Session'}</span>
 				</button>
 				<button
 					onclick={refreshData}
-					disabled={isLoading}
-					class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
+					disabled={showGlobalLoading || !!$navigating}
+					class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 				>
-					Refresh Data
+					{#if showGlobalLoading}
+						<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+					{/if}
+					<span>Refresh Data</span>
 				</button>
 				<button
 					onclick={endSession}
-					disabled={isLoading}
-					class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+					disabled={showGlobalLoading || !!$navigating}
+					class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 				>
-					End Session
+					{#if showGlobalLoading || isNavigatingAway}
+						<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+						<span>{isNavigatingAway ? 'Ending Session...' : 'Processing...'}</span>
+					{:else}
+						<span>End Session</span>
+					{/if}
 				</button>
 			</div>
 		{/if}

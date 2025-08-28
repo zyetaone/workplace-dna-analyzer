@@ -1,31 +1,125 @@
-<!-- @migration-task Error while migrating Svelte code: `$:` is not allowed in runes mode, use `$derived` or `$effect` instead
-https://svelte.dev/e/legacy_reactive_statement_invalid -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { navigating } from '$app/stores';
 	import { formatDate, copyToClipboard } from '$lib/utils/common';
+	import { getAllSessions, createSession, deleteSession } from './admin.remote';
+	import { handleError } from '$lib/utils/error-utils';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import Toast, { showToast } from '$lib/components/Toast.svelte';
-	
-	// Receive server data
-	let { data } = $props();
-	
+
 	// Local reactive state
+	let sessions = $state<any[]>([]);
 	let sessionName = $state('');
 	let isCreating = $state(false);
 	let isDeletingSession = $state<string | null>(null);
 	let showCreateForm = $state(false);
+	let isLoading = $state(true);
+	let error = $state('');
 	
+	// Derived loading states
+	let isNavigatingToSession = $derived(!!$navigating && $navigating?.to?.url.pathname?.includes('/admin/'));
+	let isNavigatingAway = $derived(!!$navigating && !$navigating.to?.url.pathname?.includes('/admin'));
+
 	// Dialog states
 	let deleteDialogOpen = $state(false);
 	let sessionToDelete = $state<string | null>(null);
+
+	// Derived states for computed values
+	let totalSessions = $derived(sessions.length);
+	let activeSessions = $derived(sessions.filter(s => s.isActive).length);
+	let totalParticipants = $derived(
+		sessions.reduce((sum, s) => sum + (s.activeCount || 0) + (s.completedCount || 0), 0)
+	);
+	let completedSurveys = $derived(
+		sessions.reduce((sum, s) => sum + (s.completedCount || 0), 0)
+	);
+
+	// Load sessions on mount
+	$effect(() => {
+		loadSessions();
+	});
+
+	// Load all sessions
+	async function loadSessions() {
+		try {
+			isLoading = true;
+			error = '';
+			const result = await getAllSessions({});
+			sessions = result || [];
+		} catch (err) {
+			error = handleError(err, 'loading sessions');
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	// Create new session
+	async function handleCreateSession() {
+		if (!sessionName.trim() || isCreating || !!$navigating) return;
+
+		isCreating = true;
+		try {
+			const result = await createSession({ name: sessionName.trim() });
+			if (result.success && result.redirect) {
+				// Don't reset isCreating here - let navigation handling do it
+				goto(result.redirect);
+			} else {
+				console.log('Toast:', {
+					title: 'Error',
+					description: 'Failed to create session',
+					variant: 'error'
+				});
+				isCreating = false;
+			}
+		} catch (err) {
+			console.log('Toast:', {
+				title: 'Error',
+				description: handleError(err, 'creating session'),
+				variant: 'error'
+			});
+			isCreating = false;
+		}
+	}
+
+	// Delete session
+	async function handleDeleteConfirm() {
+		if (!sessionToDelete) return;
+
+		isDeletingSession = sessionToDelete;
+		try {
+			const result = await deleteSession({ code: sessionToDelete });
+			if (result.success) {
+				console.log('Toast:', {
+					title: 'Success',
+					description: 'Session deleted successfully',
+					variant: 'success'
+				});
+				await loadSessions(); // Reload sessions
+			} else {
+				console.log('Toast:', {
+					title: 'Error',
+					description: result.error || 'Failed to delete session',
+					variant: 'error'
+				});
+			}
+		} catch (err) {
+			console.log('Toast:', {
+				title: 'Error',
+				description: handleError(err, 'deleting session'),
+				variant: 'error'
+			});
+		} finally {
+			isDeletingSession = null;
+			deleteDialogOpen = false;
+			sessionToDelete = null;
+		}
+	}
 	
 	// Copy participant join link  
 	function handleCopyLink(session: any) {
 		const link = `${window.location.origin}/${session.code}`;
 		copyToClipboard(link);
-		showToast({
+		console.log('Toast:', {
 			title: 'Link copied!',
 			description: 'The participant join link has been copied to your clipboard.',
 			variant: 'success'
@@ -34,6 +128,7 @@ https://svelte.dev/e/legacy_reactive_statement_invalid -->
 	
 	// Navigate to session dashboard
 	function openSession(session: any) {
+		if (!!$navigating) return;
 		goto(`/admin/${session.code}`);
 	}
 	
@@ -96,9 +191,13 @@ https://svelte.dev/e/legacy_reactive_statement_invalid -->
 			<div class="grid grid-cols-3 gap-2">
 				<button
 					onclick={() => openSession(session)}
-					class="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition text-sm font-medium"
+					disabled={!!$navigating}
+					class="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
 				>
-					Open
+					{#if isNavigatingToSession}
+						<div class="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
+					{/if}
+					<span>Open</span>
 				</button>
 				<button
 					onclick={() => handleCopyLink(session)}
@@ -139,31 +238,11 @@ https://svelte.dev/e/legacy_reactive_statement_invalid -->
 					Create New Session
 				</button>
 			{:else}
-				<form 
-					method="POST" 
-					action="?/createSession"
-					use:enhance={() => {
-						isCreating = true;
-						return async ({ result }) => {
-							isCreating = false;
-							if (result.type === 'redirect') {
-								goto(result.location);
-							} else if (result.type === 'failure') {
-								showToast({
-									title: 'Error',
-									description: (result.data?.error as string) || 'Failed to create session',
-									variant: 'error'
-								});
-							}
-						};
-					}}
-					class="space-y-4"
-				>
+				<div class="space-y-4">
 					<h2 class="text-2xl font-semibold text-gray-800">Create New Session</h2>
 					<div class="flex gap-4">
 						<input
 							type="text"
-							name="title"
 							bind:value={sessionName}
 							placeholder="Enter session name..."
 							disabled={isCreating}
@@ -172,11 +251,16 @@ https://svelte.dev/e/legacy_reactive_statement_invalid -->
 							class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
 						/>
 						<button
-							type="submit"
-							disabled={isCreating}
-							class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+							onclick={handleCreateSession}
+							disabled={isCreating || !sessionName.trim() || !!$navigating}
+							class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-2"
 						>
-							{isCreating ? 'Creating...' : 'Create'}
+							{#if isCreating || isNavigatingToSession}
+								<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+								<span>{isNavigatingToSession ? 'Navigating...' : 'Creating...'}</span>
+							{:else}
+								<span>Create</span>
+							{/if}
 						</button>
 						<button
 							type="button"
@@ -186,67 +270,67 @@ https://svelte.dev/e/legacy_reactive_statement_invalid -->
 							Cancel
 						</button>
 					</div>
-				</form>
+				</div>
 			{/if}
 		</div>
 		
 		<!-- Sessions Grid/List -->
-		{#if !data.sessions}
+		{#if isLoading}
 			<div class="bg-white rounded-lg shadow-lg p-12 flex justify-center">
 				<div class="text-center">
 					<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 mx-auto"></div>
 					<p class="mt-4 text-gray-600">Loading sessions...</p>
 				</div>
 			</div>
-		{:else if data.sessions.length === 0}
-			<div class="bg-white rounded-lg shadow-lg p-12">
+		{:else if error}
+			<div class="bg-white rounded-lg shadow-lg p-12 flex justify-center">
 				<div class="text-center">
-					<div class="text-6xl mb-4">📋</div>
-					<h3 class="text-2xl font-semibold text-gray-800 mb-2">No Sessions Yet</h3>
-					<p class="text-gray-600 mb-6">Create your first session to get started</p>
-					{#if !showCreateForm}
-						<button
-							onclick={() => showCreateForm = true}
-							class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold"
-						>
-							Create First Session
-						</button>
-					{/if}
+					<div class="text-6xl mb-4">❌</div>
+					<h2 class="text-2xl font-semibold text-gray-800 mb-2">Error Loading Sessions</h2>
+					<p class="text-gray-600">{error}</p>
+				</div>
+			</div>
+		{:else if sessions.length === 0}
+			<div class="bg-white rounded-lg shadow-lg p-12 flex justify-center">
+				<div class="text-center">
+					<div class="text-6xl mb-4">📊</div>
+					<h2 class="text-2xl font-semibold text-gray-800 mb-2">No Sessions Yet</h2>
+					<p class="text-gray-600">Create your first session to get started!</p>
 				</div>
 			</div>
 		{:else}
-			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{#each data.sessions as session}
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				{#each sessions as session}
 					{@render sessionCard(session)}
 				{/each}
 			</div>
 		{/if}
 		
 		<!-- Footer Stats -->
-		{#if data.sessions && data.sessions.length > 0}
+		{#if sessions && totalSessions > 0}
 			<div class="mt-12 bg-white rounded-lg shadow-lg p-6">
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{data.sessions.length}
+							{totalSessions}
 						</div>
 						<div class="text-sm text-gray-500">Total Sessions</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-green-600">
-							{data.sessions.filter(s => s.isActive).length}
+							{activeSessions}
 						</div>
 						<div class="text-sm text-gray-500">Active Sessions</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{data.sessions.reduce((sum, s) => sum + (s.activeCount || 0) + (s.completedCount || 0), 0)}
+							{totalParticipants}
 						</div>
 						<div class="text-sm text-gray-500">Total Participants</div>
 					</div>
 					<div>
 						<div class="text-3xl font-bold text-gray-700">
-							{data.sessions.reduce((sum, s) => sum + (s.completedCount || 0), 0)}
+							{completedSurveys}
 						</div>
 						<div class="text-sm text-gray-500">Completed Surveys</div>
 					</div>
@@ -262,43 +346,21 @@ https://svelte.dev/e/legacy_reactive_statement_invalid -->
 		<div class="bg-white rounded-lg p-6 max-w-md">
 			<h2 class="text-xl font-bold mb-4">Delete Session</h2>
 			<p class="mb-6 text-gray-600">Are you sure you want to delete this session? This action cannot be undone and all participant data will be lost.</p>
-			<form 
-				method="POST" 
-				action="?/deleteSession"
-				use:enhance={() => {
-					isDeletingSession = sessionToDelete;
-					return async ({ result }) => {
-						isDeletingSession = null;
-						deleteDialogOpen = false;
-						sessionToDelete = null;
-						if (result.type === 'success') {
-							await invalidateAll();
-							showToast({
-								title: 'Session deleted',
-								description: 'The session has been permanently deleted.',
-								variant: 'success'
-							});
-						}
-					};
-				}}
-				class="flex justify-end gap-3"
-			>
-				<input type="hidden" name="slug" value={sessionToDelete} />
+			<div class="flex justify-end gap-3">
 				<button
-					type="button"
 					onclick={() => { deleteDialogOpen = false; sessionToDelete = null; }}
 					class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
 				>
 					Cancel
 				</button>
 				<button
-					type="submit"
+					onclick={handleDeleteConfirm}
 					disabled={isDeletingSession === sessionToDelete}
 					class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition disabled:opacity-50"
 				>
 					{isDeletingSession === sessionToDelete ? 'Deleting...' : 'Delete'}
 				</button>
-			</form>
+			</div>
 		</div>
 	</div>
 {/if}

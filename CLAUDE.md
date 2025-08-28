@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A SvelteKit 5 application for interactive workplace preference analysis. The system features simplified routing with participants joining via session codes and presenters managing sessions through an admin dashboard. No authentication required - fully open access.
+A SvelteKit 5 application for interactive workplace preference analysis. The system enables presenters to create sessions with QR codes for easy participant access, featuring real-time analytics and AI-powered workplace insights. No authentication required - fully open access with cookie-based participant tracking.
 
 ## Technology Stack
 
@@ -107,13 +107,20 @@ export const updateSession = command(
 ### Key Remote Functions
 
 **Admin Operations** (`admin.remote.ts`)
+- `getAllSessions` - List all sessions with participant counts (query)
+- `createSession` - Create new session with generated code (command)
+- `deleteSession` - Delete session and participants (command)
 - `getSessionSummary` - Get basic session info (query)
 - `getSessionAnalytics` - Full session data with participants (query)
 - `updateSession` - Toggle session active state (command)
 - `endSession` - Mark session as ended (command)
 - `deleteParticipant` - Remove participant (command)
-- `generateAIInsights` - Generate session insights (query)
-- `joinSession` - Join as participant (command)
+- `generateAIInsights` - Generate session insights based on data (query)
+
+**Participant Operations** (`participant.remote.ts`)
+- `joinSession` - Join session as participant (command)
+- `submitQuizResponse` - Submit quiz answers (command)
+- `getParticipantResults` - Get completion results (query)
 
 ## File Structure
 
@@ -153,45 +160,68 @@ src/
 ## Development Commands
 
 ```bash
-npm run dev              # Start dev server (port 5173)
-npm run build           # Build for production
-npm run preview         # Preview production build
+# Development server
+npm run dev              # Start dev server with --host (port 5173)
+npm run preview          # Preview production build with --host
 
-# Database
+# Production build
+npm run build           # Build for production
+npm start               # Start production server (build/index.js)
+
+# Database operations  
 npm run db:generate     # Generate Drizzle migrations
-npm run db:migrate      # Apply migrations
-npm run db:push        # Push schema changes
-npm run db:studio      # Open Drizzle Studio
+npm run db:migrate      # Apply migrations  
+npm run db:push         # Push schema changes to database
+npm run db:studio       # Open Drizzle Studio GUI
+npm run db:setup        # Initialize database setup
+npm run setup:admin     # Setup admin user (if authentication added)
+
+# Project management
+npm run prepare         # SvelteKit sync (auto-run on install)
 ```
 
 ## Database Schema
 
 ```typescript
-// Sessions
-{
-  id: string (UUID)
-  code: string (6 chars, uppercase)
-  name: string
-  slug: string (same as code)
-  presenterId: string (default: 'default-admin')
-  isActive: boolean
-  createdAt: string
-  endedAt: string?
-}
+// Users (for future authentication)
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  username: text('username').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role', { enum: ['presenter', 'admin'] }).default('presenter'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`)
+});
 
-// Participants
-{
-  id: string (UUID)
-  sessionId: string
-  cookieId: string (for tracking)
-  name: string
-  generation: string
-  responses: JSON
-  preferenceScores: JSON
-  completed: boolean
-  joinedAt: string
-  completedAt: string?
-}
+// Sessions
+export const sessions = sqliteTable('sessions', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  code: text('code').notNull().unique(),         // 6-char uppercase code
+  name: text('name').notNull(),
+  presenterId: text('presenter_id').notNull(),   // Currently: 'default-admin'
+  slug: text('slug').notNull().unique(),         // Same as code
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  endedAt: text('ended_at')
+});
+
+// Participants  
+export const participants = sqliteTable('participants', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  sessionId: text('session_id').references(() => sessions.id),
+  cookieId: text('cookie_id').unique(),          // Anonymous tracking
+  name: text('name'),                            // Optional until join
+  generation: text('generation'),                
+  responses: text('responses', { mode: 'json' }).$type<Record<number, any>>(),
+  preferenceScores: text('preference_scores', { mode: 'json' }).$type<{
+    collaboration: number;
+    formality: number; 
+    tech: number;
+    wellness: number;
+  }>(),
+  completed: integer('completed', { mode: 'boolean' }).default(false),
+  joinedAt: text('joined_at').default(sql`CURRENT_TIMESTAMP`),
+  completedAt: text('completed_at')
+});
 ```
 
 ## Key Patterns
@@ -256,8 +286,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 ## Environment Variables
 
 ```env
+# Required
 DATABASE_URL=./local.db              # SQLite file path
 PUBLIC_APP_URL=http://localhost:5173 # Application URL
+
+# Optional
+OPENAI_API_KEY=your-api-key-here     # For AI insights feature
 ```
 
 ## Common Issues & Solutions
@@ -280,11 +314,12 @@ export const getData = query(schema, async (params) => {});
 export async function getData(params) {}
 ```
 
-### Cookie Persistence
+### Cookie Persistence  
 Participant IDs are stored in secure, HttpOnly cookies:
 - 7-day expiration
 - Auto-generated UUIDs
 - Persists across quiz sessions
+- Set in `hooks.server.ts` for participant route matching
 
 ## Testing Checklist
 

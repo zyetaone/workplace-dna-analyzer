@@ -7,10 +7,11 @@
 		duration?: number;
 	}
 	
+	// Global toast state using Svelte 5 runes
 	let toasts = $state<ToastMessage[]>([]);
 	
 	export function showToast(message: Omit<ToastMessage, 'id'>) {
-		const id = Math.random().toString(36).substr(2, 9);
+		const id = crypto.randomUUID();
 		const toast: ToastMessage = {
 			id,
 			duration: 3000,
@@ -18,103 +19,83 @@
 			...message
 		};
 		
-		toasts = [...toasts, toast];
+		toasts.push(toast);
 		
 		// Auto-remove after duration
 		setTimeout(() => {
 			removeToast(id);
 		}, toast.duration);
+		
+		return id;
 	}
 	
-	export function removeToast(id: string) {
-		toasts = toasts.filter(t => t.id !== id);
+	function removeToast(id: string) {
+		const index = toasts.findIndex(t => t.id === id);
+		if (index > -1) {
+			toasts.splice(index, 1);
+		}
 	}
 </script>
 
 <script lang="ts">
-	import { flip } from 'svelte/animate';
-	import { fly, fade } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	
-	// Toast attachment for portal behavior
-	function toastPortal(node: HTMLElement) {
-		// Move to body for proper z-index stacking
-		document.body.appendChild(node);
-		
-		return () => {
-			// Cleanup on destroy
-			node.remove();
+	// Toast variant styles
+	function getVariantStyles(variant: string) {
+		const styles = {
+			success: 'bg-green-500 text-white border-green-600',
+			error: 'bg-red-500 text-white border-red-600', 
+			warning: 'bg-amber-500 text-white border-amber-600',
+			info: 'bg-gray-800 text-white border-gray-900'
 		};
+		return styles[variant as keyof typeof styles] || styles.info;
 	}
 	
-	function getToastStyles(variant: string) {
-		switch (variant) {
-			case 'success':
-				return 'bg-green-500 text-white';
-			case 'error':
-				return 'bg-red-500 text-white';
-			case 'warning':
-				return 'bg-amber-500 text-white';
-			default:
-				return 'bg-gray-800 text-white';
-		}
-	}
-	
-	function getToastIcon(variant: string) {
-		switch (variant) {
-			case 'success':
-				return '✓';
-			case 'error':
-				return '✕';
-			case 'warning':
-				return '⚠';
-			default:
-				return 'ℹ';
-		}
+	// Toast icons
+	function getVariantIcon(variant: string) {
+		const icons = {
+			success: '✓',
+			error: '✕', 
+			warning: '⚠',
+			info: 'ℹ'
+		};
+		return icons[variant as keyof typeof icons] || icons.info;
 	}
 </script>
 
-<!-- Toast Container with portal attachment -->
-<div 
-	class="fixed bottom-4 right-4 z-50 pointer-events-none"
-	{@attach toastPortal}
->
-	<div class="space-y-2">
+<!-- Toast snippet for reusable toast item -->
+{#snippet toastItem(toast: ToastMessage)}
+	<div 
+		in:fly={{ y: 30, duration: 300 }}
+		out:fly={{ y: -30, duration: 300 }}
+		class="pointer-events-auto flex items-start gap-3 p-4 rounded-lg shadow-lg min-w-[320px] max-w-md border-2 {getVariantStyles(toast.variant || 'info')}"
+	>
+		<span class="text-xl flex-shrink-0 mt-0.5">
+			{getVariantIcon(toast.variant || 'info')}
+		</span>
+		<div class="flex-1 min-w-0">
+			<p class="font-semibold text-sm leading-tight">{toast.title}</p>
+			{#if toast.description}
+				<p class="text-sm opacity-90 mt-1 leading-tight">{toast.description}</p>
+			{/if}
+		</div>
+		<button
+			onclick={() => removeToast(toast.id)}
+			class="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity p-0.5 hover:bg-white hover:bg-opacity-20 rounded"
+			aria-label="Dismiss notification"
+		>
+			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+			</svg>
+		</button>
+	</div>
+{/snippet}
+
+<!-- Toast container with portal-like positioning -->
+<div class="fixed bottom-4 right-4 z-50 pointer-events-none">
+	<div class="flex flex-col gap-2">
 		{#each toasts as toast (toast.id)}
-			<div
-				animate:flip={{ duration: 200 }}
-				transition:fly={{ y: 30, duration: 200 }}
-				class="pointer-events-auto"
-			>
-				<div 
-					class="flex items-start gap-3 p-4 rounded-lg shadow-lg min-w-[300px] max-w-md {getToastStyles(toast.variant || 'info')}"
-				>
-					<span class="text-xl flex-shrink-0">
-						{getToastIcon(toast.variant || 'info')}
-					</span>
-					<div class="flex-1 min-w-0">
-						<p class="font-medium">{toast.title}</p>
-						{#if toast.description}
-							<p class="text-sm opacity-90 mt-1">{toast.description}</p>
-						{/if}
-					</div>
-					<button
-						onclick={() => removeToast(toast.id)}
-						class="flex-shrink-0 opacity-70 hover:opacity-100 transition"
-						aria-label="Dismiss"
-					>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-						</svg>
-					</button>
-				</div>
-			</div>
+			{@render toastItem(toast)}
 		{/each}
 	</div>
 </div>
-
-<style>
-	/* Ensure proper stacking */
-	:global(.toast-portal) {
-		z-index: 9999;
-	}
-</style>

@@ -1,12 +1,63 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	
-	let { data = $bindable() }: { data: PageData } = $props();
-	
+	import { page } from '$app/state';
+	import { navigating } from '$app/stores';
+	import { getCompletionResults } from '../participant.remote';
+	import { handleError } from '$lib/utils/error-utils';
+	import LoadingScreen from '$lib/components/LoadingScreen.svelte';
+	import ErrorScreen from '$lib/components/ErrorScreen.svelte';
+
+	let participantId = $state('');
+	let sessionData = $state<any>(null);
+	let scores = $state({
+		collaboration: 0,
+		formality: 0,
+		tech: 0,
+		wellness: 0
+	});
+	let error = $state('');
+	let isLoading = $state(true);
 	let showConfetti = $state(false);
 	
-	// Get data from server load
-	let scores = $derived(data.scores);
+	// Show loading during navigation (useful for slow devices)
+	let showLoadingState = $derived(isLoading || $navigating);
+
+	// Load completion results
+	$effect(() => {
+		const code = page.params.code;
+		const participantCookie = document.cookie
+			.split('; ')
+			.find(row => row.startsWith('participantId='))
+			?.split('=')[1];
+
+		if (!code || !participantCookie) {
+			error = 'Missing session or participant information';
+			isLoading = false;
+			return;
+		}
+
+		participantId = participantCookie;
+
+		getCompletionResults({
+			sessionCode: code as string,
+			participantId
+		})
+		.then(result => {
+			if (result.error) {
+				error = result.error;
+			} else if (result.redirect) {
+				window.location.href = result.redirect;
+			} else {
+				sessionData = result.session;
+				scores = result.scores;
+			}
+		})
+		.catch(err => {
+			error = handleError(err, 'loading results');
+		})
+		.finally(() => {
+			isLoading = false;
+		});
+	});
 	
 	// Generate workplace DNA
 	let workplaceDNA = $derived((() => {
@@ -66,7 +117,18 @@
 </style>
 
 <div class="min-h-screen animated-gradient flex items-center justify-center px-4">
-	<div class="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
+	{#if showLoadingState}
+		<LoadingScreen
+			title="Loading Results..."
+			message="Preparing your workplace DNA analysis..."
+		/>
+	{:else if error}
+		<ErrorScreen
+			title="Unable to Load Results"
+			message={error}
+		/>
+	{:else}
+		<div class="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
 		<div class="text-center mb-8">
 			<div class="text-6xl mb-4">🎉</div>
 			<h1 class="text-3xl font-bold text-gray-800 mb-2">Quiz Complete!</h1>
@@ -125,5 +187,6 @@
 				Your responses have been successfully recorded and will help shape our future workplace.
 			</p>
 		</div>
-	</div>
+		</div>
+	{/if}
 </div>
