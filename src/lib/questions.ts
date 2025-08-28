@@ -1,4 +1,4 @@
-import * as v from 'valibot';
+
 
 export interface Question {
 	id: number;
@@ -27,7 +27,7 @@ export interface Option {
 export const GENERATION_QUESTION_INDEX = 0;
 
 // Derived types from actual question data
-export type GenerationOption = 'Baby Boomer' | 'Gen X' | 'Millennial' | 'Gen Z';
+export type GenerationOption = 'Baby Boomers' | 'Gen X' | 'Millennials' | 'Gen Z';
 export type QuestionResponse = string;
 
 export const questions: Question[] = [
@@ -37,7 +37,7 @@ export const questions: Question[] = [
 		type: "single",
 		options: [
 			{ 
-				id: 'Baby Boomer', 
+				id: 'Baby Boomers', 
 				label: "Baby Boomers", 
 				years: "1946-1964", 
 				emoji: "👔",
@@ -51,7 +51,7 @@ export const questions: Question[] = [
 				color: "from-red-400 to-pink-400"
 			},
 			{ 
-				id: 'Millennial', 
+				id: 'Millennials', 
 				label: "Millennials", 
 				years: "1981-1996", 
 				emoji: "💻",
@@ -214,164 +214,6 @@ export const questions: Question[] = [
 
 // Utility Functions
 
-/**
- * Get a question by its ID
- */
-export function getQuestionById(id: number): Question | undefined {
-	return questions.find(q => q.id === id);
-}
-
-/**
- * Get a question by its index in the array
- */
-export function getQuestionByIndex(index: number): Question | undefined {
-	return questions[index];
-}
-
-/**
- * Check if a given question index is the generation question
- */
-export function isGenerationQuestion(index: number): boolean {
-	return index === GENERATION_QUESTION_INDEX;
-}
-
-/**
- * Extract generation from participant responses
- */
-export function getGenerationFromResponse(responses: QuestionResponse[]): GenerationOption | null {
-	const generationResponse = responses[GENERATION_QUESTION_INDEX];
-	if (!generationResponse) return null;
-	
-	// Map response ID to generation type
-	const generationOptions: GenerationOption[] = ['Baby Boomer', 'Gen X', 'Millennial', 'Gen Z'];
-	return generationOptions.includes(generationResponse as GenerationOption) 
-		? (generationResponse as GenerationOption)
-		: null;
-}
-
-/**
- * Get all generation options from the first question
- */
-export function getGenerationOptions(): GenerationOption[] {
-	const generationQuestion = getQuestionByIndex(GENERATION_QUESTION_INDEX);
-	return generationQuestion?.options?.map(opt => opt.id as GenerationOption) || [];
-}
-
-/**
- * Get the total number of questions
- */
-export function getQuestionCount(): number {
-	return questions.length;
-}
-
-/**
- * Get all questions that have scoring values (exclude generation question)
- */
-export function getScorableQuestions(): Question[] {
-	return questions.filter((_, index) => 
-		!isGenerationQuestion(index) && 
-		questions[index].options?.some(opt => opt.values)
-	);
-}
-
-/**
- * Calculate preference scores from responses
- */
-export function calculatePreferenceScores(responses: QuestionResponse[]) {
-	const scores = {
-		collaboration: 0,
-		formality: 0,
-		tech: 0,
-		wellness: 0
-	};
-	
-	let responseCount = 0;
-	
-	questions.forEach((question, index) => {
-		// Skip generation question (index 0)
-		if (isGenerationQuestion(index)) return;
-		
-		const response = responses[index];
-		if (!response || !question.options) return;
-		
-		const selectedOption = question.options.find(opt => opt.id === response);
-		if (!selectedOption?.values) return;
-		
-		if (selectedOption.values.collaboration) scores.collaboration += selectedOption.values.collaboration;
-		if (selectedOption.values.formality) scores.formality += selectedOption.values.formality;
-		if (selectedOption.values.tech) scores.tech += selectedOption.values.tech;
-		if (selectedOption.values.wellness) scores.wellness += selectedOption.values.wellness;
-		
-		responseCount++;
-	});
-	
-	// Normalize to percentage (0-100)
-	if (responseCount > 0) {
-		const maxScore = responseCount * 10; // Max possible score per dimension
-		scores.collaboration = Math.round((scores.collaboration / maxScore) * 100);
-		scores.formality = Math.round((scores.formality / maxScore) * 100);
-		scores.tech = Math.round((scores.tech / maxScore) * 100);
-		scores.wellness = Math.round((scores.wellness / maxScore) * 100);
-	}
-	
-	return scores;
-}
-
-// Valibot Schema Generation
-
-/**
- * Generate a Valibot schema for question responses
- */
-export function generateResponseSchema() {
-	// Create a schema that validates an array of strings with length equal to question count
-	return v.pipe(
-		v.array(v.string()),
-		v.length(questions.length, `Must answer all ${questions.length} questions`)
-	);
-}
-
-/**
- * Generate a Valibot schema for a single question response
- */
-export function generateQuestionResponseSchema(questionIndex: number) {
-	const question = getQuestionByIndex(questionIndex);
-	if (!question || !question.options) {
-		return v.string();
-	}
-	
-	// Create enum schema from question options
-	const validOptions = question.options.map(opt => opt.id);
-	return v.pipe(
-		v.string(),
-		v.picklist(validOptions, `Must select one of: ${validOptions.join(', ')}`)
-	);
-}
-
-/**
- * Generate a complete response validation schema
- */
-export const ResponseSchema = v.pipe(
-	v.array(v.string()),
-	v.length(questions.length),
-	v.check((responses) => {
-		// Validate each response against its question
-		return responses.every((response, index) => {
-			const question = getQuestionByIndex(index);
-			if (!question?.options) return true;
-			return question.options.some(opt => opt.id === response);
-		});
-	}, 'Invalid response for one or more questions')
-);
-
-/**
- * Schema for generation responses specifically
- */
-export const GenerationResponseSchema = v.pipe(
-	v.string(),
-	v.picklist(getGenerationOptions(), 'Must be a valid generation')
-);
-
-// Export derived constants
+// Export essential constants only
 export const TOTAL_QUESTIONS = questions.length;
-export const GENERATION_OPTIONS = getGenerationOptions();
-export const SCORABLE_QUESTION_COUNT = getScorableQuestions().length;
+export const GENERATION_OPTIONS: GenerationOption[] = ['Baby Boomers', 'Gen X', 'Millennials', 'Gen Z'];

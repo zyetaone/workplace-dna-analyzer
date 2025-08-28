@@ -1,14 +1,31 @@
-/**
- * Simplified Component Exports
- */
+// Unified component exports - Phase 2 optimization
+// Single source of truth for all component imports
 
-// Core Components
-export { default as LoadingScreen } from './LoadingScreen.svelte';
-export { default as ErrorScreen } from './ErrorScreen.svelte';
-export { default as QRCode } from './QRCode.svelte';
-export { default as ParticipantList } from './ParticipantList.svelte';
-export { default as QuestionCard } from './QuestionCard.svelte';
+// Core UI Components
+export { default as Button } from './ui/Button.svelte';
+export { default as Card } from './ui/Card.svelte';
+
+// Bits UI Components
+export { default as Progress } from './ui/Progress.svelte';
+export { default as Tooltip } from './ui/Tooltip.svelte';
+export { default as Select } from './ui/Select.svelte';
+
+// Display Components
+export { default as LoadingSpinner } from './shared/LoadingSpinner.svelte';
+export { default as ErrorMessage } from './shared/ErrorMessage.svelte';
+export { default as ErrorScreen } from './shared/ErrorScreen.svelte';
+
+// Interactive Components
+export { default as ConfirmationDialog } from './ui/ConfirmationDialog.svelte';
+
+// Specialized Components
+export { default as ScoreDisplay } from './ui/ScoreDisplay.svelte';
+export { default as StatsCard } from './ui/StatsCard.svelte';
+export { default as ParticipantCard } from './ui/ParticipantCard.svelte';
 
 // Chart Components
 export { default as Chart } from './charts/Chart.svelte';
+export { default as D3BarChart } from './charts/D3BarChart.svelte';
+export { default as D3DonutChart } from './charts/D3DonutChart.svelte';
+export { default as D3RadarChart } from './charts/D3RadarChart.svelte';
 export { default as WordCloud } from './charts/WordCloud.svelte';

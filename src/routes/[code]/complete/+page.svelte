@@ -1,192 +1,88 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { navigating } from '$app/stores';
-	import { getCompletionResults } from '../participant.remote';
-	import { handleError } from '$lib/utils/error-utils';
-	import LoadingScreen from '$lib/components/LoadingScreen.svelte';
-	import ErrorScreen from '$lib/components/ErrorScreen.svelte';
+	import { navigating } from '$app/state';
+	import { getPresenterState } from '../presenter.svelte';
+	import { LoadingSpinner, ErrorScreen, ScoreDisplay, Card } from '$lib/components';
+	// Removed complex effect helpers - using simple effects instead
 
-	let participantId = $state('');
-	let sessionData = $state<any>(null);
-	let scores = $state({
-		collaboration: 0,
-		formality: 0,
-		tech: 0,
-		wellness: 0
-	});
-	let error = $state('');
-	let isLoading = $state(true);
+	// Get presenter state instance for this session
+	const presenter = getPresenterState(page.params.code);
 	let showConfetti = $state(false);
+	let completionData = $derived(presenter.completionData);
 	
 	// Show loading during navigation (useful for slow devices)
-	let showLoadingState = $derived(isLoading || $navigating);
+	let showLoadingState = $derived(presenter.loading || !!navigating);
 
-	// Load completion results
+	// Simple effect for loading completion results
 	$effect(() => {
 		const code = page.params.code;
-		const participantCookie = document.cookie
-			.split('; ')
-			.find(row => row.startsWith('participantId='))
-			?.split('=')[1];
+		const participantId = presenter.participant?.id;
 
-		if (!code || !participantCookie) {
-			error = 'Missing session or participant information';
-			isLoading = false;
+		// Validate session code format
+		if (!code || !/^[A-Z0-9]{6}$/.test(code)) {
+			goto('/');
 			return;
 		}
 
-		participantId = participantCookie;
-
-		getCompletionResults({
-			sessionCode: code as string,
-			participantId
-		})
-		.then(result => {
-			if (result.error) {
-				error = result.error;
-			} else if (result.redirect) {
-				window.location.href = result.redirect;
-			} else {
-				sessionData = result.session;
-				scores = result.scores;
-			}
-		})
-		.catch(err => {
-			error = handleError(err, 'loading results');
-		})
-		.finally(() => {
-			isLoading = false;
-		});
+		if (participantId) {
+			presenter.loadCompletionResults(code, participantId);
+		}
 	});
 	
-	// Generate workplace DNA
-	let workplaceDNA = $derived((() => {
-		const profiles = [];
-		if (scores.collaboration >= 7) profiles.push('Collaborative');
-		if (scores.formality >= 7) profiles.push('Structured');
-		if (scores.tech >= 7) profiles.push('Digital-First');
-		if (scores.wellness >= 7) profiles.push('Wellness-Focused');
-		return profiles.length > 0 ? profiles.join(' & ') : 'Balanced';
-	})());
-	
-	// Show confetti after a short delay
+	// Simple confetti trigger
 	$effect(() => {
-		const confettiTimer = setTimeout(() => {
+		if (completionData && !showConfetti) {
 			showConfetti = true;
-		}, 500);
-		
-		return () => {
-			clearTimeout(confettiTimer);
-		};
-	});
-	
-	// Create confetti effect when showConfetti changes
-	$effect(() => {
-		if (showConfetti) {
-			const colors = ['#e0e7ff', '#c7d2fe', '#a5b4fc', '#818cf8'];
-			for (let i = 0; i < 50; i++) {
-				setTimeout(() => {
-					const confetti = document.createElement('div');
-					confetti.className = 'confetti';
-					confetti.style.left = Math.random() * 100 + '%';
-					confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-					confetti.style.animationDelay = Math.random() * 2 + 's';
-					document.body.appendChild(confetti);
-					setTimeout(() => confetti.remove(), 4000);
-				}, i * 50);
-			}
 		}
 	});
 </script>
 
-<style>
-	:global(.confetti) {
-		position: fixed;
-		width: 10px;
-		height: 10px;
-		top: -10px;
-		z-index: 9999;
-		animation: fall 4s linear;
-	}
-	
-	@keyframes fall {
-		to {
-			transform: translateY(100vh) rotate(360deg);
-		}
-	}
-</style>
 
 <div class="min-h-screen animated-gradient flex items-center justify-center px-4">
 	{#if showLoadingState}
-		<LoadingScreen
-			title="Loading Results..."
-			message="Preparing your workplace DNA analysis..."
-		/>
-	{:else if error}
+		<div class="bg-white rounded-lg shadow-lg max-w-md w-full p-8">
+			<h2 class="text-xl font-semibold text-gray-800 text-center mb-4">Loading Results...</h2>
+			<LoadingSpinner message="Preparing your workplace DNA analysis..." />
+		</div>
+	{:else if presenter.error}
 		<ErrorScreen
 			title="Unable to Load Results"
-			message={error}
+			message={presenter.error}
 		/>
 	{:else}
-		<div class="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
-		<div class="text-center mb-8">
-			<div class="text-6xl mb-4">🎉</div>
-			<h1 class="text-3xl font-bold text-gray-800 mb-2">Quiz Complete!</h1>
-			<p class="text-gray-600">Thank you for participating!</p>
-		</div>
-		
-		<div class="bg-gray-50 rounded-lg p-6 mb-6">
-			<h2 class="text-xl font-semibold text-gray-800 mb-3">Your Workplace DNA</h2>
-			<p class="text-2xl font-bold text-gray-700">{workplaceDNA}</p>
-		</div>
-		
-		<div class="grid grid-cols-2 gap-4 mb-6">
-			<div class="bg-gray-50 rounded p-4">
-				<p class="text-sm text-gray-600 mb-1">Collaboration</p>
-				<div class="flex items-center">
-					<div class="w-full bg-gray-200 rounded-full h-2 mr-2">
-						<div class="bg-gray-600 h-2 rounded-full" style="width: {scores.collaboration * 10}%"></div>
-					</div>
-					<span class="text-sm font-semibold">{scores.collaboration}/10</span>
+		<Card variant="elevated" size="lg" class="max-w-2xl w-full">
+			{#snippet children()}
+				<div class="text-center mb-8">
+					<div class="text-6xl mb-4">🎉</div>
+					<h1 class="text-3xl font-bold text-gray-800 mb-2">Quiz Complete!</h1>
+					<p class="text-gray-600">Thank you for participating!</p>
 				</div>
-			</div>
-			
-			<div class="bg-gray-50 rounded p-4">
-				<p class="text-sm text-gray-600 mb-1">Formality</p>
-				<div class="flex items-center">
-					<div class="w-full bg-gray-200 rounded-full h-2 mr-2">
-						<div class="bg-gray-600 h-2 rounded-full" style="width: {scores.formality * 10}%"></div>
-					</div>
-					<span class="text-sm font-semibold">{scores.formality}/10</span>
+				
+				<div class="bg-gray-50 rounded-lg p-6 mb-6">
+					<h2 class="text-xl font-semibold text-gray-800 mb-3">Your Workplace DNA</h2>
+					<p class="text-2xl font-bold text-gray-700">{completionData?.workplaceDNA || 'Loading...'}</p>
 				</div>
-			</div>
-			
-			<div class="bg-gray-50 rounded p-4">
-				<p class="text-sm text-gray-600 mb-1">Technology</p>
-				<div class="flex items-center">
-					<div class="w-full bg-gray-200 rounded-full h-2 mr-2">
-						<div class="bg-gray-600 h-2 rounded-full" style="width: {scores.tech * 10}%"></div>
+				
+				{#if completionData?.scores}
+					<div class="mb-6">
+						<ScoreDisplay
+							scores={completionData.scores}
+							maxScore={10}
+							variant="cards"
+							animated={true}
+							showLabels={true}
+							showValues={true}
+							showProgress={true}
+						/>
 					</div>
-					<span class="text-sm font-semibold">{scores.tech}/10</span>
+				{/if}
+				
+				<div class="text-center">
+					<p class="text-gray-600 text-sm">
+						Your responses have been successfully recorded and will help shape our future workplace.
+					</p>
 				</div>
-			</div>
-			
-			<div class="bg-gray-50 rounded p-4">
-				<p class="text-sm text-gray-600 mb-1">Wellness</p>
-				<div class="flex items-center">
-					<div class="w-full bg-gray-200 rounded-full h-2 mr-2">
-						<div class="bg-gray-600 h-2 rounded-full" style="width: {scores.wellness * 10}%"></div>
-					</div>
-					<span class="text-sm font-semibold">{scores.wellness}/10</span>
-				</div>
-			</div>
-		</div>
-		
-		<div class="text-center">
-			<p class="text-gray-600 text-sm">
-				Your responses have been successfully recorded and will help shape our future workplace.
-			</p>
-		</div>
-		</div>
+			{/snippet}
+		</Card>
 	{/if}
 </div>

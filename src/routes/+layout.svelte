@@ -1,5 +1,6 @@
 <script>
 	import "../app.css";
+	import { Tooltip } from 'bits-ui';
 
 	let { children } = $props();
 </script>
@@ -16,9 +17,11 @@
 	/>
 </svelte:head>
 <svelte:boundary>
-	<div class="animated-gradient min-h-screen">
-		{@render children?.()}
-	</div>
+	<Tooltip.Provider>
+		<div class="animated-gradient min-h-screen">
+			{@render children?.()}
+		</div>
+	</Tooltip.Provider>
 </svelte:boundary>
 
 <style>

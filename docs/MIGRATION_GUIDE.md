@@ -97,28 +97,42 @@ export const GET: RequestHandler = async ({ params }) => {
 };
 ```
 
-#### Use SSE Attachment in Components
+#### Use SSE in Svelte 5 Components
 ```svelte
-<script>
-  import { sse } from '$lib/attachments/sse';
+<script lang="ts">
+  // State management with runes
+  let connectionStatus = $state<'connecting' | 'connected' | 'disconnected'>('disconnected');
+  let liveData = $state<any[]>([]);
   
-  function handleRealtimeUpdates() {
-    return sse({
-      url: `/api/sessions/${sessionId}/stream`,
-      reconnect: true
-    }, {
-      'attendee:joined': (data) => {
-        // Handle attendee joined
-      },
-      'response:received': (data) => {
-        // Handle response
-      }
+  // Effect for SSE connection
+  $effect(() => {
+    const eventSource = new EventSource(`/api/sessions/${sessionId}/stream`);
+    connectionStatus = 'connecting';
+    
+    eventSource.onopen = () => {
+      connectionStatus = 'connected';
+    };
+    
+    eventSource.addEventListener('attendee:joined', (event) => {
+      const data = JSON.parse(event.data);
+      liveData = [...liveData, data];
     });
-  }
+    
+    eventSource.onerror = () => {
+      connectionStatus = 'disconnected';
+    };
+    
+    // Cleanup when component unmounts or sessionId changes
+    return () => {
+      eventSource.close();
+    };
+  });
 </script>
 
-<div {@attach handleRealtimeUpdates()}>
-  <!-- Your content -->
+<div class="status-{connectionStatus}">
+  {#each liveData as item}
+    <!-- Render data -->
+  {/each}
 </div>
 ```
 
@@ -180,6 +194,7 @@ eventSource.addEventListener('update', handler);
 ```svelte
 <script>
   import { connectWebSocket } from '$lib/websocket';
+  import { onMount } from 'svelte';
   
   onMount(() => {
     const socket = connectWebSocket();
@@ -188,22 +203,35 @@ eventSource.addEventListener('update', handler);
 </script>
 ```
 
-**After (SSE + Attachments):**
+**After (SSE + Svelte 5 Runes):**
 ```svelte
-<script>
-  import { sse } from '$lib/attachments/sse';
+<script lang="ts">
+  // State management
+  let attendees = $state<Attendee[]>([]);
+  let connectionStatus = $state<'connected' | 'disconnected'>('disconnected');
   
-  function connectRealtime() {
-    return sse({
-      url: `/api/sessions/${sessionId}/stream`
-    }, {
-      'attendee:joined': refreshData
+  // Effect for real-time connection
+  $effect(() => {
+    const eventSource = new EventSource(`/api/sessions/${sessionId}/stream`);
+    
+    eventSource.onopen = () => {
+      connectionStatus = 'connected';
+    };
+    
+    eventSource.addEventListener('attendee:joined', (event) => {
+      const newAttendee = JSON.parse(event.data);
+      attendees = [...attendees, newAttendee];
     });
-  }
+    
+    // Cleanup
+    return () => eventSource.close();
+  });
 </script>
 
-<div {@attach connectRealtime()}>
-  <!-- Content -->
+<div class="dashboard" class:connected={connectionStatus === 'connected'}>
+  {#each attendees as attendee}
+    <!-- Render attendee -->
+  {/each}
 </div>
 ```
 

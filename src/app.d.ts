@@ -12,7 +12,6 @@ declare global {
 			session?: any;
 			participants?: any[];
 			analytics?: any;
-			streamUrl?: string;
 		}
 		
 		interface Error {

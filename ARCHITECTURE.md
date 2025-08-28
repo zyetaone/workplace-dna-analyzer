@@ -33,32 +33,43 @@ Modern SvelteKit application using Svelte 5 runes, unified state management, and
 
 ## Key Components
 
-### 1. Unified State Management (`/src/lib/stores/session-state.svelte.ts`)
+### 1. Component-Level State Management (Svelte 5 Runes)
 
 **Features:**
-- Single source of truth for all session data
-- Reactive collections with `SvelteMap` and `SvelteSet`
-- Memoization to prevent expensive recalculations
-- Performance optimization with `untrack()`
+- Direct reactive state with `$state` runes in components
+- Computed values with `$derived` and `$derived.by`
+- Side effects handled with `$effect` and cleanup
+- Type-safe props with `$props()` and interfaces
 
 ```typescript
-class SessionState {
-  // Core state using Svelte 5 runes
-  private sessions = $state<SvelteMap<string, Session>>(new SvelteMap());
-  private attendees = $state<SvelteMap<string, Attendee>>(new SvelteMap());
+// Component state pattern
+<script lang="ts">
+  // Reactive state
+  let session = $state<Session | null>(null);
+  let participants = $state<Participant[]>([]);
+  let loading = $state(false);
   
-  // Derived values with automatic updates
-  get currentSession() {
-    return $derived(this.sessions.get(this.currentSessionId));
-  }
+  // Props with TypeScript
+  let { data = $bindable() }: { data?: SessionData } = $props();
   
-  // Memoized analytics with TTL cache
-  getAnalytics(sessionId: string) {
-    return this.memoize(`analytics-${sessionId}`, () => {
-      // Expensive computation cached for 1 second
-    });
-  }
-}
+  // Derived values
+  let sessionCode = $derived(session?.code || '');
+  let isActive = $derived(participants.length > 0 && session?.isActive);
+  
+  // Complex derived with $derived.by
+  let sessionUrl = $derived.by(() => {
+    if (!session || typeof window === 'undefined') return '';
+    return `${window.location.origin}/${session.code}`;
+  });
+  
+  // Effects for side effects
+  $effect(() => {
+    if (data?.session) {
+      session = data.session;
+      participants = data.participants || [];
+    }
+  });
+</script>
 ```
 
 ### 2. Remote Functions
@@ -121,9 +132,11 @@ const [sessions, attendees, responses] = await Promise.all([
 - Memory-efficient cleanup
 
 ### Svelte 5 Optimizations
-- `untrack()` prevents unnecessary reactivity in loops
-- `$derived` for efficient computed values
-- `SvelteMap/SvelteSet` for reactive collections
+- `$derived` for efficient computed values with automatic dependency tracking
+- `$derived.by` for complex computations that need explicit dependency control
+- `$effect` with automatic cleanup for side effects
+- Type-safe `$props()` with interface definitions
+- `$bindable()` for two-way data binding patterns
 
 ## Data Flow
 
@@ -168,9 +181,9 @@ src/
 - **Benefit:** Easier debugging, better performance, cleaner code
 
 ### Why Svelte 5 Runes?
-- **Problem:** Old store patterns with subscriptions
-- **Solution:** Modern `$state`, `$derived` patterns
-- **Benefit:** Better TypeScript support, cleaner syntax
+- **Problem:** Legacy reactive statements (`$:`) and manual store subscriptions
+- **Solution:** Modern `$state`, `$derived`, `$effect` runes with better TypeScript integration
+- **Benefit:** Type-safe reactivity, cleaner syntax, better performance, automatic cleanup
 
 ### Why WAL2 Mode?
 - **Problem:** Database locks with concurrent users

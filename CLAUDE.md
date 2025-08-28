@@ -4,282 +4,139 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A SvelteKit 5 application for interactive workplace preference analysis. The system enables presenters to create sessions with QR codes for easy participant access, featuring real-time analytics and AI-powered workplace insights. No authentication required - fully open access with cookie-based participant tracking.
+A SvelteKit 5 application for interactive workplace preference analysis. Presenters create sessions with QR codes for participant access, featuring real-time analytics and preference scoring. No authentication required - fully open access with cookie-based participant tracking.
 
 ## Technology Stack
 
 - **Framework**: SvelteKit 5 with Svelte 5 runes (`$state`, `$derived`, `$effect`)
+- **State Management**: Class-based reactive state with unified session store
 - **Remote Functions**: SvelteKit experimental remote functions with `query` and `command` wrappers
 - **Database**: SQLite with Drizzle ORM (WAL2 mode enabled)
 - **Validation**: Valibot schemas for all remote function inputs
-- **Styling**: TailwindCSS
-- **Charts**: Chart.js with reusable configuration utilities
+- **Styling**: TailwindCSS with custom UI components
+- **Charts**: Chart.js and D3.js with reusable configuration utilities
 - **Build**: Vite with SvelteKit adapter-node
 
-## Route Architecture
+## Development Commands
 
-### Simplified Routes (No Authentication)
+```bash
+# Development
+npm run dev              # Start dev server with --host (port 5173)
+npm run preview          # Preview production build with --host
+npm run build            # Build for production
+npm start                # Start production server
+
+# Database operations  
+npm run db:generate      # Generate Drizzle migrations
+npm run db:migrate       # Apply migrations  
+npm run db:push          # Push schema changes to database
+npm run db:studio        # Open Drizzle Studio GUI
+
+# Project management
+npm run prepare          # SvelteKit sync (auto-run on install)
+```
+
+## Architecture Overview
+
+### Route Structure
 - **`/`** - Landing page
-- **`/admin`** - Dashboard for session management (no login required)
+- **`/admin`** - Admin dashboard for session management (no login required)
 - **`/admin/[code]`** - Session analytics dashboard
 - **`/[code]`** - Participant join page (cookie-tracked)
 - **`/[code]/quiz`** - Quiz interface
 - **`/[code]/complete`** - Quiz completion with scores
 
-### Participant Flow
-1. Access session via 6-character code: `/ABC123`
-2. Enter name (cookie ID auto-generated)
-3. Complete quiz questions
-4. View personalized results
-
-### Admin Flow  
-1. Navigate to `/admin` (open access)
-2. Create sessions with auto-generated codes
-3. Share codes with participants
-4. Monitor real-time analytics at `/admin/[code]`
+### Key Files
+```
+src/
+├── lib/
+│   ├── stores/sessions.svelte.ts          # Unified session store (central state)
+│   ├── components/
+│   │   ├── ui/                            # Reusable UI components
+│   │   │   ├── StatsCard.svelte
+│   │   │   └── ConfirmationDialog.svelte
+│   │   ├── charts/                        # Chart components (Chart.js & D3)
+│   │   │   ├── Chart.svelte
+│   │   │   ├── D3RadarChart.svelte
+│   │   │   ├── D3BarChart.svelte
+│   │   │   ├── D3DonutChart.svelte
+│   │   │   └── WordCloud.svelte
+│   │   └── LoadingSpinner.svelte
+│   ├── server/db/                         # Database layer (Drizzle + SQLite)
+│   └── utils/                             # Utilities (chart config, analytics)
+└── routes/
+    ├── admin/
+    │   ├── admin.remote.ts                # Admin remote functions
+    │   ├── admin.svelte.ts                # Admin dashboard state
+    │   └── [code]/
+    │       └── session-analytics.svelte.ts # SessionAnalyticsState class
+    └── [code]/
+        ├── presenter.svelte.ts            # Participant state management
+        └── *.svelte                       # Clean component pages
+```
 
 ## Remote Functions Pattern
 
-### Implementation with SvelteKit Remote Functions
+All server operations use SvelteKit's experimental remote functions:
 
-All server operations use SvelteKit's experimental remote functions feature:
-
-```javascript
-// src/routes/admin/admin.remote.ts
+```typescript
+// Example: presenter.remote.ts
 import { query, command } from '$app/server';
 import * as v from 'valibot';
 
-// Query for reading data
 export const getSessionAnalytics = query(
-  v.object({ 
-    code: v.string(),
-    slug: v.optional(v.string())
-  }),
-  async (params) => {
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.code, params.code));
-    
-    return { session, participants };
+  v.object({ sessionId: v.string() }),
+  async ({ sessionId }) => {
+    // Query database and return data
   }
 );
 
-// Command for mutations
-export const updateSession = command(
-  v.object({
-    slug: v.string(),
-    isActive: v.boolean()
-  }),
-  async (params) => {
-    await db
-      .update(sessions)
-      .set({ isActive: params.isActive })
-      .where(eq(sessions.slug, params.slug));
-    
-    return { success: true };
+export const createSession = command(
+  v.object({ title: v.string() }),
+  async ({ title }) => {
+    // Create session and return result
   }
 );
-```
-
-### Client Usage
-
-```svelte
-<!-- src/routes/admin/[code]/+page.svelte -->
-<script>
-  import { getSessionAnalytics, updateSession } from '../admin.remote';
-  
-  async function loadData() {
-    const data = await getSessionAnalytics({ 
-      code: sessionCode 
-    });
-  }
-  
-  async function toggleSession() {
-    await updateSession({ 
-      slug: session.slug, 
-      isActive: !session.isActive 
-    });
-  }
-</script>
-```
-
-### Key Remote Functions
-
-**Admin Operations** (`admin.remote.ts`)
-- `getAllSessions` - List all sessions with participant counts (query)
-- `createSession` - Create new session with generated code (command)
-- `deleteSession` - Delete session and participants (command)
-- `getSessionSummary` - Get basic session info (query)
-- `getSessionAnalytics` - Full session data with participants (query)
-- `updateSession` - Toggle session active state (command)
-- `endSession` - Mark session as ended (command)
-- `deleteParticipant` - Remove participant (command)
-- `generateAIInsights` - Generate session insights based on data (query)
-
-**Participant Operations** (`participant.remote.ts`)
-- `joinSession` - Join session as participant (command)
-- `submitQuizResponse` - Submit quiz answers (command)
-- `getParticipantResults` - Get completion results (query)
-
-## File Structure
-
-```
-src/
-├── hooks.server.ts                    # Participant tracking only
-├── lib/
-│   ├── server/
-│   │   ├── db/
-│   │   │   ├── index.ts              # Database client (WAL2 mode)
-│   │   │   └── schema.ts             # Drizzle schema
-│   │   └── auth.ts                   # Participant cookie utilities
-│   └── components/
-│       ├── charts/
-│       │   └── Chart.svelte         # Chart.js wrapper
-│       ├── ConfirmDialog.svelte     # Confirmation dialogs
-│       └── Toast.svelte             # Notifications
-└── routes/
-    ├── admin/
-    │   ├── admin.remote.ts          # Remote functions
-    │   ├── +page.svelte             # Session list
-    │   ├── +page.server.ts          # Load sessions
-    │   └── [code]/
-    │       ├── +page.svelte         # Analytics dashboard
-    │       └── +page.server.ts     # Load analytics
-    └── [code]/
-        ├── +page.svelte             # Join session
-        ├── +page.server.ts          # Session validation
-        ├── quiz/
-        │   ├── +page.svelte         # Quiz interface
-        │   └── +page.server.ts      # Quiz submission
-        └── complete/
-            ├── +page.svelte         # Results display
-            └── +page.server.ts      # Load scores
-```
-
-## Development Commands
-
-```bash
-# Development server
-npm run dev              # Start dev server with --host (port 5173)
-npm run preview          # Preview production build with --host
-
-# Production build
-npm run build           # Build for production
-npm start               # Start production server (build/index.js)
-
-# Database operations  
-npm run db:generate     # Generate Drizzle migrations
-npm run db:migrate      # Apply migrations  
-npm run db:push         # Push schema changes to database
-npm run db:studio       # Open Drizzle Studio GUI
-npm run db:setup        # Initialize database setup
-npm run setup:admin     # Setup admin user (if authentication added)
-
-# Project management
-npm run prepare         # SvelteKit sync (auto-run on install)
 ```
 
 ## Database Schema
 
 ```typescript
-// Users (for future authentication)
-export const users = sqliteTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => generateId()),
-  username: text('username').notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
-  role: text('role', { enum: ['presenter', 'admin'] }).default('presenter'),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`)
-});
-
-// Sessions
+// Sessions table - no authentication required
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
-  code: text('code').notNull().unique(),         // 6-char uppercase code
-  name: text('name').notNull(),
-  presenterId: text('presenter_id').notNull(),   // Currently: 'default-admin'
-  slug: text('slug').notNull().unique(),         // Same as code
-  isActive: integer('is_active', { mode: 'boolean' }).default(true),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-  endedAt: text('ended_at')
+  code: text('code').notNull().unique(),         // 6-char session code (uppercase)
+  name: text('name').notNull(),                  // Session title/name
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  endedAt: text('ended_at')                      // When session was manually ended
 });
 
-// Participants  
+// Participants table - cookie-based anonymous tracking
 export const participants = sqliteTable('participants', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
-  sessionId: text('session_id').references(() => sessions.id),
-  cookieId: text('cookie_id').unique(),          // Anonymous tracking
-  name: text('name'),                            // Optional until join
-  generation: text('generation'),                
-  responses: text('responses', { mode: 'json' }).$type<Record<number, any>>(),
+  sessionId: text('session_id').notNull().references(() => sessions.id),
+  cookieId: text('cookie_id').unique(),          // Anonymous cookie tracking
+  name: text('name'),                            // Optional until proper join
+  generation: text('generation'),               // Baby Boomer, Gen X, Millennial, Gen Z
+  responses: text('responses', { mode: 'json' }).$type<Record<number, any>>().default({}),
   preferenceScores: text('preference_scores', { mode: 'json' }).$type<{
     collaboration: number;
     formality: number; 
     tech: number;
     wellness: number;
   }>(),
-  completed: integer('completed', { mode: 'boolean' }).default(false),
-  joinedAt: text('joined_at').default(sql`CURRENT_TIMESTAMP`),
+  completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+  joinedAt: text('joined_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   completedAt: text('completed_at')
 });
-```
 
-## Key Patterns
-
-### Svelte 5 Runes
-```svelte
-<script>
-  // State management
-  let count = $state(0);
-  let double = $derived(count * 2);
-  
-  // Props
-  let { data } = $props();
-  
-  // Effects
-  $effect(() => {
-    console.log('Count changed:', count);
-  });
-</script>
-```
-
-### Form Actions (Server-side)
-```typescript
-// +page.server.ts
-export const actions = {
-  createSession: async ({ request }) => {
-    const data = await request.formData();
-    const title = data.get('title');
-    
-    const code = generateCode();
-    await db.insert(sessions).values({
-      name: title,
-      code,
-      slug: code,
-      presenterId: 'default-admin'
-    });
-    
-    throw redirect(303, `/admin/${code}`);
-  }
-};
-```
-
-### Participant Tracking
-```typescript
-// hooks.server.ts
-export const handle: Handle = async ({ event, resolve }) => {
-  const isParticipantRoute = event.url.pathname.match(/^\/[A-Z0-9]{6}/);
-  
-  if (isParticipantRoute) {
-    let participantId = getParticipantId(event);
-    if (!participantId) {
-      participantId = crypto.randomUUID();
-      setParticipantCookie(event.cookies, participantId);
-    }
-    event.locals.participantId = participantId;
-  }
-  
-  return resolve(event);
+// Type exports
+export type Session = typeof sessions.$inferSelect;
+export type Participant = typeof participants.$inferSelect;
+export type SessionWithCounts = Session & {
+  activeCount: number;
+  completedCount: number;
 };
 ```
 
@@ -294,49 +151,198 @@ PUBLIC_APP_URL=http://localhost:5173 # Application URL
 OPENAI_API_KEY=your-api-key-here     # For AI insights feature
 ```
 
-## Common Issues & Solutions
+## Key Patterns
 
-### TypeScript Errors with Drizzle
-Add type assertions for insert/update operations:
-```typescript
-await db.update(sessions)
-  .set({ isActive: true } as any)
-  .where(eq(sessions.id, id));
+### Svelte 5 Patterns in Practice
+
+#### Unified Store Usage
+```svelte
+<script lang="ts">
+  import { sessionsStore } from '$lib/stores/sessions.svelte';
+  
+  // Get session analytics state
+  const sessionState = sessionsStore.getSession(code);
+  
+  // Reactive access to computed properties
+  $: analytics = sessionState.analytics;
+  $: chartConfigs = sessionState.chartConfigs;
+  $: sessionInfo = sessionState.sessionInfo;
+  
+  // Actions with optimistic updates
+  async function removeParticipant(id: string) {
+    const result = await sessionState.removeParticipant(id);
+    if (!result.success) {
+      // Error handled automatically with rollback
+      showToast(result.error, 'error');
+    }
+  }
+</script>
 ```
 
-### Remote Function Validation
-All remote functions must use query/command wrappers:
-```typescript
-// ✅ Correct
-export const getData = query(schema, async (params) => {});
+#### Component Props with Snippets
+```svelte
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  
+  interface StatsCardProps {
+    title: string;
+    value: string | number;
+    subtitle?: string;
+    loading?: boolean;
+    icon?: Snippet;
+  }
+  
+  let { title, value, subtitle, loading = false, icon }: StatsCardProps = $props();
+</script>
 
-// ❌ Wrong  
-export async function getData(params) {}
+<div class="stats-card">
+  {#if icon}
+    {@render icon()}
+  {/if}
+  <h3>{title}</h3>
+  <p class="value">{loading ? '...' : value}</p>
+  {#if subtitle}
+    <p class="subtitle">{subtitle}</p>
+  {/if}
+</div>
 ```
 
-### Cookie Persistence  
-Participant IDs are stored in secure, HttpOnly cookies:
-- 7-day expiration
-- Auto-generated UUIDs
-- Persists across quiz sessions
-- Set in `hooks.server.ts` for participant route matching
+#### Real-time State Updates
+```svelte
+<script lang="ts">
+  import { getSessionStore } from '$lib/stores/sessions.svelte';
+  
+  const { code } = $props<{ code: string }>();
+  const sessionState = getSessionStore(code);
+  
+  // Auto-refresh every 5 seconds
+  $effect(() => {
+    const interval = setInterval(() => {
+      if (!sessionState.loading) {
+        sessionState.refresh();
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  });
+  
+  // Load data on mount
+  $effect(async () => {
+    await sessionState.loadAnalytics(code);
+  });
+</script>
+```
 
-## Testing Checklist
+#### Advanced Derived State
+```svelte
+<script lang="ts">
+  let participants = $state<Participant[]>([]);
+  
+  // Complex derived computations
+  let analytics = $derived.by(() => {
+    const completed = participants.filter(p => p.completed);
+    const total = participants.length;
+    
+    return {
+      completionRate: total > 0 ? Math.round((completed.length / total) * 100) : 0,
+      averageScore: completed.length > 0 
+        ? completed.reduce((sum, p) => sum + p.totalScore, 0) / completed.length 
+        : 0,
+      generationBreakdown: groupBy(participants, 'generation')
+    };
+  });
+</script>
+```
 
-1. **Session Creation**: Create session at `/admin`
-2. **Code Generation**: Verify 6-character codes
-3. **Participant Join**: Test `/[CODE]` access
-4. **Quiz Flow**: Complete all questions
-5. **Score Calculation**: Verify preference scores
-6. **Analytics Update**: Check real-time updates
-7. **Mobile Experience**: Test responsive design
+## Modern Svelte 5 State Management
 
-## Best Practices
+### Class-Based Reactive State
+All state is managed through TypeScript classes using Svelte 5 runes:
+- `$state` for reactive data
+- `$derived` for computed properties  
+- `$effect` for side effects with proper cleanup
+
+### Unified Session Store
+Single source of truth at `/lib/stores/sessions.svelte.ts`:
+- Manages multiple session instances via `SessionsStore` class
+- Real-time updates between admin and participant views
+- Memory-efficient with automatic cleanup
+- Uses `Map<string, SessionAnalyticsState>` for session state management
+
+### SessionAnalyticsState Class
+Each session has its own reactive state instance:
+```typescript
+export class SessionAnalyticsState {
+  // Core reactive state
+  session = $state<Session | null>(null);
+  participants = $state<Participant[]>([]);
+  loading = $state(false);
+  error = $state<string | null>(null);
+  
+  // Computed analytics using $derived
+  analytics = $derived({
+    activeCount: this.participants.length,
+    completedCount: this.participants.filter(p => p.completed).length,
+    responseRate: this.calculateResponseRate(),
+    preferenceScores: this.calculateAverageScores(),
+    workplaceDNA: this.getWorkplaceDNA()
+  });
+  
+  // Chart configurations
+  chartConfigs = $derived({
+    generation: createGenerationChartConfig(this.analytics.generationDistribution),
+    radar: createPreferenceRadarConfig(this.analytics.preferenceScores),
+    bar: createChartConfig(this.analytics.preferenceScores)
+  });
+}
+```
+
+### Error Handling & Recovery
+- Runtime state validation
+- Optimistic updates with rollback on failure
+- Graceful error boundaries
+- Automatic retry mechanisms
+
+## State Management Best Practices
+
+### When to Use $state vs $derived
+- `$state`: For mutable reactive data (user input, loading states, arrays)
+- `$derived`: For computed values that depend on other state
+- `$derived.by()`: For expensive computations that need caching
+
+### Proper Cleanup in $effect
+```typescript
+$effect(() => {
+  const subscription = websocket.subscribe(handleUpdate);
+  const timer = setInterval(refresh, 5000);
+  
+  // Always return cleanup function
+  return () => {
+    subscription.unsubscribe();
+    clearInterval(timer);
+  };
+});
+```
+
+### Memory Management Strategies
+- Use `sessionsStore.clearSession(code)` when navigating away
+- Implement automatic cleanup for inactive sessions
+- Avoid storing large objects in reactive state unnecessarily
+
+### Performance Optimization Techniques
+- Use `$derived.by()` for expensive computations
+- Implement optimistic updates with rollback
+- Batch multiple state updates when possible
+- Use memoization for chart configurations
+
+## Development Best Practices
 
 - Use remote functions for all server operations
 - Validate all inputs with Valibot schemas
-- Handle errors gracefully with try/catch
+- Handle errors gracefully with optimistic updates and rollback
 - Use server-side data loading for initial renders
-- Keep client state minimal
+- Keep client state minimal with unified state management
 - Prefer derived state over manual updates
-- Use form actions for progressive enhancement
+- Always implement proper cleanup in effects
+- Use TypeScript interfaces for all component props
+- Leverage Svelte 5 snippets for reusable UI patterns
