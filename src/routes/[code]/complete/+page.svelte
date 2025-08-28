@@ -1,70 +1,14 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import { getSessionAnalytics } from '../../../../../dashboard.remote';
-	import type { Session, Participant, PreferenceScores } from '$lib/server/db/schema';
+	import type { PageData } from './$types';
 	
-	// Type matches what getSessionAnalytics actually returns (only raw data now)
-	let sessionData = $state<{
-		session: Session;
-		participants: Participant[];
-	} | null>(null);
+	let { data = $bindable() }: { data: PageData } = $props();
+	
 	let showConfetti = $state(false);
 	
-	// Get params from page store using derived for Svelte 5 runes mode
-	let sessionSlug = $derived($page.params.slug);
-	let participantId = $derived($page.params.id);
+	// Get data from server load
+	let scores = $derived(data.scores);
 	
-	// Initialize and load data on mount
-	$effect(() => {
-		// Only run effect when we have valid slug
-		
-		// Validate slug before loading session
-		if (sessionSlug && sessionSlug.trim() !== '') {
-			fetchSession();
-		}
-		
-		// Show confetti after a short delay
-		const confettiTimer = setTimeout(() => {
-			showConfetti = true;
-		}, 500);
-		
-		// Cleanup timer on unmount
-		return () => {
-			clearTimeout(confettiTimer);
-		};
-	});
-	
-	// Fetch session data using remote function
-	async function fetchSession() {
-		// Additional validation before API call
-		if (!sessionSlug || sessionSlug.trim() === '') {
-			console.error('Cannot fetch session with empty slug');
-			return;
-		}
-		
-		try {
-			sessionData = await getSessionAnalytics({ slug: sessionSlug });
-		} catch (error) {
-			console.error('Failed to fetch session:', error);
-		}
-	}
-	
-	// Get participant data with scores - simpler derived without .by()
-	let participant = $derived(
-		sessionData?.participants?.find((p: any) => p.id === participantId) ||
-		null
-	);
-	
-	let scores = $derived(
-		participant?.preferenceScores || {
-			collaboration: 0,
-			formality: 0,
-			tech: 0,
-			wellness: 0
-		}
-	);
-	
-	// Generate workplace DNA - simpler logic
+	// Generate workplace DNA
 	let workplaceDNA = $derived((() => {
 		const profiles = [];
 		if (scores.collaboration >= 7) profiles.push('Collaborative');
@@ -73,6 +17,17 @@
 		if (scores.wellness >= 7) profiles.push('Wellness-Focused');
 		return profiles.length > 0 ? profiles.join(' & ') : 'Balanced';
 	})());
+	
+	// Show confetti after a short delay
+	$effect(() => {
+		const confettiTimer = setTimeout(() => {
+			showConfetti = true;
+		}, 500);
+		
+		return () => {
+			clearTimeout(confettiTimer);
+		};
+	});
 	
 	// Create confetti effect when showConfetti changes
 	$effect(() => {
@@ -91,7 +46,6 @@
 			}
 		}
 	});
-	
 </script>
 
 <style>

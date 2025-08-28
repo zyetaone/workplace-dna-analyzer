@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { handleError } from '$lib/utils/error-utils';
-	import { getSessionSummary } from '../../dashboard.remote';
-	import { joinSession as joinSessionRemote } from '../participant.remote.js';
+	import { getSessionSummary, joinSession as joinSessionRemote } from '../admin/admin.remote';
+	import type { PageData } from './$types';
+	
+	let { data }: { data: PageData } = $props();
 	
 	let participantName = $state('');
 	let isJoining = $state(false);
@@ -15,10 +17,10 @@
 	
 	// Load session data on mount
 	$effect(() => {
-		const slug = $page.params.slug;
-		if (!slug?.trim()) return;
+		const code = page.params.code;
+		if (!code?.trim()) return;
 		
-		getSessionSummary({ slug })
+		getSessionSummary({ slug: code })
 			.then(data => {
 				sessionData = data.session;
 			})

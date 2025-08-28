@@ -1,9 +1,18 @@
 {
 	"/": [],
-	"/dashboard": [],
-	"/dashboard/[slug]": [],
-	"/dashboard/[slug]/join": [],
-	"/dashboard/[slug]/p/[id]": [],
-	"/dashboard/[slug]/p/[id]/quiz": [],
-	"/dashboard/[slug]/p/[id]/quiz/complete": []
+	"/admin": [
+		"src/routes/admin/+page.server.ts"
+	],
+	"/admin/[code]": [
+		"src/routes/admin/[code]/+page.server.ts"
+	],
+	"/[code]": [
+		"src/routes/[code]/+page.server.ts"
+	],
+	"/[code]/complete": [
+		"src/routes/[code]/complete/+page.server.ts"
+	],
+	"/[code]/quiz": [
+		"src/routes/[code]/quiz/+page.server.ts"
+	]
 }

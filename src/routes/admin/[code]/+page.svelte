@@ -1,137 +1,168 @@
 <script lang="ts">
+	import { invalidate } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import QRCode from '$lib/components/QRCode.svelte';
 	import LoadingScreen from '$lib/components/LoadingScreen.svelte';
 	import WordCloud from '$lib/components/charts/WordCloud.svelte';
 	import Chart from '$lib/components/charts/Chart.svelte';
-	import { getSessionAnalytics, generateAIInsights, endSession as endSessionRemote, deleteParticipant, updateSession } from '../dashboard.remote';
-	import {
-		state as dashboardState,
-		getAnalytics,
-		initSession,
-		hasParticipants,
-		isActive,
-		setParticipants,
-		removeParticipant,
-		setConnectionStatus,
-		updateCurrentSession,
-		setLoading,
-		setError
-	} from '../dashboard.svelte.ts';
-	import { realtimeSession } from './realtime.svelte.ts';
+	import { generateAIInsights, endSession as endSessionRemote, deleteParticipant, updateSession } from '../admin.remote';
 	import ParticipantList from '$lib/components/ParticipantList.svelte';
 	import { createChartConfig, createGenerationChartConfig, createPreferenceRadarConfig } from '$lib/utils/chart-config';
+	import { copyToClipboard } from '$lib/utils/common';
+	import { adminState } from './admin.svelte';
+	import { sessionStore } from '$lib/stores/session.svelte';
+	import type { PageData } from './$types';
+
+	// Props from +page.server.ts
+	let { data = $bindable() }: { data: PageData } = $props();
 	
-import { copyToClipboard } from '$lib/utils/common';
-
+	// Local state
 	let isClient = $state(false);
-	let aiInsights = $state<string[]>([]);
-
-	// Use dashboard analytics which are automatically computed from participants
-	let analytics = $derived(getAnalytics());
-
-	// Chart configurations are derived from analytics - will auto-update when realtime data changes
+	let isLoading = $state(false);
+	
+	// Get code from page params
+	const code = $page.params.code;
+	const slug = code; // Keep slug variable for compatibility with existing code
+	
+	// Initialize admin state with server data
+	$effect(() => {
+		if (data?.session && data?.participants) {
+			adminState.initialize(data.session, data.participants);
+			// Also sync with session store for shared state
+			sessionStore.setSession(data.session);
+			sessionStore.setParticipants(data.participants);
+		}
+	});
+	
+	// Reactive values from admin state
+	let session = $derived(adminState.session);
+	let participants = $derived(adminState.participants);
+	let analytics = $derived(adminState.analytics);
+	let aiInsights = $derived(adminState.aiInsights);
+	let error = $derived(adminState.error);
+	let sessionCode = $derived(adminState.sessionCode);
+	let sessionUrl = $derived(adminState.sessionUrl);
+	
+	// Chart configurations derived from analytics
 	let preferenceChartConfig = $derived.by(() => createChartConfig(analytics.preferenceScores));
 	let generationChartConfig = $derived.by(() => createGenerationChartConfig(analytics.generationDistribution));
 	let radarChartConfig = $derived.by(() => createPreferenceRadarConfig(analytics.preferenceScores));
-
-	// Get slug from page params
-	const slug = $page.params.slug;
-
-	// Load initial data and start polling on mount
+	
+	// Client-side initialization effect
 	$effect(() => {
 		isClient = true; // Set client flag for QR code display
-		setLoading(true);
-		
-		// Load data asynchronously
-		getSessionAnalytics({ slug }).then(data => {
-			initSession(data.session, data.participants);
-			
-			// Start polling immediately after initialization
-			if (slug) {
-				realtimeSession.startPolling(slug, 2000);
-				console.log('Real-time polling started for session:', slug);
-			}
-		}).catch(err => {
-			setError('Failed to load session data.');
-			console.error(err);
-		}).finally(() => {
-			setLoading(false);
-		});
-		
-		// Cleanup polling on unmount
-		return () => {
-			realtimeSession.stopPolling();
-		};
 	});
 	
-	// Track realtime updates and sync to dashboard state
-	$effect(() => {
-		// Sync participants from realtime to dashboard
-		if (realtimeSession.participants.length > 0) {
-			setParticipants(realtimeSession.participants);
+	// Manual refresh function
+	async function refreshData() {
+		isLoading = true;
+		adminState.setLoading(true);
+		adminState.setError(null);
+		try {
+			await invalidate(`session:${code}`);
+		} catch (err) {
+			console.error('Failed to refresh data:', err);
+			adminState.setError('Failed to refresh data');
+		} finally {
+			isLoading = false;
+			adminState.setLoading(false);
 		}
-		
-		// Update connection status based on polling state
-		setConnectionStatus(
-			realtimeSession.isPolling ? 'connected' : 
-			realtimeSession.error ? 'error' : 
-			'disconnected'
-		);
-	});
-
+	}
+	
 	// Toggle session active status
 	async function toggleSessionActive() {
-		if (!dashboardState.currentSession) return;
-
-		const newStatus = !dashboardState.currentSession.isActive;
+		if (!session) return;
+		
+		const newStatus = !adminState.isActive;
+		isLoading = true;
+		adminState.setLoading(true);
 		try {
-			const result = await updateSession({ slug, isActive: newStatus });
+			const result = await updateSession({ slug, isActive: newStatus }) as { success: boolean };
 			if (result.success) {
-				updateCurrentSession({ isActive: newStatus });
+				adminState.updateSession({ isActive: newStatus });
+				await refreshData();
 			}
 		} catch (err) {
 			console.error('Failed to update session status:', err);
+			adminState.setError('Failed to update session status');
+		} finally {
+			isLoading = false;
+			adminState.setLoading(false);
 		}
 	}
-
+	
 	// Delete a participant
 	async function handleDeleteParticipant(id: string, name: string) {
 		if (!confirm(`Are you sure you want to remove ${name}?`)) return;
-
+		
+		isLoading = true;
+		adminState.setLoading(true);
 		try {
 			await deleteParticipant({ slug, participantId: id });
-			removeParticipant(id);
+			adminState.removeParticipant(id);
+			sessionStore.removeParticipant(id);
+			await refreshData();
 		} catch (err) {
 			console.error('Failed to delete participant:', err);
+			adminState.setError('Failed to delete participant');
+		} finally {
+			isLoading = false;
+			adminState.setLoading(false);
 		}
 	}
-
+	
 	// Copy participant link
 	function handleCopyLink(id: string) {
-		const link = `${window.location.origin}/dashboard/${slug}/p/${id}/quiz`;
+		// Just use the session code for participant link (same as main join link)
+		const code = $page.params.code;
+		const link = `${window.location.origin}/${code}`;
 		copyToClipboard(link);
 	}
-
+	
+	// Generate AI insights
+	async function generateInsights() {
+		if (!session || participants.length === 0) return;
+		
+		isLoading = true;
+		adminState.setLoading(true);
+		try {
+			const result = await generateAIInsights({ slug }) as { success: boolean; insights?: string[] };
+			if (result.success && result.insights) {
+				adminState.setAIInsights(result.insights);
+			}
+		} catch (err) {
+			console.error('Failed to generate AI insights:', err);
+			adminState.setError('Failed to generate AI insights');
+		} finally {
+			isLoading = false;
+			adminState.setLoading(false);
+		}
+	}
+	
 	// End the current session
 	async function endSession() {
-		if (!dashboardState.currentSession) return;
+		if (!session) return;
 		
 		if (!confirm('Are you sure you want to end this session?')) return;
 		
-		setLoading(true);
+		isLoading = true;
+		adminState.setLoading(true);
 		try {
-			const result = await endSessionRemote({ slug });
+			const result = await endSessionRemote({ slug }) as { success: boolean };
 			if (result.success) {
-				// Navigate back to dashboard
-				await goto('/dashboard');
+				// Clear state before navigation
+				adminState.reset();
+				sessionStore.reset();
+				// Navigate back to admin dashboard
+				await goto('/admin');
 			}
 		} catch (err) {
-			setError('Failed to end session.');
+			adminState.setError('Failed to end session');
 			console.error('Failed to end session:', err);
 		} finally {
-			setLoading(false);
+			isLoading = false;
+			adminState.setLoading(false);
 		}
 	}
 </script>
@@ -143,43 +174,30 @@ import { copyToClipboard } from '$lib/utils/common';
 			<div class="flex justify-between items-start">
 				<div>
 					<h1 class="text-4xl font-bold text-gray-800 mb-2">Presenter Dashboard</h1>
-					<p class="text-gray-600">Session Code: <span class="font-mono text-2xl text-gray-700">{dashboardState.sessionCode}</span></p>
+					<p class="text-gray-600">Session Code: <span class="font-mono text-2xl text-gray-700">{sessionCode}</span></p>
 				</div>
-				<div class="flex items-center gap-2">
-				<span class="relative flex h-3 w-3">
-					{#if dashboardState.connectionStatus === 'connected'}
-						<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-						<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-					{:else if dashboardState.connectionStatus === 'connecting'}
-						<span class="animate-pulse relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-					{:else}
-						<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-					{/if}
-				</span>
-				<span class="text-sm font-medium text-gray-700 capitalize">
-					{dashboardState.connectionStatus}
-				</span>
-			</div>
 			</div>
 		</div>
 		
-		{#if dashboardState.isLoading}
-			<LoadingScreen 
-				message="Loading session data..."
-			/>
+		{#if isLoading && !data}
+			<LoadingScreen message="Loading session data..." />
+		{:else if error}
+			<div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-8">
+				<p class="font-medium">Error: {error}</p>
+			</div>
 		{:else}
 			<!-- QR Code and Stats -->
 			<div class="grid md:grid-cols-2 gap-8 mb-8">
 				<!-- QR Code -->
 				<div class="bg-white rounded-lg shadow-lg p-8">
 					<h2 class="text-2xl font-semibold text-gray-800 mb-4">Join Session</h2>
-					{#if isClient && dashboardState.sessionUrl}
+					{#if isClient && sessionUrl}
 						<div class="flex justify-center mb-4">
-							<QRCode url={dashboardState.sessionUrl} />
+							<QRCode url={sessionUrl} />
 						</div>
 						<p class="text-center text-sm text-gray-600">
 							Scan to join or visit:<br>
-							<a href={dashboardState.sessionUrl} target="_blank" class="text-gray-500 hover:text-gray-700 break-all">{dashboardState.sessionUrl}</a>
+							<a href={sessionUrl} target="_blank" class="text-gray-500 hover:text-gray-700 break-all">{sessionUrl}</a>
 						</p>
 					{:else}
 						<div class="animate-pulse bg-gray-200 h-64 rounded"></div>
@@ -206,7 +224,7 @@ import { copyToClipboard } from '$lib/utils/common';
 				</div>
 			</div>
 			
-			<!-- Charts using shared container snippet -->
+			<!-- Charts -->
 			<div class="grid md:grid-cols-2 gap-8 mb-8">
 				<div class="bg-white rounded-lg shadow-lg p-8">
 					<h2 class="text-2xl font-semibold text-gray-800 mb-4">Generation Distribution</h2>
@@ -281,14 +299,23 @@ import { copyToClipboard } from '$lib/utils/common';
 						{/each}
 					</div>
 				</div>
+			{:else if participants.length >= 3}
+				<div class="bg-gray-50 rounded-lg shadow-lg p-8 mb-8 text-center">
+					<button
+						onclick={generateInsights}
+						disabled={isLoading}
+						class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+					>
+						Generate AI Insights
+					</button>
+				</div>
 			{/if}
-			
 			
 			<!-- Participants List -->
 			<div class="bg-white rounded-lg shadow-lg p-8">
 				<h2 class="text-2xl font-semibold text-gray-800 mb-6">Participants</h2>
 				<ParticipantList
-					participants={dashboardState.participants}
+					participants={participants}
 					onDelete={handleDeleteParticipant}
 					onCopyLink={handleCopyLink}
 					showActions={true}
@@ -305,14 +332,23 @@ import { copyToClipboard } from '$lib/utils/common';
 			<!-- Controls -->
 			<div class="mt-8 flex justify-center gap-4">
 				<button
-					onclick={() => getSessionAnalytics({ slug }).then(data => initSession(data.session, data.participants))}
-					class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+					onclick={toggleSessionActive}
+					disabled={isLoading}
+					class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+				>
+					{session?.isActive ? 'Pause Session' : 'Resume Session'}
+				</button>
+				<button
+					onclick={refreshData}
+					disabled={isLoading}
+					class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
 				>
 					Refresh Data
 				</button>
 				<button
 					onclick={endSession}
-					class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+					disabled={isLoading}
+					class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
 				>
 					End Session
 				</button>

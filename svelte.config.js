@@ -5,12 +5,11 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		experimental:{
+		experimental: {
 			remoteFunctions: true
 		},
 		// Node adapter configuration
 		adapter: adapter(),
-		// CSRF protection - allow requests from the app's origin
 		
 		// Performance optimizations
 		serviceWorker: {

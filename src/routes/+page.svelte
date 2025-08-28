@@ -3,12 +3,12 @@
 	
 	let isLoggingIn = $state(false);
 	
-	// Auto-login for POC
+	// Navigate to admin dashboard
 	async function enterDashboard() {
 		isLoggingIn = true;
 		try {
-			// Direct navigation without auth
-			await goto('/dashboard', { invalidateAll: true });
+			// Navigate to admin dashboard
+			await goto('/admin', { invalidateAll: true });
 		} finally {
 			isLoggingIn = false;
 		}
@@ -37,13 +37,13 @@
 					<span>Entering Dashboard...</span>
 				{:else}
 					<span class="text-xl">🚀</span>
-					<span>Enter Dashboard</span>
+					<span>Sign In / Register</span>
 				{/if}
 			</button>
 			
 			<div class="text-center">
 				<p class="text-sm text-gray-500">
-					POC Version - No authentication required
+					Secure authentication required
 				</p>
 			</div>
 		</div>
@@ -52,6 +52,7 @@
 			<div class="space-y-2 text-sm text-gray-600">
 				<p class="font-semibold">Features:</p>
 				<ul class="list-disc list-inside space-y-1 text-left">
+					<li>Secure user authentication</li>
 					<li>Real-time survey responses</li>
 					<li>Live analytics dashboard</li>
 					<li>QR code generation for participants</li>

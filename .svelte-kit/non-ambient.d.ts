@@ -27,27 +27,25 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/dashboard" | "/dashboard/[slug]" | "/dashboard/[slug]/join" | "/dashboard/[slug]/p" | "/dashboard/[slug]/p/[id]" | "/dashboard/[slug]/p/[id]/quiz" | "/dashboard/[slug]/p/[id]/quiz/complete";
+		RouteId(): "/" | "/admin" | "/admin/[code]" | "/[code]" | "/[code]/complete" | "/[code]/quiz" | "/[code]/quiz/complete";
 		RouteParams(): {
-			"/dashboard/[slug]": { slug: string };
-			"/dashboard/[slug]/join": { slug: string };
-			"/dashboard/[slug]/p": { slug: string };
-			"/dashboard/[slug]/p/[id]": { slug: string; id: string };
-			"/dashboard/[slug]/p/[id]/quiz": { slug: string; id: string };
-			"/dashboard/[slug]/p/[id]/quiz/complete": { slug: string; id: string }
+			"/admin/[code]": { code: string };
+			"/[code]": { code: string };
+			"/[code]/complete": { code: string };
+			"/[code]/quiz": { code: string };
+			"/[code]/quiz/complete": { code: string }
 		};
 		LayoutParams(): {
-			"/": { slug?: string; id?: string };
-			"/dashboard": { slug?: string; id?: string };
-			"/dashboard/[slug]": { slug: string; id?: string };
-			"/dashboard/[slug]/join": { slug: string };
-			"/dashboard/[slug]/p": { slug: string; id?: string };
-			"/dashboard/[slug]/p/[id]": { slug: string; id: string };
-			"/dashboard/[slug]/p/[id]/quiz": { slug: string; id: string };
-			"/dashboard/[slug]/p/[id]/quiz/complete": { slug: string; id: string }
+			"/": { code?: string };
+			"/admin": { code?: string };
+			"/admin/[code]": { code: string };
+			"/[code]": { code: string };
+			"/[code]/complete": { code: string };
+			"/[code]/quiz": { code: string };
+			"/[code]/quiz/complete": { code: string }
 		};
-		Pathname(): "/" | "/dashboard" | "/dashboard/" | `/dashboard/${string}` & {} | `/dashboard/${string}/` & {} | `/dashboard/${string}/join` & {} | `/dashboard/${string}/join/` & {} | `/dashboard/${string}/p` & {} | `/dashboard/${string}/p/` & {} | `/dashboard/${string}/p/${string}` & {} | `/dashboard/${string}/p/${string}/` & {} | `/dashboard/${string}/p/${string}/quiz` & {} | `/dashboard/${string}/p/${string}/quiz/` & {} | `/dashboard/${string}/p/${string}/quiz/complete` & {} | `/dashboard/${string}/p/${string}/quiz/complete/` & {};
+		Pathname(): "/" | "/admin" | "/admin/" | `/admin/${string}` & {} | `/admin/${string}/` & {} | `/${string}` & {} | `/${string}/` & {} | `/${string}/complete` & {} | `/${string}/complete/` & {} | `/${string}/quiz` & {} | `/${string}/quiz/` & {} | `/${string}/quiz/complete` & {} | `/${string}/quiz/complete/` & {};
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): "/Zyeta_Black_SVG.svg" | "/favicon.svg" | "/robots.txt" | "/zyeta-dx-logo.svg" | string & {};
+		Asset(): "/.well-known/appspecific/com.chrome.devtools.json" | "/Zyeta_Black_SVG.svg" | "/favicon.svg" | "/robots.txt" | "/zyeta-dx-logo.svg" | string & {};
 	}
 }
