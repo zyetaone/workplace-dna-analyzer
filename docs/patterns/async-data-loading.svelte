@@ -158,7 +158,7 @@ https://svelte.dev/e/expected_whitespace -->
 			<div class="space-y-3">
 				{#each aiData.insights as insight, index}
 					<div
-						class="p-3 bg-purple-50 rounded-lg border-l-4 border-purple-500 animate-fade-in"
+						class="p-3 bg-purple-50 rounded-lg border-l-4 border-purple-500 animate-in fade-in duration-600 ease-out"
 						style="animation-delay: {index * 200}ms"
 					>
 						<p class="text-sm text-purple-900">{insight.content}</p>

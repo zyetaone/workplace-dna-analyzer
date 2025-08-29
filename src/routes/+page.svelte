@@ -45,7 +45,7 @@
 		<header class="swiss-col-full flex justify-between items-center mb-6">
 		<div class="flex items-center space-h-compact">
 			<div
-				class="w-12 h-12 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-xl flex items-center justify-center shadow-2xl card-hover-lift"
+				class="w-12 h-12 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-xl flex items-center justify-center shadow-2xl hover:scale-105 hover:shadow-3xl transition-all duration-300 ease-out"
 			>
 				<span class="text-heading-1 gradient-text-zyeta">Z</span>
 			</div>

@@ -120,19 +120,19 @@
 	</div>
 {:else if variant === 'skeleton'}
 	<!-- Skeleton Loader -->
-	<div class="skeleton-loader {className}">
+	<div class="animate-pulse {className}">
 		{#if showAvatar}
 			<div class="flex items-center space-x-4 mb-4">
-				<div class="skeleton w-12 h-12 rounded-full"></div>
+				<div class="bg-slate-300 dark:bg-slate-700 w-12 h-12 rounded-full"></div>
 				<div class="flex-1 space-y-2">
-					<div class="skeleton h-4 w-3/4 rounded"></div>
-					<div class="skeleton h-3 w-1/2 rounded"></div>
+					<div class="bg-slate-300 dark:bg-slate-700 h-4 w-3/4 rounded"></div>
+					<div class="bg-slate-300 dark:bg-slate-700 h-3 w-1/2 rounded"></div>
 				</div>
 			</div>
 		{/if}
 
 		{#each Array(lines) as _, i}
-			<div class="skeleton {lineHeight} {widths[i % widths.length]} rounded mb-3 last:mb-0"></div>
+			<div class="bg-slate-300 dark:bg-slate-700 {lineHeight} {widths[i % widths.length]} rounded mb-3 last:mb-0"></div>
 		{/each}
 	</div>
 {:else if variant === 'screen'}

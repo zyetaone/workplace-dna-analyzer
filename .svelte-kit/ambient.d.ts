@@ -31,7 +31,9 @@ declare module '$env/static/private' {
 	export const CONDA_PROMPT_MODIFIER: string;
 	export const TMUX: string;
 	export const USER: string;
+	export const CLAUDE_CODE_ENTRYPOINT: string;
 	export const npm_config_user_agent: string;
+	export const GIT_EDITOR: string;
 	export const BUN_INSTALL: string;
 	export const OBSIDIAN_API_URL: string;
 	export const npm_node_execpath: string;
@@ -60,6 +62,7 @@ declare module '$env/static/private' {
 	export const npm_config_prefix: string;
 	export const npm_config_npm_version: string;
 	export const TERM: string;
+	export const OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: string;
 	export const npm_config_cache: string;
 	export const POSH_SHELL_VERSION: string;
 	export const CLAUDE_AGENT_DIR: string;
@@ -70,6 +73,7 @@ declare module '$env/static/private' {
 	export const CLAUDE_HOME: string;
 	export const WT_SESSION: string;
 	export const XDG_RUNTIME_DIR: string;
+	export const COREPACK_ENABLE_AUTO_PIN: string;
 	export const DISPLAY: string;
 	export const HISTSIZE: string;
 	export const LANG: string;
@@ -80,6 +84,7 @@ declare module '$env/static/private' {
 	export const npm_package_version: string;
 	export const npm_lifecycle_event: string;
 	export const PYENV_VIRTUALENV_DISABLE_PROMPT: string;
+	export const CLAUDECODE: string;
 	export const OSTYPE: string;
 	export const POSH_THEME: string;
 	export const SAVEHIST: string;
@@ -136,7 +141,9 @@ declare module '$env/dynamic/private' {
 		CONDA_PROMPT_MODIFIER: string;
 		TMUX: string;
 		USER: string;
+		CLAUDE_CODE_ENTRYPOINT: string;
 		npm_config_user_agent: string;
+		GIT_EDITOR: string;
 		BUN_INSTALL: string;
 		OBSIDIAN_API_URL: string;
 		npm_node_execpath: string;
@@ -165,6 +172,7 @@ declare module '$env/dynamic/private' {
 		npm_config_prefix: string;
 		npm_config_npm_version: string;
 		TERM: string;
+		OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: string;
 		npm_config_cache: string;
 		POSH_SHELL_VERSION: string;
 		CLAUDE_AGENT_DIR: string;
@@ -175,6 +183,7 @@ declare module '$env/dynamic/private' {
 		CLAUDE_HOME: string;
 		WT_SESSION: string;
 		XDG_RUNTIME_DIR: string;
+		COREPACK_ENABLE_AUTO_PIN: string;
 		DISPLAY: string;
 		HISTSIZE: string;
 		LANG: string;
@@ -185,6 +194,7 @@ declare module '$env/dynamic/private' {
 		npm_package_version: string;
 		npm_lifecycle_event: string;
 		PYENV_VIRTUALENV_DISABLE_PROMPT: string;
+		CLAUDECODE: string;
 		OSTYPE: string;
 		POSH_THEME: string;
 		SAVEHIST: string;

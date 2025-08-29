@@ -10,7 +10,6 @@
 @import './lib/styles/typography.css';
 @import './lib/styles/colors.css';
 @import './lib/styles/grid.css';
-@import './lib/styles/bits-ui-patterns.css';
 
 /* ===================================================================
    TAILWIND 4.0 THEME CONFIGURATION
@@ -402,13 +401,6 @@
 
 @layer utilities {
 	/* Custom Utilities using Tailwind 4.0 compatible syntax */
-	.gradient-primary {
-		background: linear-gradient(to right, var(--color-purple-500), var(--color-pink-500));
-	}
-
-	.gradient-secondary {
-		background: linear-gradient(to right, var(--color-purple-600), var(--color-blue-600));
-	}
 
 	.glass-card {
 		backdrop-filter: blur(24px);
@@ -465,15 +457,6 @@
 	}
 
 	/* Animation Classes */
-	.animate-fade-in {
-		animation: fadeIn 0.6s var(--animate-ease) forwards;
-	}
-	.animate-slide-up {
-		animation: slideUp 0.4s var(--animate-ease) forwards;
-	}
-	.animate-scale-in {
-		animation: scaleIn 0.3s var(--animate-ease) forwards;
-	}
 	.animate-bounce {
 		animation: bounce 1s infinite;
 	}
