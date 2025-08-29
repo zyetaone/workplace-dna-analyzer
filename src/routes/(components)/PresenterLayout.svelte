@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { fade, fly, slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
-  import type { SessionStore } from '../admin/[code]/sessionStore.svelte';
+  
   import type { Snippet } from 'svelte';
+  import type { getSessionStore } from '../admin/admin.svelte';
+
+  type SessionStore = ReturnType<typeof getSessionStore>;
 
   interface PresenterLayoutProps {
     store: SessionStore;

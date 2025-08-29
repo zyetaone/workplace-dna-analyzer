@@ -1,7 +1,4 @@
-<!-- @migration-task Error while migrating Svelte code: Expected token >
-https://svelte.dev/e/expected_token -->
 <script lang="ts">
-  import { cn } from '$lib/utils';
   import { scale, fly } from 'svelte/transition';
   import { quintOut, elasticOut } from 'svelte/easing';
   import { Button } from '$lib/components';
@@ -67,7 +64,7 @@ https://svelte.dev/e/expected_token -->
   }));
 </script>
 
-<div class=mergeProps("completion-container relative", className)}>
+  <div class="completion-container relative {className}">
   <!-- Confetti animation -->
   {#if showConfetti}
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
@@ -197,18 +194,18 @@ https://svelte.dev/e/expected_token -->
     <div class="mt-8 pt-8 border-t border-slate-700/50">
       <p class="text-sm text-slate-400 mb-4">Share your results</p>
       <div class="flex gap-3 justify-center">
-        <button class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors">
+        <button aria-label="Share on Twitter" class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors">
           <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
             <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
           </svg>
         </button>
-        <button class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors">
+        <button aria-label="Share on LinkedIn" class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors">
           <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
             <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
             <circle cx="4" cy="4" r="2" />
           </svg>
         </button>
-        <button class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors">
+        <button aria-label="Copy link to share" class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors">
           <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 4.026A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326" />
           </svg>

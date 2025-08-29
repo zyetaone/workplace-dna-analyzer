@@ -1,7 +1,6 @@
-<!-- @migration-task Error while migrating Svelte code: Expected token >
-https://svelte.dev/e/expected_token -->
 <script lang="ts">
-	import { mergeProps } from '$lib/utils';
+	import { cn } from '$lib/utils/common';
+	import { mergeProps } from 'bits-ui';
 	import { scale } from 'svelte/transition';
 	import { backOut } from 'svelte/easing';
 
@@ -58,7 +57,7 @@ https://svelte.dev/e/expected_token -->
 	{onclick}
 	onmouseenter={() => (isHovered = true)}
 	onmouseleave={() => (isHovered = false)}
-	class={mergeProps(
+	class={cn(
 		'fab fixed z-50 rounded-full flex items-center justify-center text-white font-bold shadow-2xl transition-all duration-300',
 		positionClasses[position],
 		sizeClasses[size],
@@ -69,7 +68,7 @@ https://svelte.dev/e/expected_token -->
 	in:scale={{ duration: 500, easing: backOut }}
 	aria-label={tooltipText || 'Action button'}
 >
-	<span class=mergeProps('transition-transform duration-300', isHovered && 'rotate-90')}>
+	<span class={cn('transition-transform duration-300', isHovered && 'rotate-90')}>
 		{icon}
 	</span>
 

@@ -1,27 +1,19 @@
 <!--
-  TabContent Component - Content for individual tab
+  Bits-UI TabContent Wrapper - Enhanced styling
 -->
 <script lang="ts">
-  import { getContext } from 'svelte';
-  import type { Snippet } from 'svelte';
+	import { Tabs as BitsTabs } from 'bits-ui';
+	import type { Snippet } from 'svelte';
 
-  interface TabContentProps {
-    value: string;
-    class?: string;
-    children?: Snippet;
-  }
+	interface TabContentProps {
+		value: string;
+		class?: string;
+		children?: Snippet;
+	}
 
-  let { children, value, class: className = '' }: TabContentProps = $props();
-
-  const tabsContext = getContext('tabs') as {
-    value: string;
-  };
-
-  const isActive = $derived(tabsContext?.value === value);
+	let { children, value, class: className = '' }: TabContentProps = $props();
 </script>
 
-{#if isActive}
-  <div class="tab-content {className}" role="tabpanel">
-    {@render children?.()}
-  </div>
-{/if}
+<BitsTabs.Content {value} class={className}>
+	{@render children?.()}
+</BitsTabs.Content>

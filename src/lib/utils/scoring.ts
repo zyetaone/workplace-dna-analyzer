@@ -2,7 +2,7 @@
  * Scoring utilities for workplace preference calculations
  */
 
-import type { Generation } from '$lib/types';
+import type { Generation } from '$lib/questions';
 
 export interface PreferenceScores {
 	collaboration: number;

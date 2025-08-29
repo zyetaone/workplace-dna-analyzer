@@ -2,13 +2,16 @@
  * Workplace preference quiz questions
  */
 
-import type { Generation } from '$lib/types';
+export type Generation = 'Baby Boomers' | 'Gen X' | 'Millennials' | 'Gen Z';
 
 export interface QuestionOption {
 	id: string;
 	label: string;
 	description?: string;
+	icon?: string;
 }
+
+
 
 export interface Question {
 	id: string;

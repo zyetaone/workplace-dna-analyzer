@@ -27,14 +27,13 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/(components)" | "/" | "/admin/(components)" | "/admin" | "/admin/[code]/(components)" | "/admin/[code]" | "/[code]" | "/[code]/complete" | "/[code]/quiz" | "/[code]/quiz/complete";
+		RouteId(): "/(components)" | "/" | "/admin/(components)" | "/admin" | "/admin/[code]/(components)" | "/admin/[code]" | "/[code]" | "/[code]/complete" | "/[code]/quiz";
 		RouteParams(): {
 			"/admin/[code]/(components)": { code: string };
 			"/admin/[code]": { code: string };
 			"/[code]": { code: string };
 			"/[code]/complete": { code: string };
-			"/[code]/quiz": { code: string };
-			"/[code]/quiz/complete": { code: string }
+			"/[code]/quiz": { code: string }
 		};
 		LayoutParams(): {
 			"/(components)": Record<string, never>;
@@ -45,11 +44,10 @@ declare module "$app/types" {
 			"/admin/[code]": { code: string };
 			"/[code]": { code: string };
 			"/[code]/complete": { code: string };
-			"/[code]/quiz": { code: string };
-			"/[code]/quiz/complete": { code: string }
+			"/[code]/quiz": { code: string }
 		};
-		Pathname(): "/" | "/admin" | "/admin/" | `/admin/${string}` & {} | `/admin/${string}/` & {} | `/${string}` & {} | `/${string}/` & {} | `/${string}/complete` & {} | `/${string}/complete/` & {} | `/${string}/quiz` & {} | `/${string}/quiz/` & {} | `/${string}/quiz/complete` & {} | `/${string}/quiz/complete/` & {};
+		Pathname(): "/" | "/admin" | "/admin/" | `/admin/${string}` & {} | `/admin/${string}/` & {} | `/${string}` & {} | `/${string}/` & {} | `/${string}/complete` & {} | `/${string}/complete/` & {} | `/${string}/quiz` & {} | `/${string}/quiz/` & {};
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): "/.well-known/appspecific/com.chrome.devtools.json" | "/Zyeta_Black_SVG.svg" | "/architectural-bg.svg" | "/favicon.svg" | "/robots.txt" | "/zyeta-dx-logo.svg" | string & {};
+		Asset(): "/.well-known/appspecific/com.chrome.devtools.json" | "/Zyeta_Black_SVG.svg" | "/architectural-bg.svg" | "/favicon-128x128.png" | "/favicon-16x16.png" | "/favicon-256x256.png" | "/favicon-32x32.png" | "/favicon-48x48.png" | "/favicon-64x64.png" | "/favicon.ico" | "/favicon.svg" | "/robots.txt" | "/zyeta-dx-logo.svg" | string & {};
 	}
 }

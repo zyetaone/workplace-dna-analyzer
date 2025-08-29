@@ -58,12 +58,12 @@
 	
 	// Variant styles - Frosted Glass & White Options
 	const variantClasses = {
-		// Standard dark variants with better opacity
-		default: 'bg-slate-900/85 backdrop-blur-2xl border border-slate-700/30 shadow-lg',
-		elevated: 'bg-slate-900/90 backdrop-blur-2xl border border-slate-600/40 shadow-2xl',
-		outlined: 'bg-slate-800/80 backdrop-blur-xl border-2 border-slate-600/40 shadow-none',
-		filled: 'bg-slate-800/85 backdrop-blur-xl border border-slate-700/40 shadow-lg',
-		stats: 'bg-slate-800/90 backdrop-blur-2xl border border-slate-700/30 shadow-lg',
+		// Updated pale/off-white variants for better readability
+		default: 'bg-gray-50/95 backdrop-blur-sm border border-gray-100/50 shadow-lg',
+		elevated: 'bg-gray-50/98 backdrop-blur-sm border border-gray-100/60 shadow-2xl',
+		outlined: 'bg-gray-50/90 backdrop-blur-sm border-2 border-gray-200/60 shadow-none',
+		filled: 'bg-gray-100/95 backdrop-blur-sm border border-gray-200/50 shadow-lg',
+		stats: 'bg-gray-50/95 backdrop-blur-sm border border-gray-100/50 shadow-lg',
 		// Frosted glass variants (higher opacity for better readability)
 		frosted: 'bg-slate-900/90 backdrop-blur-3xl border-2 border-slate-600/50 shadow-2xl',
 		frostedLight: 'bg-white/90 backdrop-blur-3xl border-2 border-slate-200/60 shadow-2xl',

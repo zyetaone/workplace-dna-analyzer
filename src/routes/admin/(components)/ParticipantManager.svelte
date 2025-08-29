@@ -7,9 +7,10 @@
   interface ParticipantManagerProps {
     store: ReturnType<typeof getSessionStore>;
     onDelete: (id: string, name: string) => void;
+    totalQuestions?: number;
   }
 
-  let { store, onDelete }: ParticipantManagerProps = $props();
+  let { store, onDelete, totalQuestions = 10 }: ParticipantManagerProps = $props();
 
 </script>
 
@@ -25,6 +26,7 @@
                 showProgress={true}
                 showStatus={true}
                 showGeneration={true}
+                totalQuestions={totalQuestions}
             />
         {:else}
             <div class="text-center py-12">

@@ -4,12 +4,11 @@ Button.svelte - Clean & Simple
 
 <script lang="ts">
   import { Button } from 'bits-ui';
-  import { mergeProps } from '$lib/utils';
   import type { HTMLButtonAttributes } from 'svelte/elements';
 
   interface Props extends Omit<HTMLButtonAttributes, 'onclick' | 'class' | 'type' | 'disabled'> {
     variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'glass' | 'glassLight' | 'light' | 'lightSecondary' | 'lightOutline' | 'lightGhost';
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'icon';
     loading?: boolean;
     disabled?: boolean;
     type?: 'button' | 'submit' | 'reset';
@@ -103,26 +102,23 @@ Button.svelte - Clean & Simple
   const sizes = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2',
-    lg: 'px-6 py-3 text-lg'
+    lg: 'px-6 py-3 text-lg',
+    icon: 'p-2'
   };
 </script>
 
 <Button.Root
-  {...mergeProps(
-    {
-      type,
-      disabled: isDisabled,
-      onclick: handleClick,
-      onpointerdown: handlePointerDown,
-      onpointerup: handlePointerUp,
-      onpointerleave: handlePointerLeave,
-      class: `inline-flex items-center justify-center gap-2 font-medium rounded-lg [transition:var(--transition-base)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${variants[variant]} ${sizes[size]} ${isPressed ? 'scale-95' : ''} ${className}`,
-      'aria-busy': loading ? 'true' : undefined,
-      'aria-disabled': isDisabled ? 'true' : undefined,
-      'aria-pressed': isPressed
-    },
-    restProps
-  )}
+  {type}
+  disabled={isDisabled}
+  onclick={handleClick}
+  onpointerdown={handlePointerDown}
+  onpointerup={handlePointerUp}
+  onpointerleave={handlePointerLeave}
+  class="inline-flex items-center justify-center gap-2 font-medium rounded-lg [transition:var(--transition-base)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden {variants[variant]} {sizes[size]} {isPressed ? 'scale-95' : ''} {className}"
+  aria-busy={loading ? 'true' : undefined}
+  aria-disabled={isDisabled ? 'true' : undefined}
+  aria-pressed={isPressed}
+  {...restProps}
 >
   <!-- Ripple Effect -->
   {#if rippleEffect}

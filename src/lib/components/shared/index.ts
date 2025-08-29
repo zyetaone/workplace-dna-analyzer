@@ -12,11 +12,6 @@ export { default as Modal } from './Modal.svelte';
 export { default as Tooltip } from './Tooltip.svelte';
 export { default as FullscreenMode } from './FullscreenMode.svelte';
 export { default as InvalidSession } from './InvalidSession.svelte';
-export { default as AttachmentDemo } from './AttachmentDemo.svelte';
 
-// New UX Enhancement Components
-export { default as QuizProgressIndicator } from './QuizProgressIndicator.svelte';
-export { default as LiveParticipantIndicator } from './LiveParticipantIndicator.svelte';
-export { default as AccessibleQuizOption } from './AccessibleQuizOption.svelte';
-export { default as ErrorRecovery } from './ErrorRecovery.svelte';
-export { default as CompletionCelebration } from './CompletionCelebration.svelte';
+// Available Components
+export { default as SkeletonLoader } from './SkeletonLoader.svelte';

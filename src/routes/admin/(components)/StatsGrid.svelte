@@ -10,7 +10,6 @@
   let { store }: StatsGridProps = $props();
 
   const analytics = $derived(store.analytics());
-  const avgTime = $derived(store.avgTime);
 
   // Stats data with icons and colors
   const stats = $derived([
@@ -33,10 +32,10 @@
       tooltip: "Participants currently taking the quiz"
     },
     {
-      label: "Avg Time",
-      value: avgTime,
+      label: "Response Rate",
+      value: `${analytics.responseRate || 0}%`,
       color: "text-purple-600",
-      tooltip: "Average time to complete the quiz"
+      tooltip: "Percentage of participants who completed the quiz"
     }
   ]);
 </script>
@@ -46,28 +45,28 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
       {#each stats as stat}
         <Tooltip content={stat.tooltip}>
-          <div class="text-center cursor-help p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+          <div class="text-center cursor-help p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <div class="text-2xl font-bold {stat.color}">{stat.value}</div>
-            <div class="text-sm text-gray-600 dark:text-slate-400 font-medium">{stat.label}</div>
+            <div class="text-sm text-gray-600 font-medium">{stat.label}</div>
           </div>
         </Tooltip>
       {/each}
     </div>
 
     <!-- Progress Bar -->
-    <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+    <div class="bg-gray-200 rounded-full h-2.5">
       <div class="bg-gradient-to-r from-cyan-500 to-purple-600 h-2.5 rounded-full" style="width: {analytics.responseRate}%"></div>
     </div>
 
     {#if analytics.totalCount > 0}
       <div class="text-center mt-2">
-        <span class="text-sm text-gray-600 dark:text-slate-400">
+        <span class="text-sm text-gray-600">
           {analytics.completedCount} of {analytics.totalCount} completed ({analytics.responseRate}%)
         </span>
       </div>
     {:else}
       <div class="text-center mt-2">
-        <span class="text-sm text-gray-500 dark:text-slate-500">Waiting for participants to join...</span>
+        <span class="text-sm text-gray-500">Waiting for participants to join...</span>
       </div>
     {/if}
   {/snippet}

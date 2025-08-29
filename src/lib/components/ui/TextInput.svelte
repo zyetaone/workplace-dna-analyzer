@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { mergeProps } from '$lib/utils';
 
 	interface Props {
 		value?: string;
@@ -47,16 +46,16 @@
 	};
 
 	const variantStyles = {
-		default: 'border border-gray-300 bg-white',
-		filled: 'border-0 bg-gray-100',
-		outlined: 'border-2 border-gray-300 bg-transparent'
+		default: 'border border-slate-600 bg-slate-800/50 text-slate-200',
+		filled: 'border-0 bg-slate-700/50 text-slate-200',
+		outlined: 'border-2 border-slate-600 bg-transparent text-slate-200'
 	};
 
-	let baseStyles = 'w-full rounded-lg transition-colors duration-200 placeholder:text-gray-500';
-	let focusStyles = 'focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none';
-	let disabledStyles = 'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed disabled:opacity-60';
+	let baseStyles = 'w-full rounded-lg transition-colors duration-200 placeholder:text-slate-500';
+	let focusStyles = 'focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none';
+	let disabledStyles = 'disabled:bg-slate-900/50 disabled:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60';
 	
-	let errorStyles = $derived(error ? 'border-red-300 focus:ring-red-500 focus:border-red-300' : '');
+	let errorStyles = $derived(error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : '');
 
 	let inputClasses = $derived([
 		baseStyles,
@@ -71,7 +70,7 @@
 
 <div class="space-y-1">
 	{#if label}
-		<label for={inputId} class="block text-sm font-medium text-gray-700">
+		<label for={inputId} class="block text-sm font-medium text-slate-300">
 			{label}
 			{#if required}
 				<span class="text-red-500" aria-label="required">*</span>
@@ -79,32 +78,28 @@
 		</label>
 	{/if}
 
- 	<input
- 		{...mergeProps(
- 			{
- 				id,
- 				name,
- 				type,
- 				placeholder,
- 				disabled,
- 				required,
- 				minlength,
- 				maxlength,
- 				value,
- 				class: inputClasses,
- 				'aria-describedby': error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined,
- 				'aria-invalid': error ? 'true' : undefined
- 			},
- 			restProps
- 		)}
- 	/>
+	<input
+		{id}
+		{name}
+		{type}
+		{placeholder}
+		{disabled}
+		{required}
+		{minlength}
+		{maxlength}
+		bind:value
+		class={inputClasses}
+		aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
+		aria-invalid={error ? true : undefined}
+		{...restProps}
+	/>
 
 	{#if error}
-		<p id="{inputId}-error" class="text-sm text-red-600" role="alert">
+		<p id="{inputId}-error" class="text-sm text-red-400" role="alert">
 			{error}
 		</p>
 	{:else if hint}
-		<p id="{inputId}-hint" class="text-sm text-gray-500">
+		<p id="{inputId}-hint" class="text-sm text-slate-500">
 			{hint}
 		</p>
 	{/if}

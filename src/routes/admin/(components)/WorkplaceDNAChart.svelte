@@ -1,7 +1,7 @@
 <!-- @migration-task Error while migrating Svelte code: Expected token >
 https://svelte.dev/e/expected_token -->
 <script lang="ts">
-  import { cn } from '$lib/utils';
+  import { cn } from '$lib/utils/common';
   import { scale, fly } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
   
@@ -77,8 +77,8 @@ https://svelte.dev/e/expected_token -->
   };
 </script>
 
-<div class=mergeProps("dna-profile-card", className)}>
-  <h3 class="text-xl font-semibold gradient-text text-center mb-6">{title}</h3>
+  <div class="dna-profile-card {className}">
+  <h3 class="text-xl font-semibold text-gray-900 text-center mb-6">{title}</h3>
   
   <!-- SVG Radar Chart -->
   <div class="relative flex justify-center mb-6" in:scale={{ duration: 600, easing: quintOut }}>
@@ -108,7 +108,7 @@ https://svelte.dev/e/expected_token -->
         fill-opacity="0.3"
         stroke="url(#dna-gradient-stroke)"
         stroke-width="2"
-        class=mergeProps(animate && "transition-all duration-1000")}
+        class={animate ? "transition-all duration-1000" : ""}
       />
       
       <!-- Data points -->
@@ -132,7 +132,7 @@ https://svelte.dev/e/expected_token -->
             y={labelY}
             text-anchor="middle"
             dominant-baseline="middle"
-            class="fill-slate-300 text-xs font-medium"
+            class="fill-gray-600 text-xs font-medium"
           >
             {traitConfig[trait as keyof typeof traitConfig].icon}
           </text>
@@ -159,24 +159,24 @@ https://svelte.dev/e/expected_token -->
     {#each Object.entries(scores) as [trait, score], index}
       {@const config = traitConfig[trait as keyof typeof traitConfig]}
       <div 
-        class="flex items-center justify-between p-3 rounded-xl bg-slate-800/30 border border-slate-700/30"
+        class="flex items-center justify-between p-3 rounded-xl bg-gray-100 border border-gray-200"
         in:fly={{ x: -20, delay: index * 50, duration: 400, easing: quintOut }}
       >
         <div class="flex items-center gap-3">
           <span class="text-2xl">{config.icon}</span>
           <div>
-            <p class="text-sm font-medium text-slate-200">{config.label}</p>
-            <p class="text-xs text-slate-500">{config.description}</p>
+            <p class="text-sm font-medium text-gray-800">{config.label}</p>
+            <p class="text-xs text-gray-600">{config.description}</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div class="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div 
               class="h-full bg-gradient-to-r {config.color} rounded-full transition-all duration-1000"
               style="width: {score}%"
             ></div>
           </div>
-          <span class="text-sm font-bold text-slate-300 w-10 text-right">
+          <span class="text-sm font-bold text-gray-700 w-10 text-right">
             {score}%
           </span>
         </div>
@@ -190,7 +190,7 @@ https://svelte.dev/e/expected_token -->
       <span class="text-2xl">💡</span>
       <div>
         <p class="text-sm font-medium text-purple-300 mb-1">Key Insight</p>
-        <p class="text-xs text-slate-400">
+        <p class="text-xs text-gray-600">
           {#if scores.collaboration > 70}
             This workplace thrives on teamwork and collective decision-making.
           {:else if scores.tech > 70}

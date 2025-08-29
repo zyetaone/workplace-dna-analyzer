@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { GenerationOption, Generation } from '$lib/questions';
-	import type { Session } from '$lib/types';
+	import type { Session } from '$lib/server/db/schema';
 	import { Button, TextInput, RadioGroup } from '$lib/components';
 	
 	// Props interface
@@ -99,9 +99,9 @@
 
 	<!-- Generation Selection -->
 	<div class="space-y-4">
-		<label class="block text-sm font-medium text-slate-300">
+		<div class="block text-sm font-medium text-slate-300">
 			Select Your Generation
-		</label>
+		</div>
 		<div class="grid grid-cols-1 gap-3">
 			{#each generationOptions as option}
 				<button

@@ -5,6 +5,7 @@
 	import D3RadarChart from "$lib/components/charts/D3RadarChart.svelte";
 	import { createDonutData, createRadarData } from "$lib/components/charts/chart-config";
 	import type { getSessionStore } from "../admin.svelte.ts";
+	import { getWorkplaceDNA } from "$lib/utils/scoring";
 	import { fly } from "svelte/transition";
 
 	interface AnalysisChartsProps {
@@ -30,7 +31,7 @@
 	// Average preference scores for radar chart
 	const averageScores = $derived(() => {
 		if (!analytics.preferenceScores) return null;
-		return createRadarData(analytics.preferenceScores, 'Team Average');
+		return createRadarData(analytics.preferenceScores as unknown as Record<string, number>, 'Team Average');
 	});
 	
 	// Workplace DNA profile data
@@ -38,7 +39,7 @@
 		const profiles: Record<string, number> = {};
 		store.participants?.forEach(p => {
 			if (p.completed && p.preferenceScores) {
-				const dna = store.getWorkplaceDNA(p.preferenceScores);
+				const dna = getWorkplaceDNA(p.preferenceScores);
 				profiles[dna] = (profiles[dna] || 0) + 1;
 			}
 		});

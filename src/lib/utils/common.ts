@@ -32,8 +32,15 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  * Copy participant join link
  */
 export function copyParticipantLink(baseUrl: string, slug: string, participantId?: string): void {
-	const link = participantId 
+	const link = participantId
 		? `${baseUrl}/dashboard/${slug}/p/${participantId}/quiz`
 		: `${baseUrl}/dashboard/${slug}/join`;
 	copyToClipboard(link);
+}
+
+/**
+ * Class name utility - combines multiple class names
+ */
+export function cn(...classes: (string | boolean | undefined | null)[]): string {
+    return classes.filter(Boolean).join(' ');
 }

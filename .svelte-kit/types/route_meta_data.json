@@ -2,9 +2,7 @@
 	"/": [],
 	"/admin": [],
 	"/admin/[code]": [],
-	"/[code]": [
-		"src/routes/[code]/+page.ts"
-	],
+	"/[code]": [],
 	"/[code]/complete": [],
 	"/[code]/quiz": []
 }

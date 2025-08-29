@@ -1,8 +1,7 @@
 <!--
-  Modal Component using {@attach ...} for focus management and click outside
+  Simple Modal Component
 -->
 <script lang="ts">
-	import { focusTrap, clickOutside } from '$lib/utils/attachments';
 	import { fade, scale } from 'svelte/transition';
   import type { Snippet } from 'svelte';
 
@@ -40,18 +39,23 @@
   <!-- Backdrop -->
   <div
     class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4"
-    {@attach clickOutside(closeModal)}
+    onclick={closeModal}
+    onkeydown={(e) => e.key === 'Escape' && closeModal()}
     transition:fade={{ duration: 200 }}
+    role="button"
+    tabindex="-1"
   >
     <!-- Modal Content -->
     <div
       bind:this={modalRef}
       class="bg-white rounded-xl shadow-2xl {sizeClasses[size]} w-full max-h-[90vh] overflow-hidden"
-      {@attach focusTrap()}
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.key === 'Escape' && closeModal()}
       transition:scale={{ duration: 200, start: 0.95 }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
+      tabindex="-1"
     >
       <!-- Header -->
       {#if title}

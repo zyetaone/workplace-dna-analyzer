@@ -1,7 +1,5 @@
-<!-- @migration-task Error while migrating Svelte code: Expected token >
-https://svelte.dev/e/expected_token -->
 <script lang="ts">
-  import { cn } from '$lib/utils';
+  import { cn } from '$lib/utils/common';
   
   interface QuizOptionProps {
     id: string;
@@ -68,13 +66,7 @@ https://svelte.dev/e/expected_token -->
   onmouseenter={handleMouseEnter}
   onmouseleave={handleMouseLeave}
   disabled={disabled}
-  class=mergeProps(
-    "quiz-option-card group relative w-full p-6 text-left transition-all duration-500",
-    "transform-gpu hover:scale-[1.02] hover:shadow-2xl",
-    selected && "selected ring-2 ring-purple-500/50",
-    disabled && "opacity-50 cursor-not-allowed",
-    isHovered && "shadow-2xl shadow-purple-500/20"
-  )}
+  class="quiz-option-card group relative w-full p-6 text-left transition-all duration-500 transform-gpu hover:scale-[1.02] hover:shadow-2xl {selected ? 'selected ring-2 ring-purple-500/50' : ''} {disabled ? 'opacity-50 cursor-not-allowed' : ''} {isHovered ? 'shadow-2xl shadow-purple-500/20' : ''}"
   style="--mouse-x: {mouseX}%; --mouse-y: {mouseY}%; animation-delay: {index * 100}ms"
   aria-pressed={selected}
   aria-label={`Option: ${label}`}
@@ -87,14 +79,14 @@ https://svelte.dev/e/expected_token -->
   <!-- Content -->
   <div class="relative z-10 flex items-start gap-4">
     <!-- Icon with animation -->
-    <div class=mergeProps(
+    <div class={cn(
       "flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl",
       "bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm",
       "border border-white/20 shadow-lg",
       "transition-all duration-300",
       selected && "scale-110 rotate-3 border-purple-400/50"
     )}>
-      <span class=mergeProps(
+      <span class={cn(
         "transition-transform duration-500",
         selected && "scale-125"
       )}>
@@ -104,7 +96,7 @@ https://svelte.dev/e/expected_token -->
 
     <!-- Text content -->
     <div class="flex-1">
-      <h3 class=mergeProps(
+      <h3 class={cn(
         "text-lg font-semibold mb-1 transition-colors duration-300",
         selected ? "text-purple-300" : "text-slate-200",
         "group-hover:text-purple-200"
@@ -112,7 +104,7 @@ https://svelte.dev/e/expected_token -->
         {label}
       </h3>
       {#if description}
-        <p class=mergeProps(
+        <p class={cn(
           "text-sm transition-colors duration-300",
           selected ? "text-purple-300/80" : "text-slate-400",
           "group-hover:text-slate-300"
@@ -123,7 +115,7 @@ https://svelte.dev/e/expected_token -->
     </div>
 
     <!-- Selection indicator -->
-    <div class=mergeProps(
+    <div class={cn(
       "flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all duration-300",
       "flex items-center justify-center",
       selected 

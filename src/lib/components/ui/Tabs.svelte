@@ -1,33 +1,39 @@
 <!--
-  Simple Tabs Component - Replacement for bits-ui
+  Bits-UI Tabs Wrapper - Enhanced with our styling
 -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import type { Snippet } from 'svelte';
+	import { Tabs as BitsTabs } from 'bits-ui';
+	import type { Snippet } from 'svelte';
 
-  interface TabsProps {
-    value?: string;
-    onValueChange?: (value: string) => void;
-    children?: Snippet;
-  }
+	interface TabsProps {
+		value?: string;
+		onValueChange?: (value: string) => void;
+		orientation?: 'horizontal' | 'vertical';
+		activationMode?: 'automatic' | 'manual';
+		disabled?: boolean;
+		loop?: boolean;
+		children?: Snippet;
+	}
 
-  let { children, value = $bindable(''), onValueChange }: TabsProps = $props();
-
-  const dispatch = createEventDispatcher();
-
-  function selectTab(newValue: string) {
-    value = newValue;
-    onValueChange?.(newValue);
-    dispatch('change', { value: newValue });
-  }
+	let {
+		children,
+		value = $bindable(''),
+		onValueChange,
+		orientation = 'horizontal',
+		activationMode = 'automatic',
+		disabled = false,
+		loop = true
+	}: TabsProps = $props();
 </script>
 
-<div class="tabs-container">
-  {@render children?.()}
-</div>
-
-<style>
-  .tabs-container {
-    width: 100%;
-  }
-</style>
+<BitsTabs.Root
+	bind:value
+	{onValueChange}
+	{orientation}
+	{activationMode}
+	{disabled}
+	{loop}
+	class="w-full"
+>
+	{@render children?.()}
+</BitsTabs.Root>

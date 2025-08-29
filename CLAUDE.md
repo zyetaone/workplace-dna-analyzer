@@ -1,6 +1,6 @@
-# CLAUDE.md
+# CLAUDE.md - Complete Development Guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides comprehensive guidance for working with the PPT Quiz App codebase.
 
 ## Project Overview
 
@@ -9,7 +9,7 @@ A SvelteKit 5 application for interactive workplace preference analysis. Present
 ## Technology Stack
 
 - **Framework**: SvelteKit 5 with Svelte 5 runes (`$state`, `$derived`, `$effect`)
-- **State Management**: Class-based reactive state with unified session store
+- **State Management**: Simplified reactive state with Svelte 5 runes
 - **Remote Functions**: SvelteKit experimental remote functions with `query` and `command` wrappers
 - **Database**: SQLite with Drizzle ORM (WAL2 mode enabled)
 - **Validation**: Valibot schemas for all remote function inputs
@@ -18,6 +18,27 @@ A SvelteKit 5 application for interactive workplace preference analysis. Present
 - **AI Integration**: OpenAI API for workplace insights and recommendations
 - **Styling**: TailwindCSS with custom UI components
 - **Charts**: Chart.js and D3.js with reusable configuration utilities
+
+## Commands
+
+- **Dev**: `npm run dev` (port 5173 with --host)
+- **Build**: `npm run build`
+- **Preview**: `npm run preview` (with --host)
+- **Start**: `npm start`
+- **DB**: `npm run db:generate`, `npm run db:migrate`, `npm run db:push`, `npm run db:studio`
+- **Type check**: `npx svelte-check --tsconfig ./tsconfig.json`
+
+## Code Style
+
+- **Svelte 5**: Use `$state`, `$derived`, `$effect` runes
+- **Imports**: `$lib/` for internal, relative paths for local
+- **Types**: Strict TypeScript (interfaces/types in dedicated files)
+- **Naming**: camelCase variables/functions, PascalCase components/types
+- **Components**: Use `$props()`, snippets for children, Tailwind CSS
+- **Validation**: Valibot schemas for all remote function inputs
+- **Error handling**: `<svelte:boundary>` for runtime errors, `{#if error}` for reactive state
+- **Attachments**: `{@attach ...}` for reactive DOM interactions and effects
+- **State**: Simplified reactive state with proper cleanup
 - **Build**: Vite with SvelteKit adapter-node
 
 ## Development Commands

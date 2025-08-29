@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Participant } from '$lib/types';
+	import type { Participant } from '$lib/server/db/schema';
 
-	interface Props {
+ 	interface Props {
 		participants: Participant[];
 		onDelete?: (id: string, name: string) => void;
 		onCopyLink?: (id: string) => void;
@@ -10,6 +10,7 @@
 		showStatus?: boolean;
 		showGeneration?: boolean;
 		emptyMessage?: string;
+		totalQuestions?: number;
 	}
 
 	let {
@@ -20,13 +21,14 @@
 		showProgress = true,
 		showStatus = true,
 		showGeneration = true,
-		emptyMessage = 'No participants yet.'
+		emptyMessage = 'No participants yet.',
+		totalQuestions = 10
 	}: Props = $props();
 
 	// Calculate progress percentage
-	function getProgress(responses: Record<number, any> | undefined): number {
+	function getProgress(responses: Record<string, any> | undefined): number {
 		const responseCount = Object.keys(responses || {}).length;
-		return Math.round((responseCount / 7) * 100);
+		return Math.round((responseCount / totalQuestions) * 100);
 	}
 
 	// Format score with proper decimal places
@@ -35,7 +37,7 @@
 	}
 </script>
 
-<div class="participant-list">
+<div class="w-full">
 	{#if participants.length > 0}
 		<div class="overflow-x-auto">
 			<table class="w-full text-left">
@@ -75,7 +77,7 @@
 							{#if showProgress}
 								<td class="px-4 py-4">
 									<div class="flex items-center gap-3">
-										<span class="text-sm text-gray-600">{responseCount}/7</span>
+										<span class="text-sm text-gray-600">{responseCount}/{totalQuestions}</span>
 										<div class="w-20 h-2 bg-gray-200 rounded-full">
 											<div class="bg-blue-500 h-full rounded-full transition-all" style="width: {progress}%"></div>
 										</div>
@@ -105,6 +107,7 @@
 												onclick={() => onCopyLink(participant.id)}
 												class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
 												title="Copy link"
+												aria-label="Copy participant link"
 											>
 												<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -136,13 +139,9 @@
 </div>
 
 <style>
-	.participant-list {
-		@apply w-full;
-	}
-
 	@media (max-width: 768px) {
-		.participant-list th,
-		.participant-list td {
+		table th,
+		table td {
 			padding: 0.5rem;
 		}
 	}

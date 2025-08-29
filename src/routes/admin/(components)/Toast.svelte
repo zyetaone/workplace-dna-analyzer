@@ -68,7 +68,7 @@
 	<div 
 		in:fly={{ y: 30, duration: 300 }}
 		out:fly={{ y: -30, duration: 300 }}
-		class="pointer-events-auto flex items-start gap-3 p-4 rounded-lg shadow-lg min-w-[320px] max-w-md border-2 {getVariantStyles(toast.variant || 'info')}"
+		class="pointer-events-auto flex items-start gap-3 p-4 rounded-lg shadow-lg w-full sm:min-w-[320px] sm:max-w-md border-2 {getVariantStyles(toast.variant || 'info')}"
 	>
 		<span class="text-xl flex-shrink-0 mt-0.5">
 			{getVariantIcon(toast.variant || 'info')}
@@ -91,9 +91,9 @@
 	</div>
 {/snippet}
 
-<!-- Toast container with portal-like positioning -->
-<div class="fixed bottom-4 right-4 z-50 pointer-events-none">
-	<div class="flex flex-col gap-2">
+<!-- Toast container with responsive positioning -->
+<div class="fixed bottom-4 right-4 left-4 sm:left-auto z-50 pointer-events-none">
+	<div class="flex flex-col gap-2 items-end max-w-full sm:max-w-md">
 		{#each toasts as toast (toast.id)}
 			{@render toastItem(toast)}
 		{/each}

@@ -4,7 +4,7 @@ ParticipantCard - Clean Card-Based Component
 <script lang="ts">
   import Card from './Card.svelte';
   import Button from './Button.svelte';
-  import type { Participant } from '$lib/types';
+  import type { Participant } from '$lib/server/db/schema';
 
   interface Props {
     participant: Participant;

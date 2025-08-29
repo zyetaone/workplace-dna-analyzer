@@ -28,7 +28,7 @@ COPY . .
 # Generate Sveltekit Files for production
 RUN npm run prepare
 
-# Build the application - producrtion mode
+# Build the application - production mode
 RUN npm run build
 
 ###STAGE 3 : RUN###
@@ -36,13 +36,16 @@ FROM node:24-alpine AS runner
 # Set working directory
 WORKDIR /app
 
-#env variables
+# Create data directory for database
+RUN mkdir -p /app/data
+
+# Set environment variables
 ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0 \
     DATABASE_URL=file:./local.db
 
-    #Copy package files and node modules
+# Copy package files and node modules
 COPY package*.json ./
 COPY --from=deps /app/node_modules ./node_modules
 
@@ -52,15 +55,16 @@ RUN npm prune --omit=dev --no-audit --no-fund
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/drizzle ./drizzle
 
+# Copy drizzle config for database setup
+COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 
-# Create database with WAL mode for better concurrency
+# Initialize database with proper schema
+RUN npx drizzle-kit push --config drizzle.config.ts
 
-RUN sqlite3 local.db "PRAGMA journal_mode=WAL; SELECT 'Database initialized';"
-
-# DB permissions
-RUN chmod 755 local.db
-RUN chmod 755 local.db-shm
-RUN chmod 755 local.db-wal
+# Set proper permissions for database files
+RUN chmod 755 ./ && \
+    chmod 644 ./local.db && \
+    chmod 644 ./local.db-* 2>/dev/null || true
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \

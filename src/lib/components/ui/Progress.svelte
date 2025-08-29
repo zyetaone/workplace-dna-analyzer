@@ -3,7 +3,7 @@ https://svelte.dev/e/expected_token -->
 <!-- Bits UI Progress Component with mergeProps -->
 <script lang="ts">
 	import { Progress, mergeProps } from 'bits-ui';
-	import { cn } from '$lib/utils/index';
+	import { cn } from '$lib/utils/common';
 	
 	interface ProgressProps {
 		value?: number;
@@ -52,13 +52,9 @@ https://svelte.dev/e/expected_token -->
 		</div>
 	{/if}
 	<Progress.Root {...rootProps}>
-		<Progress.Indicator 
-			class=mergeProps(
-				"h-full transition-all duration-500 ease-out rounded-full shadow-lg",
-				colorClasses[color],
-				"shadow-purple-500/20"
-			)}
+		<div
+			class="h-full transition-all duration-500 ease-out rounded-full shadow-lg shadow-purple-500/20 {colorClasses[color]}"
 			style="transform: translateX(-{100 - percentage}%)"
-		/>
+		></div>
 	</Progress.Root>
 </div>

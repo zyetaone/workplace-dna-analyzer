@@ -1,13 +1,33 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { formatDate, copyToClipboard } from '$lib/utils/common';
-	import { query } from '$app/server';
-	import { getAllSessionsRemote, createSessionRemote, deleteSessionRemote } from './data.remote';
+	import { getAllSessionsRemote, createSessionRemote, deleteSessionRemote } from '../data.remote';
 	import Toast, { showToast } from './(components)/Toast.svelte';
 	import { Card, StatsCard, ConfirmationDialog, Button, TextInput } from '$lib/components';
 
-	// Reactive query for sessions - automatically updates when invalidated
-	const sessionsQuery = query(getAllSessionsRemote, {});
+	// Sessions state
+	let sessions = $state<any[]>([]);
+	let sessionsLoading = $state(true);
+	let sessionsError = $state<string | null>(null);
+
+	// Load sessions
+	async function loadSessions() {
+		sessionsLoading = true;
+		sessionsError = null;
+		try {
+			sessions = await getAllSessionsRemote({});
+		} catch (error: any) {
+			console.error('Failed to load sessions:', error);
+			sessionsError = error.message;
+		} finally {
+			sessionsLoading = false;
+		}
+	}
+
+	// Load sessions on mount
+	$effect(() => {
+		loadSessions();
+	});
 
 	// Simplified UI state
 	let sessionName = $state('');
@@ -31,6 +51,9 @@
 				});
 				sessionName = '';
 				showCreateForm = false;
+				
+				// Reload sessions to show updated list
+				await loadSessions();
 
 				// Navigate immediately
 				console.log('Navigating to:', result.redirect);
@@ -59,13 +82,15 @@
 				description: result.success
 					? 'Session deleted successfully'
 					: 'error' in result
-						? result.error
+						? String(result.error)
 						: 'Failed to delete session',
 				variant: result.success ? 'success' : 'error'
 			});
 
 			if (result.success) {
 				deleteDialog = { open: false, sessionCode: '' };
+				// Reload sessions after deletion
+				await loadSessions();
 			}
 		} catch (error) {
 			console.error('Session deletion failed:', error);
@@ -94,7 +119,7 @@
 {#snippet sessionCard(session)}
 	<div class="h-fit">
 		<Card
-			variant="frostedDark"
+			variant="glassDark"
 			hoverable
 			hoverEffect="glow"
 			size="lg"
@@ -128,9 +153,9 @@
 
 					<!-- Session Code -->
 					<div class="mb-4">
-						<div class="text-sm text-slate-300 mb-1">Session Code</div>
+						<div class="text-sm text-slate-400 mb-1 font-medium">Session Code</div>
 						<div
-							class="font-mono text-2xl font-bold text-white bg-slate-900/70 backdrop-blur-xl px-4 py-3 rounded-lg border-2 border-slate-600/50 shadow-inner"
+							class="font-mono text-2xl font-bold text-cyan-400 bg-slate-950/90 backdrop-blur-xl px-4 py-3 rounded-lg border-2 border-cyan-500/30 shadow-inner tracking-wider"
 						>
 							{session.code}
 						</div>
@@ -192,15 +217,15 @@
 			<!-- Header -->
 
 			<!-- Top Stats Bar - Fixed Position for Key Metrics -->
-			{#if sessionsQuery.data && sessionsQuery.data.length > 0}
-				<Card variant="frostedStats" class="mb-6">
+			{#if sessions && sessions.length > 0}
+				<Card variant="glassDark" class="mb-6">
 					{#snippet children()}
-						{@const sessions = sessionsQuery.data}
+						{@const sessionsList = sessions}
 						{@const stats = {
-							total: sessions.length,
-							active: sessions.filter(s => s.isActive).length,
-							totalParticipants: sessions.reduce((sum, s) => sum + (s.activeCount + s.completedCount), 0),
-							completedSurveys: sessions.reduce((sum, s) => sum + s.completedCount, 0)
+							total: sessionsList.length,
+							active: sessionsList.filter(s => s.isActive).length,
+							totalParticipants: sessionsList.reduce((sum, s) => sum + (s.activeCount + s.completedCount), 0),
+							completedSurveys: sessionsList.reduce((sum, s) => sum + s.completedCount, 0)
 						}}
 						<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 							<div
@@ -237,11 +262,11 @@
 			{/if}
 
 			<!-- Create Session with Smooth Transitions -->
-			<Card variant="frosted" size="lg" class="mb-8">
+			<Card variant="glassDark" size="lg" class="mb-8">
 				{#snippet children()}
 					{#if !showCreateForm}
 						<div>
-							{#if sessionsQuery.data && sessionsQuery.data.length >= 3}
+							{#if sessions && sessions.length >= 3}
 								<div
 									class="text-center p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-slate-700/30"
 								>
@@ -252,7 +277,7 @@
 										one.
 									</p>
 									<div class="text-xs text-slate-500">
-										Current sessions: {sessionsQuery.data.length}/3
+										Current sessions: {sessions.length}/3
 									</div>
 								</div>
 							{:else}
@@ -314,26 +339,28 @@
 			<!-- Sessions Content -->
 			<Card variant="glassDark" class="min-h-[400px] relative">
 				{#snippet children()}
-					{#if sessionsQuery.isError}
+					{#if sessionsError}
 						<div class="p-12 text-center">
 							<div class="text-6xl mb-4">❌</div>
 							<h2 class="text-2xl font-semibold text-slate-200 mb-2">Error Loading Sessions</h2>
-							<p class="text-slate-400">{sessionsQuery.error?.message || 'Failed to load sessions'}</p>
+							<p class="text-slate-400">{sessionsError || 'Failed to load sessions'}</p>
 						</div>
-					{:else if sessionsQuery.isLoading}
+					{:else if sessionsLoading}
 						<div class="p-12 text-center">
-							<div class="text-6xl mb-4 animate-spin">🔄</div>
-							<h2 class="text-2xl font-semibold text-slate-200 mb-2">Loading Sessions...</h2>
-							<p class="text-slate-400">Please wait while we fetch your sessions</p>
+							<div class="inline-flex items-center justify-center w-16 h-16 mb-4">
+								<div class="animate-spin rounded-full border-4 border-slate-700 border-t-cyan-500 w-12 h-12"></div>
+							</div>
+							<h2 class="text-xl font-semibold text-slate-200 mb-2">Loading Sessions</h2>
+							<p class="text-slate-400">Fetching your sessions...</p>
 						</div>
-					{:else if !sessionsQuery.data || sessionsQuery.data.length === 0}
+					{:else if !sessions || sessions.length === 0}
 						<div class="p-12 text-center">
 							<div class="text-6xl mb-4">📊</div>
 							<h2 class="text-2xl font-semibold text-slate-200 mb-2">No Sessions Yet</h2>
 							<p class="text-slate-400">Create your first session to get started!</p>
 						</div>
 					{:else}
-						{@const sessions = sessionsQuery.data}
+						{@const sessionsList = sessions}
 						<div class="p-6">
 							<!-- Session Cards Container with Scroll -->
 							<div class="relative">
@@ -343,14 +370,14 @@
 									<div
 										class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 auto-rows-fr pr-2"
 									>
-										{#each sessions as session (session.code)}
+										{#each sessionsList as session (session.code)}
 											{@render sessionCard(session)}
 										{/each}
 									</div>
 								</div>
 
 								<!-- Scroll Indicator -->
-								{#if sessions.length > 8}
+								{#if sessionsList.length > 8}
 									<div
 										class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-900/90 to-transparent pointer-events-none rounded-b-lg"
 									></div>
@@ -364,7 +391,7 @@
 
 							<!-- Session Count Info -->
 							<div class="mt-4 text-center text-sm text-slate-400">
-								Showing {sessions.length} session{sessions.length !== 1
+								Showing {sessionsList.length} session{sessionsList.length !== 1
 									? 's'
 									: ''}
 							</div>

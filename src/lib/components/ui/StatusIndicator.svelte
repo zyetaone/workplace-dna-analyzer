@@ -1,7 +1,5 @@
-<!-- @migration-task Error while migrating Svelte code: Expected token >
-https://svelte.dev/e/expected_token -->
 <script lang="ts">
-  import { cn } from '$lib/utils';
+  import { cn } from '$lib/utils/common';
 
   interface StatusIndicatorProps {
     status: 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -62,7 +60,7 @@ https://svelte.dev/e/expected_token -->
 </script>
 
 {#if status === 'loading'}
-  <div class=mergeProps(
+  <div class={cn(
     "inline-flex items-center gap-2 rounded-lg backdrop-blur-sm",
     currentConfig.bg,
     currentConfig.border,
@@ -78,7 +76,7 @@ https://svelte.dev/e/expected_token -->
     {/if}
   </div>
 {:else}
-  <div class=mergeProps(
+  <div class={cn(
     "inline-flex items-center gap-2 rounded-lg backdrop-blur-sm",
     currentConfig.bg,
     currentConfig.border,

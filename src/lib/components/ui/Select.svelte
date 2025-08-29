@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Select } from 'bits-ui';
-	import { mergeProps } from '$lib/utils';
 
 	interface SelectOption {
 		value: string;
@@ -86,16 +85,12 @@
 		</label>
 	{/if}
 
-	<Select.Root
-		{...mergeProps(
-			{
-				type: 'single',
-				value,
-				onValueChange: handleValueChange,
-				disabled
-			},
-			restProps
-		)}
+ 	<Select.Root
+		type="single"
+		{value}
+		{onValueChange}
+		{disabled}
+		{...restProps}
 	>
 		<Select.Trigger 
 			class={triggerClasses}
