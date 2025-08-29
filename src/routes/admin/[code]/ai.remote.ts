@@ -12,14 +12,14 @@ import { eq } from 'drizzle-orm';
 import OpenAI from 'openai';
 import { analyzeWorkplaceData } from '$lib/utils/analysis';
 import type { Generation } from '$lib/questions';
-import { OPENAI_API_KEY } from '$env/static/private';
+// Note: Using process.env for server-side remote functions
 
 // Initialize OpenAI client with error handling
 let openai: OpenAI | null = null;
 
 try {
-	// Use SvelteKit environment variable import
-	const apiKey = OPENAI_API_KEY;
+	// Use Node.js process.env for server-side remote functions
+	const apiKey = process.env.OPENAI_API_KEY;
 	if (!apiKey || apiKey.trim() === '') {
 		console.warn('⚠️ OPENAI_API_KEY not found. AI features will be disabled.');
 	} else {
