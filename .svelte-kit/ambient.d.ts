@@ -63,7 +63,6 @@ declare module '$env/static/private' {
 	export const npm_config_cache: string;
 	export const POSH_SHELL_VERSION: string;
 	export const CLAUDE_AGENT_DIR: string;
-	export const OPENCODE: string;
 	export const npm_config_node_gyp: string;
 	export const PATH: string;
 	export const NODE: string;
@@ -169,7 +168,6 @@ declare module '$env/dynamic/private' {
 		npm_config_cache: string;
 		POSH_SHELL_VERSION: string;
 		CLAUDE_AGENT_DIR: string;
-		OPENCODE: string;
 		npm_config_node_gyp: string;
 		PATH: string;
 		NODE: string;

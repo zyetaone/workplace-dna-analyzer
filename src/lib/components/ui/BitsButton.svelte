@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button as ButtonPrimitive } from 'bits-ui';
-	import { mergeProps } from '$lib/utils/merge-props.js';
+	import { mergeProps } from '$lib/utils/merge-props';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 
 	type Props = {
@@ -56,7 +56,7 @@
 
 <ButtonPrimitive.Root {...buttonProps}>
 	{#if loading}
-		<span class="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white mr-2" />
+		<span class="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white mr-2"></span>
 	{/if}
 	{@render children?.()}
 </ButtonPrimitive.Root>

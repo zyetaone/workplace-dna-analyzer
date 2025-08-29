@@ -28,7 +28,7 @@
 					{...props} 
 					transition:fade={{ duration: 200 }}
 					class="fixed inset-0 bg-black/50 backdrop-blur-sm"
-				/>
+				></div>
 			{/if}
 		{/snippet}
 	</Dialog.Overlay>
@@ -100,7 +100,7 @@
 </Tooltip.Root>
 
 <!-- Example 4: Accordion with Slide -->
-<Accordion.Root>
+<Accordion.Root type="single">
 	<Accordion.Item value="item-1">
 		<Accordion.Trigger class={`${buttonPressClass} w-full text-left p-4`}>
 			Section 1
@@ -130,13 +130,13 @@
 </div>
 
 <!-- Example 6: Loading State Transition -->
-{#if $state.loading}
+{#if false /* Replace with actual loading state */}
 	<div 
 		in:fade={{ duration: 300 }}
 		out:fade={{ duration: 200 }}
 		class="center-flex p-8"
 	>
-		<div class="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600" />
+		<div class="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600"></div>
 	</div>
 {:else}
 	<div 

@@ -49,6 +49,18 @@
 	--radius-md: 12px;
 	--radius-lg: 16px;
 	--radius-xl: 24px;
+
+	/* Tailwind Color Extensions */
+	--color-purple-500: #a855f7;
+	--color-purple-600: #9333ea;
+	--color-pink-500: #ec4899;
+	--color-pink-600: #db2777;
+	--color-blue-600: #2563eb;
+	--color-slate-300: #cbd5e1;
+	--color-slate-700: #334155;
+	--color-slate-900: #0f172a;
+	--color-red-500: #ef4444;
+	--color-green-500: #22c55e;
 }
 
 /* ===================================================================
@@ -389,37 +401,27 @@
 }
 
 @layer utilities {
-	/* Common patterns to reduce duplication */
+	/* Custom Utilities using Tailwind 4.0 compatible syntax */
 	.gradient-primary {
-		@apply bg-gradient-to-r from-purple-500 to-pink-500;
+		background: linear-gradient(to right, var(--color-purple-500), var(--color-pink-500));
 	}
-	.gradient-primary-hover {
-		@apply hover:from-purple-600 hover:to-pink-600;
-	}
+
 	.gradient-secondary {
-		@apply bg-gradient-to-r from-purple-600 to-blue-600;
+		background: linear-gradient(to right, var(--color-purple-600), var(--color-blue-600));
 	}
+
 	.glass-card {
-		@apply backdrop-blur-xl bg-slate-900/80 border border-slate-700/50 rounded-xl;
+		backdrop-filter: blur(24px);
+		background: color-mix(in srgb, var(--color-slate-900) 80%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-slate-700) 50%, transparent);
+		border-radius: var(--radius-xl);
 	}
+
 	.glass-surface {
-		@apply backdrop-blur-sm bg-white/10;
+		backdrop-filter: blur(4px);
+		background: color-mix(in srgb, white 10%, transparent);
 	}
-	.center-flex {
-		@apply flex items-center justify-center;
-	}
-	.icon-circle {
-		@apply w-12 h-12 rounded-full flex items-center justify-center;
-	}
-	.btn-padding-sm {
-		@apply px-3 py-1.5;
-	}
-	.btn-padding {
-		@apply px-4 py-2;
-	}
-	.btn-padding-lg {
-		@apply px-6 py-3;
-	}
+
 	/* Accessibility Utilities */
 	.sr-only {
 		position: absolute;

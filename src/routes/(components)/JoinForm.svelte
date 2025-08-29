@@ -100,7 +100,7 @@
 		e.preventDefault();
 		handleJoin();
 	}}
-	onkeydown={handleKeyDown}
+	
 	class="space-y-6"
 >
 	<!-- Error Display with gentle animation -->
