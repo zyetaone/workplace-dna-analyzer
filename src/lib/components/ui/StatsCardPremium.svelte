@@ -76,10 +76,7 @@ https://svelte.dev/e/expected_token -->
 </script>
 
 <div 
-  class=mergeProps(
-    "stats-card-premium relative group",
-    className
-  )}
+  class="stats-card-premium relative group {className}"
   in:fly={{ y: 20, duration: 500, easing: quintOut }}
 >
   <!-- Background gradient effect -->

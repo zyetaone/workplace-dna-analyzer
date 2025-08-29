@@ -1,7 +1,7 @@
 <!-- Smart Error Recovery Component with User-Friendly Messaging -->
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
-	import { Button } from '$lib/components/ui/Button.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { tooltip } from '$lib/utils/attachments';
 	
 	interface Props {

@@ -44,7 +44,7 @@ https://svelte.dev/e/expected_token -->
 	));
 </script>
 
-<div class=mergeProps("w-full", className)}>
+<div class="w-full {className}">
 	{#if showLabel}
 		<div class="flex items-center justify-between mb-1">
 			<span class="text-sm font-medium text-slate-300">Progress</span>

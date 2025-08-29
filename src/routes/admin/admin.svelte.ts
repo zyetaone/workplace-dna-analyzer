@@ -40,6 +40,11 @@ let updateQueue = $state<ParticipantUpdate[]>([]);
 
 // Session metadata
 let sessionCode = $state('');
+let sessionUrl = $state('');
+let networkUrl = $state('');
+
+// Alias for admin sessions (same as sessions for now)
+const adminSessions = sessions;
 
 // Analytics computed from current participants using $derived
 const analytics = $derived(() => computeAnalyticsFast(participants));
