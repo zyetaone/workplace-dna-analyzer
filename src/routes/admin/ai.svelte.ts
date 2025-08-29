@@ -4,6 +4,7 @@
  */
 
 import type { Session, Participant } from '../../lib/server/db/schema';
+import { BaseSessionState } from './admin.svelte';
 import { getStreamingInsights, generateSessionSummary } from './[code]/ai.remote';
 
 export interface AIInsight {
@@ -103,51 +104,22 @@ export function getIsLoading() {
 }
 
 /**
- * AI Operations Class
- * Manages AI state for individual sessions
+ * AI Session State - Extends Base Session State
+ * Specialized for AI operations and insights generation
  */
-export class AISessionState {
-	session = $state<Session | null>(null);
-	participants = $state<Participant[]>([]);
+export class AISessionState extends BaseSessionState {
+	// AI-specific state
 	insights = $state<AIInsight[]>([]);
 	summary = $state<AISessionSummary | null>(null);
-	loading = $state(false);
-	error = $state<string | null>(null);
 	lastGenerated = $state<string | null>(null);
 
-	// Computed properties
-	hasCompletedParticipants = $derived(this.participants.filter((p) => p.completed).length > 0);
-
+	// AI-specific computed properties
 	hasInsights = $derived(this.insights.length > 0);
 	hasSummary = $derived(this.summary !== null);
 
-	// Methods
-	updateSession(session: Session) {
-		this.session = session;
-	}
-
-	updateParticipants(participants: Participant[]) {
-		this.participants = participants;
-	}
-
-	setLoading(loading: boolean) {
-		this.loading = loading;
-	}
-
-	setError(error: string | null) {
-		this.error = error;
-	}
-
 	// AI Operations
 	async generateInsights() {
-		console.log('🤖 Starting AI insights generation...', {
-			session: this.session?.code,
-			hasCompletedParticipants: this.hasCompletedParticipants,
-			completedCount: this.participants.filter((p) => p.completed).length
-		});
-
-		if (!this.session || !this.hasCompletedParticipants) {
-			console.log('❌ Cannot generate insights: missing session or completed participants');
+		if (!this.session || this.completedParticipants.length === 0) {
 			return { success: false, error: 'No completed participants to analyze' };
 		}
 
@@ -155,13 +127,11 @@ export class AISessionState {
 		this.error = null;
 
 		try {
-			console.log('📡 Calling OpenAI API...');
 			const result = await getStreamingInsights({ code: this.session.code });
-			console.log('📨 OpenAI API response:', result);
 
 			if (result.insights) {
 				// Cast the insights to proper types
-				this.insights = result.insights.map((insight) => ({
+				this.insights = result.insights.map((insight: any) => ({
 					...insight,
 					type: insight.type as AIInsight['type']
 				}));

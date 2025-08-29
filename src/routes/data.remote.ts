@@ -356,8 +356,46 @@ export const deleteParticipant = command(
 );
 
 // ============================================================================
-// AI OPERATIONS - Kept in separate ai.remote.ts file
+// OPTIMIZED DATA FLOW - Consolidated Analysis Operations
 // ============================================================================
+
+// Consolidated analysis query to eliminate redundant data fetching
+export const getSessionAnalysis = query(v.object({ code: v.string() }), async ({ code }) => {
+	// Single optimized query that gets all data needed for analysis
+	const sessionResult = await db.select().from(sessions).where(eq(sessions.code, code)).limit(1);
+
+	if (!sessionResult[0]) {
+		throw new Error('Session not found');
+	}
+
+	const session = sessionResult[0];
+
+	// Single participant query with all necessary data
+	const participantsResult = await db
+		.select()
+		.from(participants)
+		.where(eq(participants.sessionId, session.id))
+		.orderBy(desc(participants.joinedAt));
+
+	// Calculate stats in a single pass
+	const completedParticipants = participantsResult.filter((p) => p.completed);
+	const stats = {
+		totalCount: participantsResult.length,
+		completedCount: completedParticipants.length,
+		completionRate:
+			participantsResult.length > 0
+				? Math.round((completedParticipants.length / participantsResult.length) * 100)
+				: 0
+	};
+
+	return {
+		session,
+		participants: participantsResult,
+		stats,
+		// Pre-computed analysis data to avoid redundant processing
+		analysisReady: completedParticipants.length > 0
+	};
+});
 
 // ============================================================================
 // LEGACY EXPORTS (for backward compatibility)

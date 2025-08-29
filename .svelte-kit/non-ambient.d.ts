@@ -27,9 +27,8 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/(components)" | "/" | "/admin/(components)" | "/admin" | "/admin/[code]/(components)" | "/admin/[code]" | "/[code]" | "/[code]/complete" | "/[code]/quiz";
+		RouteId(): "/(components)" | "/" | "/admin/(components)" | "/admin" | "/admin/[code]" | "/[code]" | "/[code]/complete" | "/[code]/quiz";
 		RouteParams(): {
-			"/admin/[code]/(components)": { code: string };
 			"/admin/[code]": { code: string };
 			"/[code]": { code: string };
 			"/[code]/complete": { code: string };
@@ -40,7 +39,6 @@ declare module "$app/types" {
 			"/": { code?: string };
 			"/admin/(components)": Record<string, never>;
 			"/admin": { code?: string };
-			"/admin/[code]/(components)": { code: string };
 			"/admin/[code]": { code: string };
 			"/[code]": { code: string };
 			"/[code]/complete": { code: string };

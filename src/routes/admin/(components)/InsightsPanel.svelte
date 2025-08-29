@@ -11,8 +11,8 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 	import type { getSessionStore } from '../admin.svelte.ts';
 	import { getAISessionStore } from '../ai.svelte';
 	import { analyzeWorkplaceData, generateConceptWordCloud } from '$lib/utils/analysis';
-	import GenerationDonutChart from '$lib/components/charts/GenerationDonutChart.svelte';
-	import ConceptWordCloud from '$lib/components/charts/ConceptWordCloud.svelte';
+	import DonutChart from '$lib/components/charts/DonutChart.svelte';
+	import WordCloud from '$lib/components/charts/WordCloud.svelte';
 	import type { Generation } from '$lib/questions';
 
 	interface InsightsPanelProps {
@@ -96,16 +96,12 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 		}
 	});
 
-	// Debug: Log AI store state
+	// Monitor AI insights generation
 	$effect(() => {
 		const completedCount = store.participants?.filter((p) => p.completed).length || 0;
-		console.log('🤖 AI Store State:', {
-			hasInsights: aiInsights.length > 0,
-			isLoading: isLoadingAI,
-			hasError: !!aiError,
-			completedParticipants: completedCount,
-			sessionCode: store.session?.code
-		});
+		if (completedCount > 0 && !isLoadingAI && aiInsights.length === 0) {
+			console.log('🎯 Auto-generating AI insights for', completedCount, 'completed participants');
+		}
 	});
 </script>
 
@@ -136,7 +132,10 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 										Generation Distribution
 									</h3>
 									<div class="flex items-center justify-center">
-										<GenerationDonutChart data={comprehensiveAnalysis.generationChartData} />
+										<DonutChart
+											data={comprehensiveAnalysis.generationChartData}
+											variant="generation"
+										/>
 									</div>
 									<div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
 										{#each comprehensiveAnalysis.generationBreakdown as gen}
@@ -152,7 +151,8 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 
 							<!-- Concept Word Cloud -->
 							{#if comprehensiveAnalysis && comprehensiveAnalysis.concepts.length > 0}
-								<ConceptWordCloud
+								<WordCloud
+									variant="concept"
 									concepts={comprehensiveAnalysis.concepts}
 									onRefresh={refreshConcepts}
 								/>
@@ -338,19 +338,16 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 						Complete responses will generate personalized workplace insights
 					</p>
 
-					<!-- Manual AI Generation Button -->
-					{#if store.participants && store.participants.filter((p) => p.completed).length > 0}
-						<button
-							class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-							onclick={() => aiStore.generateInsights()}
-							disabled={isLoadingAI}
-						>
-							{#if isLoadingAI}
-								<span>Generating...</span>
-							{:else}
-								<span>Generate AI Insights</span>
-							{/if}
-						</button>
+					{#if aiError}
+						<div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+							<p class="text-red-700 text-sm">Error: {aiError}</p>
+							<button
+								class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+								onclick={() => aiStore.generateInsights()}
+							>
+								Try Again
+							</button>
+						</div>
 					{/if}
 
 					{#if aiError}

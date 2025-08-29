@@ -17,7 +17,7 @@
     rank?: number;
     totalParticipants?: number;
     onViewInsights?: () => void;
-    onRestartQuiz?: () => void;
+    onRestartAssessment?: () => void;
     class?: string;
   }
   
@@ -28,7 +28,7 @@
     rank,
     totalParticipants,
     onViewInsights,
-    onRestartQuiz,
+    onRestartAssessment,
     class: className = ''
   }: CompletionScreenProps = $props();
   
@@ -91,7 +91,7 @@
         Congratulations, {participantName}!
       </h1>
       <p class="text-lg text-slate-400 mb-8">
-        You've completed the Workplace Preferences Quiz
+        You've completed the Workplace Preference Assessment
       </p>
     </div>
     
@@ -107,7 +107,7 @@
         </div>
         {#if rank && totalParticipants}
           <div class="mt-2 text-sm text-slate-400">
-            Ranked #{rank} of {totalParticipants} participants
+            Ranked #{rank} of {totalParticipants} respondents
           </div>
         {/if}
       </div>
@@ -118,7 +118,7 @@
       class="dna-profile-card mb-8"
       in:fly={{ y: 20, delay: 600, duration: 500, easing: quintOut }}
     >
-      <h2 class="text-xl font-semibold text-slate-200 mb-6">Your Workplace DNA</h2>
+      <h2 class="text-xl font-semibold text-slate-200 mb-6">Your Workplace DNA Profile</h2>
       
       <div class="grid grid-cols-2 gap-6 mb-6">
         <div class="text-center">
@@ -175,24 +175,24 @@
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
           </svg>
-          View Insights
+          View Workplace Insights
         </Button>
       {/if}
       
-      {#if onRestartQuiz}
+      {#if onRestartAssessment}
         <Button
-          onclick={onRestartQuiz}
+          onclick={onRestartAssessment}
           variant="outline"
           size="lg"
         >
-          Take Again
+          Retake Assessment
         </Button>
       {/if}
     </div>
     
     <!-- Share section -->
     <div class="mt-8 pt-8 border-t border-slate-700/50">
-      <p class="text-sm text-slate-400 mb-4">Share your results</p>
+      <p class="text-sm text-slate-400 mb-4">Share your workplace insights</p>
       <div class="flex gap-3 justify-center">
         <button aria-label="Share on Twitter" class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors">
           <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 24 24">

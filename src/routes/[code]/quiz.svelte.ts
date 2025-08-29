@@ -21,6 +21,11 @@ export class QuizState {
 	responses = $state<Record<string, string>>({});
 	currentQuestionIndex = $state(0);
 
+	// Loading state coordination to prevent race conditions
+	dataLoaded = $state(false);
+	questionsLoaded = $state(true); // Static data, always true
+	responsesLoaded = $state(false);
+
 	// Computed properties
 	readonly questions = questions;
 	readonly totalQuestions = questions.length;
@@ -30,6 +35,20 @@ export class QuizState {
 	progressPercent = $derived(
 		Math.round((Object.keys(this.responses).length / questions.length) * 100)
 	);
+
+	// Unified loading state - only ready when both questions and responses are loaded
+	isReady = $derived(this.questionsLoaded && this.responsesLoaded && !this.loading);
+
+	// Current question with answer - only available when data is ready
+	currentQuestionWithAnswer = $derived.by(() => {
+		if (!this.isReady || !this.currentQuestion) return null;
+
+		return {
+			...this.currentQuestion,
+			selectedAnswer: this.currentAnswer,
+			hasAnswer: Boolean(this.currentAnswer)
+		};
+	});
 
 	completionData = $derived.by(() => {
 		if (!this.participant?.preferenceScores) return null;
@@ -91,16 +110,28 @@ export class QuizState {
 	loadQuizState = async (code: string, participantId: string) => {
 		this.loading = true;
 		this.error = null;
+		this.responsesLoaded = false;
+		this.dataLoaded = false;
+
 		try {
 			const result = await getQuizStateRemote({ sessionCode: code, participantId });
 			if (result.session && result.participant) {
 				this.session = result.session;
 				this.participant = result.participant;
 				this.responses = result.responses || {};
+
+				// Set responses as loaded
+				this.responsesLoaded = true;
+
+				// Calculate current question index based on responses
 				this.currentQuestionIndex = Math.min(
 					Object.keys(this.responses).length,
 					questions.length - 1
 				);
+
+				// Mark data as fully loaded
+				this.dataLoaded = true;
+
 				return result;
 			} else {
 				// Participant not found, clear localStorage and throw error

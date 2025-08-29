@@ -40,34 +40,46 @@
   ]);
 </script>
 
-<Card variant="stats">
-  {#snippet children()}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-      {#each stats as stat}
-        <Tooltip content={stat.tooltip}>
-          <div class="text-center cursor-help p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <div class="text-2xl font-bold {stat.color}">{stat.value}</div>
-            <div class="text-sm text-gray-600 font-medium">{stat.label}</div>
-          </div>
-        </Tooltip>
-      {/each}
-    </div>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    {#each stats as stat}
+      <Tooltip content={stat.tooltip}>
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all cursor-help">
+          <div class="text-3xl font-bold {stat.color} mb-1">{stat.value}</div>
+          <div class="text-xs text-gray-600 font-medium uppercase tracking-wide">{stat.label}</div>
+        </div>
+      </Tooltip>
+    {/each}
+  </div>
 
-    <!-- Progress Bar -->
-    <div class="bg-gray-200 rounded-full h-2.5">
-      <div class="bg-gradient-to-r from-cyan-500 to-purple-600 h-2.5 rounded-full" style="width: {analytics.responseRate}%"></div>
+  <!-- Enhanced Progress Bar -->
+  <div class="relative">
+    <div class="flex justify-between text-xs text-gray-600 mb-2">
+      <span>Completion Progress</span>
+      <span class="font-semibold">{analytics.responseRate}%</span>
     </div>
+    <div class="bg-gray-200 rounded-full h-3 overflow-hidden">
+      <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-full rounded-full transition-all duration-500 relative" style="width: {analytics.responseRate}%">
+        <div class="absolute inset-0 bg-white opacity-20 animate-pulse"></div>
+      </div>
+    </div>
+  </div>
 
-    {#if analytics.totalCount > 0}
-      <div class="text-center mt-2">
-        <span class="text-sm text-gray-600">
-          {analytics.completedCount} of {analytics.totalCount} completed ({analytics.responseRate}%)
+  {#if analytics.totalCount > 0}
+    <div class="flex items-center justify-center mt-4 text-sm">
+      <div class="flex items-center gap-4">
+        <span class="text-gray-600">
+          <span class="font-semibold text-gray-800">{analytics.completedCount}</span> of <span class="font-semibold text-gray-800">{analytics.totalCount}</span> completed
+        </span>
+        <div class="h-4 w-px bg-gray-300"></div>
+        <span class="text-purple-600 font-semibold">
+          {analytics.responseRate}% response rate
         </span>
       </div>
-    {:else}
-      <div class="text-center mt-2">
-        <span class="text-sm text-gray-500">Waiting for participants to join...</span>
-      </div>
-    {/if}
-  {/snippet}
-</Card>
+    </div>
+  {:else}
+    <div class="text-center mt-4 py-3 bg-amber-50 rounded-lg border border-amber-200">
+      <span class="text-sm text-amber-700 font-medium">Waiting for participants to join...</span>
+    </div>
+  {/if}
+</div>

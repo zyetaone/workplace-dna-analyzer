@@ -1,0 +1,187 @@
+/* ===================================================================
+   ZYETA COLOR SYSTEM - TAILWIND 4.0 INTEGRATION
+   OKLCH colors for better mixing and modern CSS features
+   =================================================================== */
+
+/* Extended Theme Configuration */
+@theme {
+  /* Brand Color Extensions */
+  --color-brand-purple: oklch(40% 0.25 285);        /* Deep brand purple */
+  --color-brand-cyan: oklch(70% 0.15 200);          /* Brand cyan accent */
+  --color-brand-warm: oklch(75% 0.12 85);           /* Warm amber accent */
+  
+  /* Extended Semantic Palette */
+  --color-info-light: oklch(80% 0.08 240);          /* Light info blue */
+  --color-success-light: oklch(80% 0.1 142);        /* Light success green */
+  --color-warning-light: oklch(85% 0.08 85);        /* Light warning orange */
+  --color-error-light: oklch(80% 0.12 25);          /* Light error red */
+  
+  /* Surface & Glass Effects */
+  --color-glass-light: color-mix(in srgb, white 8%, transparent);
+  --color-glass-medium: color-mix(in srgb, white 12%, transparent);
+  --color-glass-strong: color-mix(in srgb, white 18%, transparent);
+  
+  /* Interactive State Colors */
+  --color-hover-light: color-mix(in srgb, var(--color-primary) 5%, transparent);
+  --color-hover-medium: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  --color-hover-strong: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  
+  /* Shadow Tokens - Modern Approach */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, black 5%, transparent);
+  --shadow-md: 0 4px 6px color-mix(in srgb, black 7%, transparent);
+  --shadow-lg: 0 10px 15px color-mix(in srgb, black 10%, transparent);
+  --shadow-xl: 0 20px 25px color-mix(in srgb, black 15%, transparent);
+  --shadow-2xl: 0 25px 50px color-mix(in srgb, black 25%, transparent);
+  
+  /* Glass & Blur Shadows */
+  --shadow-glass: 0 8px 32px color-mix(in srgb, black 12%, transparent);
+  --shadow-glass-lg: 0 20px 40px color-mix(in srgb, black 20%, transparent);
+}
+
+/* Modern Color Utilities */
+@layer components {
+  /* Glass Surface System */
+  .surface-glass {
+    background: var(--color-glass-light);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid color-mix(in srgb, white 10%, transparent);
+    box-shadow: var(--shadow-glass);
+  }
+  
+  .surface-glass-medium {
+    background: var(--color-glass-medium);
+    backdrop-filter: blur(20px) saturate(200%);
+    border: 1px solid color-mix(in srgb, white 15%, transparent);
+    box-shadow: var(--shadow-glass-lg);
+  }
+  
+  .surface-glass-strong {
+    background: var(--color-glass-strong);
+    backdrop-filter: blur(24px) saturate(220%);
+    border: 1px solid color-mix(in srgb, white 20%, transparent);
+    box-shadow: var(--shadow-2xl);
+  }
+  
+  /* Material Textures */
+  .surface-wood {
+    background: linear-gradient(135deg, 
+      oklch(45% 0.05 85) 0%, 
+      oklch(40% 0.08 75) 100%);
+    box-shadow: inset 0 2px 4px color-mix(in srgb, black 10%, transparent);
+  }
+  
+  .surface-metal {
+    background: linear-gradient(180deg, 
+      oklch(85% 0.01 0) 0%, 
+      oklch(80% 0.01 0) 50%, 
+      oklch(85% 0.01 0) 100%);
+    box-shadow: 
+      inset 0 1px 0 color-mix(in srgb, white 50%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, black 10%, transparent);
+  }
+}
+
+@layer utilities {
+  /* Gradient Text Effects */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .gradient-text-warm {
+    background: linear-gradient(135deg, var(--color-brand-warm), var(--color-primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Interactive State Utilities */
+  .hover-glow:hover {
+    box-shadow: 
+      var(--shadow-lg),
+      0 0 20px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  }
+  
+  /* Brand Color Utilities */
+  .text-brand { color: var(--color-brand-purple); }
+  .text-accent { color: var(--color-brand-cyan); }
+  .text-warm { color: var(--color-brand-warm); }
+  
+  .bg-brand { background: var(--color-brand-purple); }
+  .bg-accent { background: var(--color-brand-cyan); }
+  .bg-warm { background: var(--color-brand-warm); }
+  
+  /* Missing Text Color Utilities */
+  .text-zyeta { color: var(--color-text-primary); }
+  .text-primary { color: var(--color-primary); }
+  .text-secondary { color: var(--color-text-secondary); }
+  .text-muted { color: var(--color-text-muted); }
+  .text-success { color: var(--color-success); }
+  .text-danger { color: var(--color-error); }
+  
+  /* Additional Gradient Text Effects */
+  .gradient-text-zyeta {
+    background: linear-gradient(135deg, var(--color-brand-purple), var(--color-brand-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .gradient-text-primary {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Additional Surface Effects */
+  .surface-frosted {
+    background: var(--color-glass-medium);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid color-mix(in srgb, white 12%, transparent);
+    box-shadow: var(--shadow-glass);
+  }
+  
+  /* Gradient Backgrounds */
+  .gradient-zyeta {
+    background: linear-gradient(135deg, var(--color-brand-purple), var(--color-brand-cyan));
+  }
+}
+
+/* Accessibility & Media Query Enhancements */
+@media (prefers-contrast: high) {
+  .surface-glass,
+  .surface-glass-medium,
+  .surface-glass-strong {
+    background: color-mix(in srgb, white 95%, transparent) !important;
+    border: 2px solid currentColor !important;
+    backdrop-filter: none !important;
+  }
+  
+  .gradient-text,
+  .gradient-text-warm {
+    background: none !important;
+    -webkit-text-fill-color: currentColor !important;
+    background-clip: unset !important;
+  }
+}
+
+@media print {
+  .surface-glass,
+  .surface-glass-medium,
+  .surface-glass-strong {
+    background: white !important;
+    border: 1px solid black !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+  
+  .gradient-text,
+  .gradient-text-warm {
+    background: none !important;
+    -webkit-text-fill-color: black !important;
+    color: black !important;
+  }
+}

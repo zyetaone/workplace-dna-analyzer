@@ -30,26 +30,13 @@ try {
 	console.error('❌ Failed to initialize OpenAI client:', error);
 }
 
-// Get workplace analysis data for AI prompts
+// Get workplace analysis data for AI prompts - OPTIMIZED
 async function getWorkplaceAnalysisData(sessionCode: string) {
-	// Get session
-	const sessionResult = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.code, sessionCode))
-		.limit(1);
+	// Use consolidated data fetching to eliminate redundant queries
+	const { getSessionAnalysis } = await import('../../data.remote');
+	const sessionData = await getSessionAnalysis({ code: sessionCode });
 
-	if (!sessionResult[0]) {
-		throw new Error('Session not found');
-	}
-
-	const session = sessionResult[0];
-
-	// Get participants
-	const participantsResult = await db
-		.select()
-		.from(participants)
-		.where(eq(participants.sessionId, session.id));
+	const { session, participants: participantsResult } = sessionData;
 
 	const completedParticipants = participantsResult.filter((p) => p.completed);
 
@@ -94,7 +81,15 @@ async function getWorkplaceAnalysisData(sessionCode: string) {
 
 // Generate AI insights using OpenAI chat completions API
 export const getStreamingInsights = query('unchecked', async (input) => {
-	const { code, _service, _systemPrompt, _userMessage } = validateInput(
+	const {
+		code,
+		_systemPrompt,
+		_userMessage
+	}: {
+		code: string;
+		_systemPrompt?: string;
+		_userMessage?: string;
+	} = validateInput(
 		v.object({
 			code: v.string(),
 			_service: v.optional(v.string()),
@@ -104,8 +99,7 @@ export const getStreamingInsights = query('unchecked', async (input) => {
 		input
 	);
 
-	console.log('🎯 AI Insights requested for session:', code);
-	console.log('🔑 OpenAI client available:', !!openai);
+	// AI insights generation for session
 
 	try {
 		// Check if OpenAI client is available
@@ -169,12 +163,12 @@ export const getStreamingInsights = query('unchecked', async (input) => {
 		let prompt: string;
 
 		if (_systemPrompt && _userMessage) {
-			// Custom AI assistant mode
+			// Custom AI assistant mode for ZyetaI
 			prompt = `${_systemPrompt}
 
 User Query: ${_userMessage}
 
-Please provide a helpful, detailed response based on ZYETA's expertise in the ${_service} area. Focus on practical, actionable advice that aligns with the user's workplace preferences and needs.`;
+Please provide a helpful, detailed response based on ZYETA's expertise in workplace optimization. Focus on practical, actionable advice that aligns with workplace preferences and needs. Consider the session data and participant insights when relevant.`;
 		} else {
 			// Default analysis mode
 			prompt = `Analyze this workplace preference assessment data and provide 3 key insights in valid JSON format:
@@ -262,11 +256,6 @@ Focus on data-driven insights about workplace culture, team dynamics, and action
 				}
 			];
 		}
-
-		console.log('✅ AI insights generated successfully:', {
-			insightsCount: insights.length,
-			sessionCode: code
-		});
 
 		return {
 			insights,
@@ -399,7 +388,9 @@ Focus on workplace culture insights, team dynamics, and practical applications.`
 		});
 
 		// Extract summary from response
-		let summary, keyMetrics, recommendations;
+		let summary: string | undefined;
+		let keyMetrics: any[] | undefined;
+		let recommendations: string[] | undefined;
 
 		if (response.choices[0]?.message?.content) {
 			try {

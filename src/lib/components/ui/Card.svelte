@@ -1,38 +1,54 @@
 <!-- Unified Card component to replace duplicate card patterns throughout the app -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import LoadingScreen from '$lib/components/shared/LoadingScreen.svelte';
-	
+	import Loading from '$lib/components/shared/Loading.svelte';
+
 	interface Props {
 		// Content
 		title?: string;
 		subtitle?: string;
-		
+
 		// Layout & styling
 		size?: 'sm' | 'md' | 'lg';
-		variant?: 'default' | 'elevated' | 'outlined' | 'filled' | 'stats' | 'glass' | 'glassLight' | 
-				  'glassDark' | 'glassMedium' | 'glassSubtle' | 'glassElevated' | 'glassPrimary' | 
-				  'glassSuccess' | 'glassDanger' | 'light' | 'lightElevated' | 'lightOutlined' | 
-				  'lightFilled' | 'lightStats';
-		
+		variant?:
+			| 'default'
+			| 'elevated'
+			| 'outlined'
+			| 'filled'
+			| 'stats'
+			| 'glass'
+			| 'glassLight'
+			| 'glassDark'
+			| 'glassMedium'
+			| 'glassSubtle'
+			| 'glassElevated'
+			| 'glassPrimary'
+			| 'glassSuccess'
+			| 'glassDanger'
+			| 'light'
+			| 'lightElevated'
+			| 'lightOutlined'
+			| 'lightFilled'
+			| 'lightStats';
+
 		// Interaction
 		hoverable?: boolean;
 		clickable?: boolean;
 		loading?: boolean;
 		hoverEffect?: 'none' | 'glow' | 'lift' | 'scale' | 'border';
-		
+
 		// Custom styling
 		class?: string;
 		headerClass?: string;
 		bodyClass?: string;
-		
+
 		// Snippets
 		children: Snippet;
 		header?: Snippet;
 		actions?: Snippet;
 	}
-	
-	let { 
+
+	let {
 		title,
 		subtitle,
 		size = 'md',
@@ -48,14 +64,14 @@
 		header,
 		actions
 	}: Props = $props();
-	
+
 	// Size variants
 	const sizeClasses = {
 		sm: 'p-4',
-		md: 'p-6', 
+		md: 'p-6',
 		lg: 'p-8'
 	};
-	
+
 	// Variant styles - Frosted Glass & White Options
 	const variantClasses = {
 		// Updated pale/off-white variants for better readability
@@ -72,13 +88,19 @@
 		// Glass morphism variants (keeping for backwards compatibility)
 		glass: 'bg-slate-900/40 backdrop-blur-2xl border border-slate-700/30 shadow-2xl',
 		glassLight: 'bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg',
-		glassDark: 'bg-gradient-to-br from-slate-900/75 to-slate-800/75 backdrop-blur-2xl border border-slate-700/30 shadow-2xl',
-		glassMedium: 'bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-slate-700/40 shadow-lg',
+		glassDark:
+			'bg-gradient-to-br from-slate-900/75 to-slate-800/75 backdrop-blur-2xl border border-slate-700/30 shadow-2xl',
+		glassMedium:
+			'bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-slate-700/40 shadow-lg',
 		glassSubtle: 'bg-slate-900/70 backdrop-blur-md border border-slate-700/20 shadow-md',
-		glassElevated: 'bg-gradient-to-br from-slate-900/85 to-slate-800/85 backdrop-blur-2xl border border-slate-600/40 shadow-2xl',
-		glassPrimary: 'bg-gradient-to-br from-cyan-900/30 to-purple-900/30 backdrop-blur-xl border border-cyan-700/30 shadow-lg',
-		glassSuccess: 'bg-gradient-to-br from-green-900/30 to-emerald-900/30 backdrop-blur-xl border border-green-700/30 shadow-lg',
-		glassDanger: 'bg-gradient-to-br from-red-900/30 to-rose-900/30 backdrop-blur-xl border border-red-700/30 shadow-lg',
+		glassElevated:
+			'bg-gradient-to-br from-slate-900/85 to-slate-800/85 backdrop-blur-2xl border border-slate-600/40 shadow-2xl',
+		glassPrimary:
+			'bg-gradient-to-br from-cyan-900/30 to-purple-900/30 backdrop-blur-xl border border-cyan-700/30 shadow-lg',
+		glassSuccess:
+			'bg-gradient-to-br from-green-900/30 to-emerald-900/30 backdrop-blur-xl border border-green-700/30 shadow-lg',
+		glassDanger:
+			'bg-gradient-to-br from-red-900/30 to-rose-900/30 backdrop-blur-xl border border-red-700/30 shadow-lg',
 		// White/Light variants for maximum readability
 		white: 'bg-white/95 backdrop-blur-xl border border-gray-200 shadow-lg',
 		whiteElevated: 'bg-white/98 backdrop-blur-2xl shadow-2xl border border-gray-100',
@@ -88,7 +110,7 @@
 		lightFilled: 'bg-gray-50 border border-gray-200 shadow-sm',
 		lightStats: 'bg-gray-50 border border-gray-200 shadow-sm'
 	};
-	
+
 	// Hover effect classes
 	const hoverEffectClasses = {
 		none: '',
@@ -97,7 +119,7 @@
 		scale: 'hover:scale-[1.02]',
 		border: 'hover:border-slate-600/50'
 	};
-	
+
 	// Interactive states
 	const interactionClasses = $derived(() => {
 		let classes = [];
@@ -109,7 +131,7 @@
 		if (hoverEffect !== 'none') classes.push(hoverEffectClasses[hoverEffect]);
 		return classes.join(' ');
 	});
-	
+
 	const cardClasses = $derived(() => {
 		return `rounded-lg ${variantClasses[variant]} ${interactionClasses()} ${className}`.trim();
 	});
@@ -118,14 +140,9 @@
 <div class={cardClasses}>
 	<!-- Loading overlay -->
 	{#if loading}
-		<LoadingScreen 
-			show={true}
-			message="Loading..."
-			variant="modal"
-			autoHide={false}
-		/>
+		<Loading variant="screen" message="Loading..." />
 	{/if}
-	
+
 	<!-- Header section -->
 	{#if header || title || subtitle}
 		<div class="border-b border-slate-700/50 {headerClass}">
@@ -143,18 +160,26 @@
 			{/if}
 		</div>
 	{/if}
-	
- 	<!-- Body content -->
- 	<div class="{title || subtitle || header ? (size === 'sm' ? 'p-4' : size === 'md' ? 'p-6' : 'p-8') : sizeClasses[size]} {bodyClass}">
- 		{#if children}
- 			{@render children()}
- 		{/if}
- 	</div>
 
-  	<!-- Actions section -->
-  	{#if actions}
-  		<div class="border-t border-slate-700/50 px-6 py-4 bg-slate-800/70 rounded-b-lg">
-  			{@render actions()}
-  		</div>
-  	{/if}
+	<!-- Body content -->
+	<div
+		class="{title || subtitle || header
+			? size === 'sm'
+				? 'p-4'
+				: size === 'md'
+					? 'p-6'
+					: 'p-8'
+			: sizeClasses[size]} {bodyClass}"
+	>
+		{#if children}
+			{@render children()}
+		{/if}
+	</div>
+
+	<!-- Actions section -->
+	{#if actions}
+		<div class="border-t border-slate-700/50 px-6 py-4 bg-slate-800/70 rounded-b-lg">
+			{@render actions()}
+		</div>
+	{/if}
 </div>

@@ -52,7 +52,9 @@ COPY --from=deps /app/node_modules ./node_modules
 RUN npm prune --omit=dev --no-audit --no-fund
 
 # Copy built files from builder stage
-COPY --from=builder /app/build ./build
+COPY --from=builder /app/.svelte-kit/adapter-node ./build
+COPY --from=builder /app/.svelte-kit/output/client ./client
+COPY --from=builder /app/static ./static
 COPY --from=builder /app/drizzle ./drizzle
 
 # Copy drizzle config for database setup
@@ -71,4 +73,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
 # Start the application
-CMD ["node", "build"]
+CMD ["node", "build/index.js"]
