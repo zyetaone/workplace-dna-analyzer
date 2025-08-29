@@ -58,13 +58,8 @@ RUN npm prune --omit=dev --no-audit --no-fund
 COPY --from=builder /app/.svelte-kit/adapter-node ./build
 COPY --from=builder /app/.svelte-kit/output/client ./client
 COPY --from=builder /app/static ./static
-COPY --from=builder /app/drizzle ./drizzle
 
-# Copy drizzle config for database setup
-COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
-
-# Initialize database with proper schema
-RUN npx drizzle-kit push --config drizzle.config.ts
+# Database will be initialized automatically at runtime by the application
 
 # Set proper permissions for database files
 RUN chmod 755 ./ && \
