@@ -1,27 +1,68 @@
-<script>
-	import "../app.css";
-	import { Tooltip } from 'bits-ui';
+<script lang="ts">
+ 	import "../app.css";
+ 	import { Tooltip } from 'bits-ui';
+ 	import LoadingScreen from '$lib/components/shared/LoadingScreen.svelte';
+ 	import AnimatedBackground from '$lib/components/shared/AnimatedBackground.svelte';
 
-	let { children } = $props();
+ 	let { children } = $props<{ children: any }>();
 </script>
 
 <svelte:head>
-	<title>Zyeta DX - Workplace Experience Platform</title>
-	<meta
-		name="description"
-		content="Transform workplace insights with real-time engagement and analytics powered by Zyeta DX"
-	/>
-	<link
-		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-		rel="stylesheet"
-	/>
+ 	<title>Zyeta DX - Workplace Experience Platform</title>
+ 	<meta
+ 		name="description"
+ 		content="Transform workplace insights with real-time engagement and analytics powered by Zyeta DX"
+ 	/>
+ 	<link
+ 		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+ 		rel="stylesheet"
+ 	/>
+ 	<link
+ 		href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap"
+ 		rel="stylesheet"
+ 	/>
 </svelte:head>
-<svelte:boundary>
+
+<svelte:boundary onerror={(error, reset) => console.error('Application Error:', error)}>
+	{#snippet pending()}
+		<LoadingScreen 
+			show={true}
+			message="Loading application..."
+			variant="fullscreen"
+			autoHide={false}
+		/>
+	{/snippet}
+
 	<Tooltip.Provider>
-		<div class="animated-gradient min-h-screen">
-			{@render children?.()}
-		</div>
+		<AnimatedBackground variant="default" intensity="medium" showParticles={true}>
+			<!-- Main Content -->
+			<div class="min-h-screen">
+				{@render children?.()}
+			</div>
+		</AnimatedBackground>
 	</Tooltip.Provider>
+
+	{#snippet failed(error, reset)}
+		<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4" role="main">
+			<div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full" role="alert" aria-live="assertive">
+				<div class="text-red-600 text-5xl text-center mb-4" aria-hidden="true">⚠️</div>
+				<h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">Application Error</h1>
+				<p class="text-gray-600 text-center mb-6">
+					{error && typeof error === 'object' && 'message' in error ? (error as Error).message : 'An unexpected error occurred'}
+				</p>
+				<div class="text-center">
+					<button
+						type="button"
+						class="text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+						onclick={reset}
+						aria-label="Try again"
+					>
+						Try Again
+					</button>
+				</div>
+			</div>
+		</div>
+	{/snippet}
 </svelte:boundary>
 
 <style>

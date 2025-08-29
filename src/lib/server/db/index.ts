@@ -5,12 +5,17 @@ import { env } from '$env/dynamic/private';
 
 // Use DATABASE_URL from env or default to local file
 // LibSQL expects file URLs in the format 'file:./path' or 'file:///absolute/path'
-let dbUrl = env.DATABASE_URL || 'file:./local.db';
+let dbUrl = env.DATABASE_URL || './local.db';
 
 // Ensure the URL has the correct format
 if (dbUrl && !dbUrl.startsWith('file:') && !dbUrl.startsWith('libsql:') && !dbUrl.startsWith('http')) {
-  // If it's just a filename, prepend file:./
-  dbUrl = `file:./${dbUrl}`;
+  // For local development, use relative path
+  if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    dbUrl = `file:${dbUrl}`;
+  } else {
+    // For Coolify deployment, use /app/data/
+    dbUrl = `file:/app/data/${dbUrl}`;
+  }
 }
 
 const client = createClient({ url: dbUrl });

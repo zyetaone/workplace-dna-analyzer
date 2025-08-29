@@ -27,30 +27,29 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/admin" | "/admin/components" | "/admin/[code]" | "/admin/[code]/components" | "/[code]" | "/[code]/complete" | "/[code]/components" | "/[code]/quiz" | "/[code]/quiz/complete";
+		RouteId(): "/(components)" | "/" | "/admin/(components)" | "/admin" | "/admin/[code]/(components)" | "/admin/[code]" | "/[code]" | "/[code]/complete" | "/[code]/quiz" | "/[code]/quiz/complete";
 		RouteParams(): {
+			"/admin/[code]/(components)": { code: string };
 			"/admin/[code]": { code: string };
-			"/admin/[code]/components": { code: string };
 			"/[code]": { code: string };
 			"/[code]/complete": { code: string };
-			"/[code]/components": { code: string };
 			"/[code]/quiz": { code: string };
 			"/[code]/quiz/complete": { code: string }
 		};
 		LayoutParams(): {
+			"/(components)": Record<string, never>;
 			"/": { code?: string };
+			"/admin/(components)": Record<string, never>;
 			"/admin": { code?: string };
-			"/admin/components": Record<string, never>;
+			"/admin/[code]/(components)": { code: string };
 			"/admin/[code]": { code: string };
-			"/admin/[code]/components": { code: string };
 			"/[code]": { code: string };
 			"/[code]/complete": { code: string };
-			"/[code]/components": { code: string };
 			"/[code]/quiz": { code: string };
 			"/[code]/quiz/complete": { code: string }
 		};
-		Pathname(): "/" | "/admin" | "/admin/" | "/admin/components" | "/admin/components/" | `/admin/${string}` & {} | `/admin/${string}/` & {} | `/admin/${string}/components` & {} | `/admin/${string}/components/` & {} | `/${string}` & {} | `/${string}/` & {} | `/${string}/complete` & {} | `/${string}/complete/` & {} | `/${string}/components` & {} | `/${string}/components/` & {} | `/${string}/quiz` & {} | `/${string}/quiz/` & {} | `/${string}/quiz/complete` & {} | `/${string}/quiz/complete/` & {};
+		Pathname(): "/" | "/admin" | "/admin/" | `/admin/${string}` & {} | `/admin/${string}/` & {} | `/${string}` & {} | `/${string}/` & {} | `/${string}/complete` & {} | `/${string}/complete/` & {} | `/${string}/quiz` & {} | `/${string}/quiz/` & {} | `/${string}/quiz/complete` & {} | `/${string}/quiz/complete/` & {};
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): "/.well-known/appspecific/com.chrome.devtools.json" | "/Zyeta_Black_SVG.svg" | "/favicon.svg" | "/robots.txt" | "/zyeta-dx-logo.svg" | string & {};
+		Asset(): "/.well-known/appspecific/com.chrome.devtools.json" | "/Zyeta_Black_SVG.svg" | "/architectural-bg.svg" | "/favicon.svg" | "/robots.txt" | "/zyeta-dx-logo.svg" | string & {};
 	}
 }

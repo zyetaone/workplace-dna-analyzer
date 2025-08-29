@@ -13,6 +13,9 @@ A SvelteKit 5 application for interactive workplace preference analysis. Present
 - **Remote Functions**: SvelteKit experimental remote functions with `query` and `command` wrappers
 - **Database**: SQLite with Drizzle ORM (WAL2 mode enabled)
 - **Validation**: Valibot schemas for all remote function inputs
+- **Error Handling**: `<svelte:boundary>` for runtime errors, reactive error states
+- **Attachments**: `{@attach ...}` for reactive DOM interactions and effects
+- **AI Integration**: OpenAI API for workplace insights and recommendations
 - **Styling**: TailwindCSS with custom UI components
 - **Charts**: Chart.js and D3.js with reusable configuration utilities
 - **Build**: Vite with SvelteKit adapter-node
@@ -71,7 +74,7 @@ src/
     │   └── [code]/
     │       └── session-analytics.svelte.ts # SessionAnalyticsState class
     └── [code]/
-        ├── presenter.svelte.ts            # Participant state management
+        ├── quiz.svelte.ts            # Participant state management
         └── *.svelte                       # Clean component pages
 ```
 
@@ -149,6 +152,214 @@ PUBLIC_APP_URL=http://localhost:5173 # Application URL
 
 # Optional
 OPENAI_API_KEY=your-api-key-here     # For AI insights feature
+```
+
+## Modern Svelte 5 Features
+
+### {@attach ...} Reactive Attachments
+
+Svelte 5's `{@attach ...}` provides reactive DOM interactions that automatically re-run when dependencies change:
+
+#### Attachment Factory Pattern
+```typescript
+// Create reusable attachment factories
+function tooltip(content: string) {
+  return (element: HTMLElement) => {
+    // Setup tooltip
+    const tooltip = createTooltip(element, content);
+
+    // Return cleanup function
+    return () => tooltip.destroy();
+  };
+}
+```
+
+#### Usage in Components
+```svelte
+<script>
+  import { tooltip } from '$lib/utils/attachments';
+</script>
+
+<button {@attach tooltip('Click me!')}>
+  Hover for tooltip
+</button>
+```
+
+#### Available Attachment Utilities (`$lib/utils/attachments.ts`)
+
+- **`intersectionObserver(callback, options)`** - Lazy loading, scroll animations
+- **`clickOutside(callback)`** - Close dropdowns/modals when clicking outside
+- **`focusTrap()`** - Keyboard navigation containment for modals
+- **`resizeObserver(callback)`** - Respond to element size changes
+- **`autoResize(minHeight)`** - Auto-growing textareas
+- **`scrollListener(callback, delay)`** - Debounced scroll events
+- **`copyToClipboard(text, onSuccess, onError)`** - Copy text to clipboard
+- **`longPress(callback, duration)`** - Long press detection for mobile
+
+### Error Boundaries with `<svelte:boundary>`
+
+Modern error handling using Svelte 5's boundary component:
+
+#### Basic Error Boundary
+```svelte
+<ErrorBoundary title="Component Error">
+  <RiskyComponent />
+</ErrorBoundary>
+```
+
+#### Advanced Error Handling
+```svelte
+<svelte:boundary onerror={(error, reset) => reportError(error)}>
+  {#snippet pending()}
+    <div>Loading...</div>
+  {/snippet}
+
+  {#snippet failed(error, reset)}
+    <div class="error">
+      <p>Something went wrong: {error.message}</p>
+      <button onclick={reset}>Try Again</button>
+    </div>
+  {/snippet}
+
+  <UnstableComponent />
+</svelte:boundary>
+```
+
+### AI Integration Features
+
+#### OpenAI-Powered Insights
+```typescript
+// AI insights remote function
+export const generateInsights = command(
+  v.object({ sessionId: v.string() }),
+  async ({ sessionId }) => {
+    const analysis = await analyzeWorkplaceData(sessionId);
+
+    const insights = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{
+        role: "user",
+        content: `Analyze this workplace preference data: ${JSON.stringify(analysis)}`
+      }]
+    });
+
+    return { insights: insights.choices[0].message.content };
+  }
+);
+```
+
+#### Graceful AI Fallbacks
+```typescript
+// Handle AI API failures gracefully
+try {
+  const insights = await generateInsights({ sessionId });
+  return { success: true, insights };
+} catch (error) {
+  console.warn('AI insights unavailable:', error);
+  return {
+    success: true,
+    insights: 'AI insights temporarily unavailable. Using basic analytics.'
+  };
+}
+```
+
+## Updated File Structure
+
+### New Components
+```
+src/lib/components/shared/
+├── ErrorBoundary.svelte      # Runtime error handling
+├── Tooltip.svelte           # Reactive tooltips with {@attach ...}
+├── Modal.svelte            # Accessible modals with focus trap
+├── AttachmentDemo.svelte    # {@attach ...} examples and demos
+└── ErrorMessage.svelte      # Display component for reactive errors
+```
+
+### Enhanced Utilities
+```
+src/lib/utils/
+├── attachments.ts           # {@attach ...} utilities (NEW)
+├── validation.ts            # Moved from lib root
+├── scoring.ts               # Workplace preference calculations
+├── common.ts                # Shared utility functions
+├── id.ts                    # ID generation utilities
+└── analytics.ts             # Analytics helpers
+```
+
+### AI Features
+```
+src/routes/admin/[code]/
+├── ai-insights.remote.ts    # AI-powered insights (NEW)
+└── data.remote.ts           # Enhanced with AI integration
+```
+
+## Component Patterns
+
+### Modern Component with Attachments
+```svelte
+<script lang="ts">
+  import { autoResize, focusTrap } from '$lib/utils/attachments';
+  import ErrorBoundary from '$lib/components/shared/ErrorBoundary.svelte';
+
+  let feedback = $state('');
+  let showModal = $state(false);
+</script>
+
+<ErrorBoundary title="Feedback Form Error">
+  <form {@attach focusTrap()}>
+    <textarea
+      {@attach autoResize(60)}
+      bind:value={feedback}
+      placeholder="Enter your feedback..."
+    />
+
+    <button type="submit">Submit</button>
+  </form>
+</ErrorBoundary>
+```
+
+### Reactive Tooltip Component
+```svelte
+<script lang="ts">
+  import { tooltip } from '$lib/utils/attachments';
+
+  interface Props {
+    content: string;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+    children?: any;
+  }
+
+  let { content, position = 'top', children }: Props = $props();
+</script>
+
+<div {@attach tooltip(content, position)}>
+  {@render children?.()}
+</div>
+```
+
+### Modal with Multiple Attachments
+```svelte
+<script lang="ts">
+  import { clickOutside, focusTrap } from '$lib/utils/attachments';
+
+  let modalRef: HTMLElement;
+  let open = $state(false);
+</script>
+
+{#if open}
+  <div
+    {@attach clickOutside(() => open = false)}
+    class="modal-backdrop"
+  >
+    <div
+      bind:this={modalRef}
+      {@attach focusTrap()}
+      class="modal-content"
+    >
+      <slot />
+    </div>
+  </div>
+{/if}
 ```
 
 ## Key Patterns
@@ -337,12 +548,159 @@ $effect(() => {
 
 ## Development Best Practices
 
-- Use remote functions for all server operations
-- Validate all inputs with Valibot schemas
-- Handle errors gracefully with optimistic updates and rollback
-- Use server-side data loading for initial renders
-- Keep client state minimal with unified state management
-- Prefer derived state over manual updates
-- Always implement proper cleanup in effects
-- Use TypeScript interfaces for all component props
-- Leverage Svelte 5 snippets for reusable UI patterns
+### Modern Svelte 5 Patterns
+
+#### Use `{@attach ...}` for Reactive DOM Interactions
+```svelte
+<!-- ✅ Modern approach -->
+<button {@attach tooltip('Click me!')}>Action</button>
+
+<!-- ❌ Legacy approach -->
+<button use:tooltip={{ content: 'Click me!' }}>Action</button>
+```
+
+#### Implement Error Boundaries for Runtime Errors
+```svelte
+<!-- ✅ Modern error handling -->
+<ErrorBoundary title="Component Error">
+  <RiskyComponent />
+</ErrorBoundary>
+
+<!-- ❌ Manual error handling -->
+{#if error}
+  <div class="error">{error}</div>
+{/if}
+```
+
+#### Leverage AI Features with Graceful Fallbacks
+```typescript
+// ✅ AI with fallback
+try {
+  const insights = await generateInsights({ sessionId });
+  return { success: true, insights };
+} catch (error) {
+  return {
+    success: true,
+    insights: 'AI insights unavailable. Using basic analytics.'
+  };
+}
+```
+
+### Core Development Principles
+
+- **Use remote functions** for all server operations with `query` and `command`
+- **Validate all inputs** with Valibot schemas for type safety
+- **Handle errors gracefully** with optimistic updates and rollback
+- **Use server-side data loading** for initial renders and SEO
+- **Keep client state minimal** with unified state management
+- **Prefer derived state** over manual updates with `$derived` and `$derived.by()`
+- **Always implement proper cleanup** in `$effect` with return functions
+- **Use TypeScript interfaces** for all component props and utilities
+- **Leverage Svelte 5 snippets** for reusable UI patterns
+- **Implement accessibility** with focus traps and proper ARIA labels
+
+### Performance Optimization
+
+#### Reactive State Optimization
+```typescript
+// ✅ Efficient derived computations
+let expensiveCalculation = $derived.by(() => {
+  // Only runs when dependencies change
+  return heavyComputation(data);
+});
+
+// ❌ Inefficient manual updates
+let expensiveCalculation = $state(null);
+$effect(() => {
+  expensiveCalculation = heavyComputation(data); // Runs on every change
+});
+```
+
+#### Memory Management
+```typescript
+// ✅ Proper cleanup
+$effect(() => {
+  const subscription = websocket.subscribe(handleUpdate);
+  const timer = setInterval(poll, 5000);
+
+  return () => {
+    subscription.unsubscribe();
+    clearInterval(timer);
+  };
+});
+```
+
+#### Bundle Optimization
+- Use dynamic imports for heavy libraries
+- Implement code splitting for routes
+- Tree-shake unused utilities
+- Optimize images and assets
+
+### Testing Modern Features
+
+#### Testing {@attach ...} Utilities
+```typescript
+import { clickOutside } from '$lib/utils/attachments';
+
+// Test attachment behavior
+describe('clickOutside', () => {
+  it('calls callback when clicking outside', () => {
+    const callback = vi.fn();
+    const element = document.createElement('div');
+
+    clickOutside(callback)(element);
+
+    // Simulate click outside
+    document.body.click();
+    expect(callback).toHaveBeenCalled();
+  });
+});
+```
+
+#### Testing Error Boundaries
+```svelte
+<!-- Test error boundary behavior -->
+<ErrorBoundary title="Test Error">
+  <ComponentThatThrows />
+</ErrorBoundary>
+```
+
+#### Testing AI Features
+```typescript
+// Test AI with mocked responses
+describe('AI Insights', () => {
+  it('handles API failures gracefully', async () => {
+    // Mock OpenAI API failure
+    vi.mocked(openai.chat.completions.create).mockRejectedValue(
+      new Error('API unavailable')
+    );
+
+    const result = await generateInsights({ sessionId: 'test' });
+    expect(result.insights).toContain('unavailable');
+  });
+});
+```
+
+### Deployment Considerations
+
+#### Environment Configuration
+```env
+# Production settings
+NODE_ENV=production
+DATABASE_URL=./data/production.db
+PUBLIC_APP_URL=https://your-domain.com
+OPENAI_API_KEY=your-production-key
+
+# Performance monitoring
+SENTRY_DSN=your-sentry-dsn
+ANALYTICS_ID=your-analytics-id
+```
+
+#### Build Optimization
+- Enable source maps for debugging
+- Configure proper caching headers
+- Implement CDN for static assets
+- Set up error tracking and monitoring
+- Configure log aggregation
+
+This documentation reflects the modern Svelte 5 architecture with cutting-edge patterns for reactive DOM interactions, error boundaries, and AI-powered features.

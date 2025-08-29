@@ -54,7 +54,7 @@
 		{#each Object.entries(scores) as [key, value]}
 			{@const config = scoreConfig[key as keyof PreferenceScores]}
 			{@const percentage = (value / maxScore) * 100}
-			<div class="p-4 rounded-lg border {colorClasses[config.color as keyof typeof colorClasses]} {animated ? 'transition-all duration-500' : ''}">
+			<div class="p-4 rounded-lg border {colorClasses[config.color as keyof typeof colorClasses]} {animated ? '[transition:var(--transition-smooth)]' : ''}">
 				<div class="flex items-center gap-2 mb-2">
 					<span class="text-2xl">{config.icon}</span>
 					{#if showLabels}
@@ -66,7 +66,7 @@
 				{/if}
 				{#if showProgress}
 					<div class="w-full bg-gray-200 rounded-full h-2">
-						<div class="{progressClasses[config.color as keyof typeof progressClasses]} h-2 rounded-full {animated ? 'transition-all duration-1000 delay-300' : ''}" 
+						<div class="{progressClasses[config.color as keyof typeof progressClasses]} h-2 rounded-full {animated ? '[transition:var(--transition-bounce)] delay-300' : ''}" 
 							style="width: {percentage}%"></div>
 					</div>
 				{/if}
@@ -85,7 +85,7 @@
 					<span class="w-24 text-sm font-medium">{config.label}</span>
 				{/if}
 				<div class="flex-1 bg-gray-200 rounded-full h-3">
-					<div class="{progressClasses[config.color as keyof typeof progressClasses]} h-3 rounded-full {animated ? 'transition-all duration-1000' : ''}" 
+					<div class="{progressClasses[config.color as keyof typeof progressClasses]} h-3 rounded-full {animated ? '[transition:var(--transition-bounce)]' : ''}" 
 						style="width: {percentage}%"></div>
 				</div>
 				{#if showValues}

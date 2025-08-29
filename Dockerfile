@@ -1,102 +1,38 @@
-# Multi-stage Dockerfile for SvelteKit application
-# This builds the app inside Docker to ensure compatibility with Coolify
+# Simple Dockerfile for Coolify
+FROM node:20-alpine
 
-########################################
-# Stage 1: Install ALL dependencies
-########################################
-FROM node:24-alpine AS deps
+# Install SQLite
+RUN apk add --no-cache sqlite
+
+# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including dev deps needed for build)
-RUN npm ci --no-audit --no-fund
+# Install dependencies
+RUN npm ci --only=production
 
-########################################
-# Stage 2: Build the application
-########################################
-FROM node:24-alpine AS builder
-WORKDIR /app
-
-# Copy node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy all source files
+# Copy source code
 COPY . .
 
-# Generate SvelteKit files first (required for TypeScript config)
-RUN npm run prepare
-
-# Build the SvelteKit application
-# This generates the build directory that will be used in production
+# Build the application
 RUN npm run build
 
-########################################
-# Stage 3: Production runtime
-########################################
-FROM node:24-alpine AS runner
-WORKDIR /app
-
-# Install SQLite and curl for database operations and healthcheck
-RUN apk add --no-cache sqlite curl
+# Create data directory for libsql
+RUN mkdir -p /app/data && \
+    chmod 755 /app/data
 
 # Set environment variables
-# ORIGIN will be overridden at runtime via environment variable
-ENV NODE_ENV=production \
-    HOST=0.0.0.0 \
-    PORT=3000 \
-    DATABASE_URL=file:./local.db
-
-# Copy package files for production install
-COPY package*.json ./
-
-# Copy dependencies from deps stage and prune dev dependencies
-COPY --from=deps /app/node_modules ./node_modules
-RUN npm prune --omit=dev
-
-# Copy built application from builder stage
-COPY --from=builder /app/build ./build
-
-# Copy Drizzle migrations if they exist
-COPY --from=builder /app/drizzle ./drizzle
-
-# Create database with WAL mode for better concurrency
-RUN sqlite3 local.db "PRAGMA journal_mode=WAL; SELECT 'Database initialized';"
-
-# Create a startup script to handle database and start the app
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'set -e' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Set ORIGIN if not provided (detect from Coolify environment)' >> /app/start.sh && \
-    echo 'if [ -z "$ORIGIN" ]; then' >> /app/start.sh && \
-    echo '  if [ -n "$COOLIFY_URL" ]; then' >> /app/start.sh && \
-    echo '    export ORIGIN="$COOLIFY_URL"' >> /app/start.sh && \
-    echo '  elif [ -n "$COOLIFY_FQDN" ]; then' >> /app/start.sh && \
-    echo '    export ORIGIN="http://$COOLIFY_FQDN"' >> /app/start.sh && \
-    echo '  else' >> /app/start.sh && \
-    echo '    export ORIGIN="http://localhost:3000"' >> /app/start.sh && \
-    echo '  fi' >> /app/start.sh && \
-    echo 'fi' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo 'echo "Starting application with ORIGIN=$ORIGIN"' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Ensure database has proper permissions' >> /app/start.sh && \
-    echo 'chmod 644 local.db 2>/dev/null || true' >> /app/start.sh && \
-    echo 'chmod 644 local.db-wal 2>/dev/null || true' >> /app/start.sh && \
-    echo 'chmod 644 local.db-shm 2>/dev/null || true' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Start the application' >> /app/start.sh && \
-    echo 'exec node build' >> /app/start.sh
-
-RUN chmod +x /app/start.sh
+ENV NODE_ENV=production
+ENV DATABASE_URL=file:/app/data/local.db
 
 # Expose port
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
-# Run the application
-CMD ["/app/start.sh"]
+# Start the application
+CMD ["node", "build"]

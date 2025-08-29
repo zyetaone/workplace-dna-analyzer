@@ -1,6 +1,7 @@
 <!-- Unified Card component to replace duplicate card patterns throughout the app -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import LoadingScreen from '$lib/components/shared/LoadingScreen.svelte';
 	
 	interface Props {
 		// Content
@@ -9,12 +10,16 @@
 		
 		// Layout & styling
 		size?: 'sm' | 'md' | 'lg';
-		variant?: 'default' | 'elevated' | 'outlined' | 'filled' | 'stats';
+		variant?: 'default' | 'elevated' | 'outlined' | 'filled' | 'stats' | 'glass' | 'glassLight' | 
+				  'glassDark' | 'glassMedium' | 'glassSubtle' | 'glassElevated' | 'glassPrimary' | 
+				  'glassSuccess' | 'glassDanger' | 'light' | 'lightElevated' | 'lightOutlined' | 
+				  'lightFilled' | 'lightStats';
 		
 		// Interaction
 		hoverable?: boolean;
 		clickable?: boolean;
 		loading?: boolean;
+		hoverEffect?: 'none' | 'glow' | 'lift' | 'scale' | 'border';
 		
 		// Custom styling
 		class?: string;
@@ -35,6 +40,7 @@
 		hoverable = false,
 		clickable = false,
 		loading = false,
+		hoverEffect = 'none',
 		class: className = '',
 		headerClass = '',
 		bodyClass = '',
@@ -50,21 +56,57 @@
 		lg: 'p-8'
 	};
 	
-	// Variant styles
+	// Variant styles - Frosted Glass & White Options
 	const variantClasses = {
-		default: 'bg-white border border-gray-200 shadow-sm',
-		elevated: 'bg-white shadow-lg',
-		outlined: 'bg-white border-2 border-gray-300 shadow-none',
-		filled: 'bg-gray-50 border border-gray-200 shadow-sm',
-		stats: 'bg-gray-50 border border-gray-200 shadow-sm'
+		// Standard dark variants with better opacity
+		default: 'bg-slate-900/85 backdrop-blur-2xl border border-slate-700/30 shadow-lg',
+		elevated: 'bg-slate-900/90 backdrop-blur-2xl border border-slate-600/40 shadow-2xl',
+		outlined: 'bg-slate-800/80 backdrop-blur-xl border-2 border-slate-600/40 shadow-none',
+		filled: 'bg-slate-800/85 backdrop-blur-xl border border-slate-700/40 shadow-lg',
+		stats: 'bg-slate-800/90 backdrop-blur-2xl border border-slate-700/30 shadow-lg',
+		// Frosted glass variants (higher opacity for better readability)
+		frosted: 'bg-slate-900/90 backdrop-blur-3xl border-2 border-slate-600/50 shadow-2xl',
+		frostedLight: 'bg-white/90 backdrop-blur-3xl border-2 border-slate-200/60 shadow-2xl',
+		frostedDark: 'bg-slate-900/95 backdrop-blur-3xl border-2 border-slate-600/60 shadow-2xl',
+		frostedStats: 'bg-slate-800/95 backdrop-blur-3xl border-2 border-slate-600/40 shadow-xl',
+		// Glass morphism variants (keeping for backwards compatibility)
+		glass: 'bg-slate-900/40 backdrop-blur-2xl border border-slate-700/30 shadow-2xl',
+		glassLight: 'bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg',
+		glassDark: 'bg-gradient-to-br from-slate-900/75 to-slate-800/75 backdrop-blur-2xl border border-slate-700/30 shadow-2xl',
+		glassMedium: 'bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-slate-700/40 shadow-lg',
+		glassSubtle: 'bg-slate-900/70 backdrop-blur-md border border-slate-700/20 shadow-md',
+		glassElevated: 'bg-gradient-to-br from-slate-900/85 to-slate-800/85 backdrop-blur-2xl border border-slate-600/40 shadow-2xl',
+		glassPrimary: 'bg-gradient-to-br from-cyan-900/30 to-purple-900/30 backdrop-blur-xl border border-cyan-700/30 shadow-lg',
+		glassSuccess: 'bg-gradient-to-br from-green-900/30 to-emerald-900/30 backdrop-blur-xl border border-green-700/30 shadow-lg',
+		glassDanger: 'bg-gradient-to-br from-red-900/30 to-rose-900/30 backdrop-blur-xl border border-red-700/30 shadow-lg',
+		// White/Light variants for maximum readability
+		white: 'bg-white/95 backdrop-blur-xl border border-gray-200 shadow-lg',
+		whiteElevated: 'bg-white/98 backdrop-blur-2xl shadow-2xl border border-gray-100',
+		light: 'bg-white border border-gray-200 shadow-sm',
+		lightElevated: 'bg-white shadow-lg',
+		lightOutlined: 'bg-white border-2 border-gray-300 shadow-none',
+		lightFilled: 'bg-gray-50 border border-gray-200 shadow-sm',
+		lightStats: 'bg-gray-50 border border-gray-200 shadow-sm'
+	};
+	
+	// Hover effect classes
+	const hoverEffectClasses = {
+		none: '',
+		glow: 'hover:shadow-cyan-500/10',
+		lift: 'hover:-translate-y-1',
+		scale: 'hover:scale-[1.02]',
+		border: 'hover:border-slate-600/50'
 	};
 	
 	// Interactive states
 	const interactionClasses = $derived(() => {
 		let classes = [];
-		if (hoverable || clickable) classes.push('transition-shadow duration-200');
+		if (hoverable || clickable || hoverEffect !== 'none') {
+			classes.push('transition-all duration-300');
+		}
 		if (hoverable) classes.push('hover:shadow-xl');
 		if (clickable) classes.push('cursor-pointer hover:shadow-lg');
+		if (hoverEffect !== 'none') classes.push(hoverEffectClasses[hoverEffect]);
 		return classes.join(' ');
 	});
 	
@@ -76,23 +118,26 @@
 <div class={cardClasses}>
 	<!-- Loading overlay -->
 	{#if loading}
-		<div class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg">
-			<div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
-		</div>
+		<LoadingScreen 
+			show={true}
+			message="Loading..."
+			variant="modal"
+			autoHide={false}
+		/>
 	{/if}
 	
 	<!-- Header section -->
 	{#if header || title || subtitle}
-		<div class="border-b border-gray-200 {headerClass}">
+		<div class="border-b border-slate-700/50 {headerClass}">
 			{#if header}
 				{@render header()}
 			{:else if title || subtitle}
 				<div class="pb-4 {size === 'sm' ? 'px-4 pt-4' : size === 'md' ? 'px-6 pt-6' : 'px-8 pt-8'}">
 					{#if title}
-						<h3 class="text-xl font-semibold text-gray-800 mb-1">{title}</h3>
+						<h3 class="text-xl font-semibold text-slate-200 mb-1">{title}</h3>
 					{/if}
 					{#if subtitle}
-						<p class="text-gray-600">{subtitle}</p>
+						<p class="text-slate-400">{subtitle}</p>
 					{/if}
 				</div>
 			{/if}
@@ -106,10 +151,10 @@
  		{/if}
  	</div>
 
- 	<!-- Actions section -->
- 	{#if actions}
- 		<div class="border-t border-gray-100 px-6 py-4 bg-gray-50 rounded-b-lg">
- 			{@render actions()}
- 		</div>
- 	{/if}
+  	<!-- Actions section -->
+  	{#if actions}
+  		<div class="border-t border-slate-700/50 px-6 py-4 bg-slate-800/70 rounded-b-lg">
+  			{@render actions()}
+  		</div>
+  	{/if}
 </div>

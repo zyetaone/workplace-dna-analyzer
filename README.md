@@ -55,16 +55,24 @@ OPENAI_API_KEY=your-api-key-here  # For AI insights
 ## 🏗️ Tech Stack
 
 - **SvelteKit 5** with Svelte 5 runes
-- **SQLite** with Drizzle ORM
+- **LibSQL** (SQLite-compatible) with Drizzle ORM
 - **TailwindCSS** for styling
 - **Chart.js** for data visualization
 - **Server-Sent Events** for real-time updates
+- **Coolify** for deployment and hosting
 
 ## 🚢 Production
 
+### Coolify Deployment (Recommended)
+1. Connect your repository to Coolify
+2. Set domain: `zyetaApp.rdtect.com`
+3. Coolify handles SSL, reverse proxy, and deployment automatically
+
+### Manual Docker Deployment
 ```bash
 npm run build          # Build for production
-npm start              # Run production server
+docker build -t app .  # Build Docker image
+docker run -p 3000:3000 app  # Run container
 ```
 
 ## 📖 Documentation

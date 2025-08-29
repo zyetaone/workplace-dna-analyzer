@@ -38,9 +38,9 @@
       {/if}
 
       {#if showHomeButton}
-        <Button href="/" variant="outline" class="w-full">
+        <a href="/" class="inline-flex items-center justify-center gap-2 font-medium rounded-lg px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 transition-all duration-200 w-full">
           Go to Home
-        </Button>
+        </a>
       {/if}
     </div>
 

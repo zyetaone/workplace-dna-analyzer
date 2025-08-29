@@ -1,47 +1,49 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { formatDate, copyToClipboard } from '$lib/utils/common';
-	import { adminState } from './admin.svelte';
-	import Toast, { showToast } from '$lib/components/shared/Toast.svelte';
-	import { Card, StatsCard, ConfirmationDialog, Button } from '$lib/components';
+	import { query } from '$app/server';
+	import { getAllSessionsRemote, createSessionRemote, deleteSessionRemote } from './data.remote';
+	import Toast, { showToast } from './(components)/Toast.svelte';
+	import { Card, StatsCard, ConfirmationDialog, Button, TextInput } from '$lib/components';
 
-	// Consolidated UI state
+	// Reactive query for sessions - automatically updates when invalidated
+	const sessionsQuery = query(getAllSessionsRemote, {});
+
+	// Simplified UI state
 	let sessionName = $state('');
 	let showCreateForm = $state(false);
-	let actionLoading = $state<{ [key: string]: boolean }>({});
+	let isCreating = $state(false);
 	let deleteDialog = $state({ open: false, sessionCode: '' });
-
-	// Load sessions on mount
-	$effect(() => {
-		adminState.loadSessions();
-	});
-
-	// Generic action handler with loading state
-	async function handleAction(key: string, action: () => Promise<any>) {
-		actionLoading[key] = true;
-		try {
-			return await action();
-		} finally {
-			actionLoading[key] = false;
-		}
-	}
 
 	// Create session handler
 	async function createSession() {
 		if (!sessionName.trim()) return;
-		
-		const result = await handleAction('create', async () => {
-			const result = await adminState.createSession(sessionName);
+
+		isCreating = true;
+		try {
+			const result = await createSessionRemote({ name: sessionName });
+
 			if (result.success && 'redirect' in result) {
-				showToast({ title: 'Success', description: 'Session created successfully', variant: 'success' });
+				showToast({
+					title: 'Success',
+					description: 'Session created successfully',
+					variant: 'success'
+				});
 				sessionName = '';
 				showCreateForm = false;
+
+				// Navigate immediately
+				console.log('Navigating to:', result.redirect);
 				goto(result.redirect);
 			} else {
 				showToast({ title: 'Error', description: 'Failed to create session', variant: 'error' });
 			}
-			return result;
-		});
+		} catch (error) {
+			console.error('Session creation failed:', error);
+			showToast({ title: 'Error', description: 'Failed to create session', variant: 'error' });
+		} finally {
+			isCreating = false;
+		}
 	}
 
 	// Delete session handler
@@ -49,21 +51,36 @@
 		const sessionCode = deleteDialog.sessionCode;
 		if (!sessionCode) return;
 
-		await handleAction(`delete-${sessionCode}`, async () => {
-			const result = await adminState.deleteSession(sessionCode);
+		try {
+			const result = await deleteSessionRemote({ code: sessionCode });
+
 			showToast({
 				title: result.success ? 'Success' : 'Error',
-				description: result.success ? 'Session deleted successfully' : ('error' in result ? result.error : 'Failed to delete session'),
+				description: result.success
+					? 'Session deleted successfully'
+					: 'error' in result
+						? result.error
+						: 'Failed to delete session',
 				variant: result.success ? 'success' : 'error'
 			});
-			deleteDialog = { open: false, sessionCode: '' };
-		});
+
+			if (result.success) {
+				deleteDialog = { open: false, sessionCode: '' };
+			}
+		} catch (error) {
+			console.error('Session deletion failed:', error);
+			showToast({ title: 'Error', description: 'Failed to delete session', variant: 'error' });
+		}
 	}
 
 	// Copy link handler
 	function copyLink(session: any) {
 		copyToClipboard(`${window.location.origin}/${session.code}`);
-		showToast({ title: 'Link copied!', description: 'Participant join link copied to clipboard.', variant: 'success' });
+		showToast({
+			title: 'Link copied!',
+			description: 'Participant join link copied to clipboard.',
+			variant: 'success'
+		});
 	}
 
 	// Navigation helper
@@ -75,176 +92,328 @@
 
 <!-- Session Card Snippet -->
 {#snippet sessionCard(session)}
-	<Card variant="elevated" hoverable size="md" class="overflow-hidden">
-		{#snippet children()}
-		<div class="p-6 border-b border-gray-100">
-			<div class="flex justify-between items-start mb-3">
-				<h3 class="text-xl font-semibold text-gray-800 truncate pr-2">{session.name}</h3>
-				<div class="flex items-center gap-1">
-					<span class="relative flex h-3 w-3">
-						{#if session.isActive}
-							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-							<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-						{:else}
-							<span class="relative inline-flex rounded-full h-3 w-3 bg-gray-400"></span>
-						{/if}
-					</span>
-					<span class="text-xs font-medium {session.isActive ? 'text-green-600' : 'text-gray-500'}">
-						{session.isActive ? 'Active' : 'Inactive'}
-					</span>
+	<div class="h-fit">
+		<Card
+			variant="frostedDark"
+			hoverable
+			hoverEffect="glow"
+			size="lg"
+			class="min-h-[320px] overflow-hidden flex flex-col transform hover:scale-[1.02] transition-all duration-300 ring-2 ring-slate-600/60 hover:ring-cyan-500/50 shadow-2xl hover:shadow-cyan-500/20"
+		>
+			{#snippet children()}
+				<div class="flex-1 flex flex-col">
+					<!-- Header with status -->
+					<div class="flex justify-between items-start mb-4">
+						<h3 class="text-2xl font-bold text-white flex-1 pr-3 leading-tight drop-shadow-lg">
+							{session.name}
+						</h3>
+						<div class="flex items-center gap-2 flex-shrink-0">
+							<span class="relative flex h-3 w-3">
+								{#if session.isActive}
+									<span
+										class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+									></span>
+									<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+								{:else}
+									<span class="relative inline-flex rounded-full h-3 w-3 bg-slate-500"></span>
+								{/if}
+							</span>
+							<span
+								class="text-xs font-medium {session.isActive ? 'text-green-400' : 'text-slate-400'}"
+							>
+								{session.isActive ? 'Active' : 'Inactive'}
+							</span>
+						</div>
+					</div>
+
+					<!-- Session Code -->
+					<div class="mb-4">
+						<div class="text-sm text-slate-300 mb-1">Session Code</div>
+						<div
+							class="font-mono text-2xl font-bold text-white bg-slate-900/70 backdrop-blur-xl px-4 py-3 rounded-lg border-2 border-slate-600/50 shadow-inner"
+						>
+							{session.code}
+						</div>
+					</div>
+
+					<!-- Stats Grid -->
+					<div class="grid grid-cols-2 gap-4 mb-4">
+						<div
+							class="text-center p-4 bg-slate-900/60 backdrop-blur-xl rounded-lg border-2 border-slate-700/50 shadow-lg"
+						>
+							<div class="text-3xl font-bold text-white">{session.activeCount || 0}</div>
+							<div class="text-xs text-slate-400">Active</div>
+						</div>
+						<div
+							class="text-center p-4 bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-xl rounded-lg border-2 border-green-600/50 shadow-lg"
+						>
+							<div class="text-3xl font-bold text-green-400">{session.completedCount || 0}</div>
+							<div class="text-xs text-slate-400">Completed</div>
+						</div>
+					</div>
+
+					<!-- Creation Date -->
+					<div class="text-sm text-slate-400 mt-auto">
+						Created: {formatDate(session.createdAt)}
+					</div>
 				</div>
-			</div>
-			
-			<div class="mb-4">
-				<span class="text-sm text-gray-500">Code:</span>
-				<span class="ml-2 font-mono text-lg text-gray-700">{session.code}</span>
-			</div>
-			
-			<div class="grid grid-cols-2 gap-4 mb-4">
-				<div class="text-center p-2 bg-gray-50 rounded">
-					<div class="text-2xl font-bold text-gray-700">{session.activeCount || 0}</div>
-					<div class="text-xs text-gray-500">Active</div>
+			{/snippet}
+
+			{#snippet actions()}
+				<div class="grid grid-cols-3 gap-2">
+					<Button
+						onclick={() => openSession(session.code)}
+						variant="secondary"
+						size="sm"
+						class="text-xs bg-slate-800/80 hover:bg-slate-700/80 text-white border border-slate-600/50"
+						>Open</Button
+					>
+					<Button onclick={() => copyLink(session)} variant="secondary" size="sm" class="text-xs"
+						>Copy Link</Button
+					>
+					<Button
+						onclick={() => confirmDelete(session.code)}
+						variant="destructive"
+						size="sm"
+						class="text-xs"
+					>
+						Delete
+					</Button>
 				</div>
-				<div class="text-center p-2 bg-green-50 rounded">
-					<div class="text-2xl font-bold text-green-600">{session.completedCount || 0}</div>
-					<div class="text-xs text-gray-500">Completed</div>
-				</div>
-			</div>
-			
-			<div class="text-sm text-gray-500">Created: {formatDate(session.createdAt)}</div>
-		</div>
-		{/snippet}
-		{#snippet actions()}
-			<div class="grid grid-cols-3 gap-2">
-				<Button onclick={() => openSession(session.code)} variant="default" size="sm">Open</Button>
-				<Button onclick={() => copyLink(session)} variant="secondary" size="sm">Copy Link</Button>
-				<Button 
-					onclick={() => confirmDelete(session.code)}
-					disabled={actionLoading[`delete-${session.code}`]}
-					loading={actionLoading[`delete-${session.code}`]}
-					variant="destructive" 
-					size="sm"
-				>
-					Delete
-				</Button>
-			</div>
-		{/snippet}
-	</Card>
+			{/snippet}
+		</Card>
+	</div>
 {/snippet}
 
 <!-- Main Layout -->
-<div class="min-h-screen animated-gradient">
-	<div class="container mx-auto px-6 py-12">
-		<!-- Header -->
-		<Card variant="elevated" size="lg" class="mb-8" title="Presenter Dashboard" subtitle="Manage your workplace experience sessions">
-			{#snippet children()}{/snippet}
-		</Card>
-		
-		<!-- Create Session -->
-		<Card variant="elevated" size="lg" class="mb-8">
-			{#snippet children()}
-				{#if !showCreateForm}
-					<Button
-						onclick={() => showCreateForm = true}
-						class="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800"
-						size="lg"
-					>
-						<span class="text-2xl">+</span> Create New Session
-					</Button>
-				{:else}
-					<div class="space-y-4">
-						<h2 class="text-2xl font-semibold text-gray-800">Create New Session</h2>
-						<div class="flex gap-4">
-							<div class="flex-1">
-								<label for="sessionName" class="block text-xs font-medium text-gray-700 mb-1">
-									Session Name
-									<span class="text-red-500" aria-label="required">*</span>
-								</label>
-								<input
-									id="sessionName"
-									bind:value={sessionName}
-									placeholder="Enter session name..."
-									disabled={actionLoading.create}
-									required
-									minlength={2}
-									class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-gray-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-								/>
+<svelte:boundary onerror={(error, reset) => console.error('Admin Dashboard Error:', error)}>
+	<div class="">
+		<div class="container mx-auto px-6 py-12">
+			<!-- Header -->
+
+			<!-- Top Stats Bar - Fixed Position for Key Metrics -->
+			{#if sessionsQuery.data && sessionsQuery.data.length > 0}
+				<Card variant="frostedStats" class="mb-6">
+					{#snippet children()}
+						{@const sessions = sessionsQuery.data}
+						{@const stats = {
+							total: sessions.length,
+							active: sessions.filter(s => s.isActive).length,
+							totalParticipants: sessions.reduce((sum, s) => sum + (s.activeCount + s.completedCount), 0),
+							completedSurveys: sessions.reduce((sum, s) => sum + s.completedCount, 0)
+						}}
+						<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+							<div
+								class="text-center p-3 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-slate-700/20"
+							>
+								<div class="text-2xl font-bold text-slate-100">{stats.total}</div>
+								<div class="text-xs text-slate-400">Total Sessions</div>
 							</div>
-							<div class="flex gap-2 items-end">
-								<Button
-									onclick={createSession}
-									disabled={actionLoading.create || !sessionName.trim()}
-									loading={actionLoading.create}
-									size="lg"
-								>
-									Create
-								</Button>
-								<Button
-									onclick={() => { showCreateForm = false; sessionName = ''; }}
-									variant="secondary"
-									size="lg"
-								>
-									Cancel
-								</Button>
+							<div
+								class="text-center p-3 bg-green-900/30 backdrop-blur-sm rounded-lg border border-green-700/20"
+							>
+								<div class="text-2xl font-bold text-green-400">{stats.active}</div>
+								<div class="text-xs text-slate-400">Active Now</div>
+							</div>
+							<div
+								class="text-center p-3 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-slate-700/20"
+							>
+								<div class="text-2xl font-bold text-slate-100">
+									{stats.totalParticipants}
+								</div>
+								<div class="text-xs text-slate-400">Total Participants</div>
+							</div>
+							<div
+								class="text-center p-3 bg-purple-900/30 backdrop-blur-sm rounded-lg border border-purple-700/20"
+							>
+								<div class="text-2xl font-bold text-purple-400">
+									{stats.completedSurveys}
+								</div>
+								<div class="text-xs text-slate-400">Completed</div>
 							</div>
 						</div>
-					</div>
-				{/if}
-			{/snippet}
-		</Card>
-		
-		<!-- Sessions Content -->
-		<Card variant="elevated" loading={adminState.isLoading}>
-			{#snippet children()}
-				{#if adminState.error}
-					<div class="p-12 text-center">
-						<div class="text-6xl mb-4">❌</div>
-						<h2 class="text-2xl font-semibold text-gray-800 mb-2">Error Loading Sessions</h2>
-						<p class="text-gray-600">{adminState.error}</p>
-					</div>
-				{:else if adminState.sessions.length === 0}
-					<div class="p-12 text-center">
-						<div class="text-6xl mb-4">📊</div>
-						<h2 class="text-2xl font-semibold text-gray-800 mb-2">No Sessions Yet</h2>
-						<p class="text-gray-600">Create your first session to get started!</p>
-					</div>
-				{:else}
-					<div class="p-6">
-						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							{#each adminState.sessions as session}
-								{@render sessionCard(session)}
-							{/each}
-						</div>
-					</div>
-				{/if}
-			{/snippet}
-		</Card>
-		
-		<!-- Footer Stats -->
-		{#if adminState.sessions && adminState.stats.total > 0}
-			<Card variant="default" class="mt-8">
+					{/snippet}
+				</Card>
+			{/if}
+
+			<!-- Create Session with Smooth Transitions -->
+			<Card variant="frosted" size="lg" class="mb-8">
 				{#snippet children()}
-					<div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
-						<StatsCard title="Total Sessions" value={adminState.stats.total} />
-						<StatsCard title="Active Sessions" value={adminState.stats.active} valueClass="text-3xl font-bold text-green-600" />
-						<StatsCard title="Total Participants" value={adminState.stats.totalParticipants} />
-						<StatsCard title="Completed Surveys" value={adminState.stats.completedSurveys} />
-					</div>
+					{#if !showCreateForm}
+						<div>
+							{#if sessionsQuery.data && sessionsQuery.data.length >= 3}
+								<div
+									class="text-center p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-slate-700/30"
+								>
+									<div class="text-4xl mb-2">📋</div>
+									<h3 class="text-lg font-semibold text-slate-200 mb-2">Session Limit Reached</h3>
+									<p class="text-slate-400 text-sm mb-4">
+										You can have up to 3 active sessions. Delete an existing session to create a new
+										one.
+									</p>
+									<div class="text-xs text-slate-500">
+										Current sessions: {sessionsQuery.data.length}/3
+									</div>
+								</div>
+							{:else}
+								<Button
+									onclick={() => (showCreateForm = true)}
+									class="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl"
+									size="lg"
+								>
+									<span class="text-2xl mr-2">+</span> Create New Session
+								</Button>
+							{/if}
+						</div>
+					{:else}
+						<div class="space-y-6">
+							<div class="flex items-center justify-between">
+								<h2 class="text-2xl font-semibold text-slate-200">Create New Session</h2>
+								<Button
+									onclick={() => {
+										showCreateForm = false;
+										sessionName = '';
+									}}
+									variant="secondary"
+									size="sm"
+									class="text-slate-400 hover:text-slate-200"
+								>
+									✕
+								</Button>
+							</div>
+							<div class="flex flex-col sm:flex-row gap-4">
+								<div class="flex-1">
+									<TextInput
+										id="sessionName"
+										bind:value={sessionName}
+										placeholder="Enter session name..."
+										disabled={isCreating}
+										required
+										minlength={2}
+										label="Session Name"
+										size="md"
+									/>
+								</div>
+								<div class="flex gap-2 items-end">
+									<Button
+										onclick={createSession}
+										disabled={isCreating || !sessionName.trim()}
+										loading={isCreating}
+										size="lg"
+										class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+									>
+										Create Session
+									</Button>
+								</div>
+							</div>
+						</div>
+					{/if}
 				{/snippet}
 			</Card>
-		{/if}
+
+			<!-- Sessions Content -->
+			<Card variant="glassDark" class="min-h-[400px] relative">
+				{#snippet children()}
+					{#if sessionsQuery.isError}
+						<div class="p-12 text-center">
+							<div class="text-6xl mb-4">❌</div>
+							<h2 class="text-2xl font-semibold text-slate-200 mb-2">Error Loading Sessions</h2>
+							<p class="text-slate-400">{sessionsQuery.error?.message || 'Failed to load sessions'}</p>
+						</div>
+					{:else if sessionsQuery.isLoading}
+						<div class="p-12 text-center">
+							<div class="text-6xl mb-4 animate-spin">🔄</div>
+							<h2 class="text-2xl font-semibold text-slate-200 mb-2">Loading Sessions...</h2>
+							<p class="text-slate-400">Please wait while we fetch your sessions</p>
+						</div>
+					{:else if !sessionsQuery.data || sessionsQuery.data.length === 0}
+						<div class="p-12 text-center">
+							<div class="text-6xl mb-4">📊</div>
+							<h2 class="text-2xl font-semibold text-slate-200 mb-2">No Sessions Yet</h2>
+							<p class="text-slate-400">Create your first session to get started!</p>
+						</div>
+					{:else}
+						{@const sessions = sessionsQuery.data}
+						<div class="p-6">
+							<!-- Session Cards Container with Scroll -->
+							<div class="relative">
+								<div
+									class="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 rounded-lg p-2"
+								>
+									<div
+										class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 auto-rows-fr pr-2"
+									>
+										{#each sessions as session (session.code)}
+											{@render sessionCard(session)}
+										{/each}
+									</div>
+								</div>
+
+								<!-- Scroll Indicator -->
+								{#if sessions.length > 8}
+									<div
+										class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-900/90 to-transparent pointer-events-none rounded-b-lg"
+									></div>
+									<div
+										class="absolute bottom-2 right-4 text-xs text-slate-400 bg-slate-800/80 px-2 py-1 rounded"
+									>
+										Scroll for more sessions
+									</div>
+								{/if}
+							</div>
+
+							<!-- Session Count Info -->
+							<div class="mt-4 text-center text-sm text-slate-400">
+								Showing {sessions.length} session{sessions.length !== 1
+									? 's'
+									: ''}
+							</div>
+						</div>
+					{/if}
+				{/snippet}
+			</Card>
+		</div>
 	</div>
-</div>
+
+	<!-- Error state with reset functionality -->
+	{#snippet failed(error, reset)}
+		<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4" role="main">
+			<div
+				class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full"
+				role="alert"
+				aria-live="assertive"
+			>
+				<div class="text-red-600 text-5xl text-center mb-4" aria-hidden="true">⚠️</div>
+				<h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">Admin Dashboard Error</h1>
+				<p class="text-gray-600 text-center mb-6">
+					{error && typeof error === 'object' && 'message' in error
+						? (error as Error).message
+						: 'An unexpected error occurred'}
+				</p>
+				<div class="text-center">
+					<button
+						type="button"
+						class="text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+						onclick={reset}
+						aria-label="Try again"
+					>
+						Try Again
+					</button>
+				</div>
+			</div>
+		</div>
+	{/snippet}
+</svelte:boundary>
 
 <!-- Confirmation Dialog -->
 <ConfirmationDialog
 	bind:open={deleteDialog.open}
 	title="Delete Session"
 	message="Are you sure you want to delete this session? This action cannot be undone and all participant data will be lost."
-	confirmText={actionLoading[`delete-${deleteDialog.sessionCode}`] ? 'Deleting...' : 'Delete'}
+	confirmText="Delete"
 	variant="destructive"
 	onConfirm={deleteSession}
-	onCancel={() => deleteDialog = { open: false, sessionCode: '' }}
+	onCancel={() => (deleteDialog = { open: false, sessionCode: '' })}
 />
 
 <Toast />

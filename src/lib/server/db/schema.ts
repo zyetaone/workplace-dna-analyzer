@@ -1,8 +1,8 @@
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
-// Use native crypto for ID generation
-const generateId = () => crypto.randomUUID();
+// Use simplified ID generation utility
+import { generateId } from '../../utils/id';
 
 // Quiz sessions table - simplified without auth
 export const sessions = sqliteTable('sessions', {

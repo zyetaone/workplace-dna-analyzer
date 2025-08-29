@@ -3,7 +3,7 @@ import { setParticipantCookie, getParticipantId } from '$lib/server/auth';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Participant tracking for anonymous users
-	const isParticipantRoute = event.url.pathname.match(/^\/[A-Z0-9]{6}/);
+	const isParticipantRoute = event.url.pathname.match(/^\/[A-Z0-9]+-[0-9]{6}/);
 	if (isParticipantRoute) {
 		let participantId = getParticipantId(event);
 		if (!participantId) {
