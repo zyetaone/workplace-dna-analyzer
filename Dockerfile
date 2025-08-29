@@ -11,8 +11,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --omit=dev --no-audit --no-fund
+# Install dependencies (without running prepare script)
+RUN npm ci --omit=dev --no-audit --no-fund --ignore-scripts
 
 ###STAGE 2 : BUILD###
 FROM node:24-alpine AS builder
@@ -24,6 +24,9 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy all source code
 COPY . .
+
+# Install all dependencies (including dev dependencies for prepare script)
+RUN npm ci --no-audit --no-fund
 
 # Generate Sveltekit Files for production
 RUN npm run prepare
@@ -47,7 +50,7 @@ ENV NODE_ENV=production \
 
 # Copy package files and node modules
 COPY package*.json ./
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
 
 RUN npm prune --omit=dev --no-audit --no-fund
 
