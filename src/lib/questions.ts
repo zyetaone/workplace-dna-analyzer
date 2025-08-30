@@ -11,14 +11,22 @@ export interface QuestionOption {
 	icon?: string;
 }
 
-
-
 export interface Question {
 	id: string;
 	question: string;
 	description: string;
 	options: QuestionOption[];
-	category: 'communication' | 'technology' | 'environment' | 'meetings' | 'feedback' | 'learning' | 'workspace' | 'decision-making' | 'work-life' | 'recognition';
+	category:
+		| 'communication'
+		| 'technology'
+		| 'environment'
+		| 'meetings'
+		| 'feedback'
+		| 'learning'
+		| 'workspace'
+		| 'decision-making'
+		| 'work-life'
+		| 'recognition';
 }
 
 export interface GenerationOption {
@@ -59,7 +67,7 @@ export const questions: Question[] = [
 	},
 	{
 		id: 'technology',
-		question: 'What\'s your preference for workplace technology?',
+		question: "What's your preference for workplace technology?",
 		description: 'Your tech comfort level influences tool adoption',
 		category: 'technology',
 		options: [
@@ -87,7 +95,7 @@ export const questions: Question[] = [
 	},
 	{
 		id: 'environment',
-		question: 'What\'s your ideal work environment?',
+		question: "What's your ideal work environment?",
 		description: 'Your workspace preference affects productivity and satisfaction',
 		category: 'environment',
 		options: [
@@ -171,7 +179,7 @@ export const questions: Question[] = [
 	},
 	{
 		id: 'learning',
-		question: 'What\'s your preferred learning style?',
+		question: "What's your preferred learning style?",
 		description: 'Your learning preference affects skill development',
 		category: 'learning',
 		options: [
@@ -199,7 +207,7 @@ export const questions: Question[] = [
 	},
 	{
 		id: 'workspace',
-		question: 'What\'s your ideal workspace setup?',
+		question: "What's your ideal workspace setup?",
 		description: 'Your workspace preferences affect comfort and productivity',
 		category: 'workspace',
 		options: [
@@ -337,11 +345,11 @@ export const GENERATION_OPTIONS: GenerationOption[] = [
 
 // Helper functions
 export function getQuestionById(id: string): Question | undefined {
-	return questions.find(q => q.id === id);
+	return questions.find((q) => q.id === id);
 }
 
 export function getQuestionsByCategory(category: Question['category']): Question[] {
-	return questions.filter(q => q.category === category);
+	return questions.filter((q) => q.category === category);
 }
 
 export function getTotalQuestions(): number {
@@ -349,7 +357,7 @@ export function getTotalQuestions(): number {
 }
 
 export function getQuestionIndex(questionId: string): number {
-	return questions.findIndex(q => q.id === questionId);
+	return questions.findIndex((q) => q.id === questionId);
 }
 
 export function getNextQuestion(currentIndex: number): Question | null {

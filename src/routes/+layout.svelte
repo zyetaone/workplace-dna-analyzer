@@ -1,8 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { Tooltip } from 'bits-ui';
-	import Loading from '$lib/components/shared/Loading.svelte';
-	import AnimatedBackground from '$lib/components/shared/AnimatedBackground.svelte';
+	import Loading from '$lib/components/ui/Loading.svelte';
 
 	let { children } = $props<{ children: any }>();
 </script>
@@ -13,12 +12,10 @@
 	{/snippet}
 
 	<Tooltip.Provider>
-		<AnimatedBackground variant="default" intensity="medium" showParticles={true}>
-			<!-- Main Content -->
-			<div class="min-h-screen">
-				{@render children?.()}
-			</div>
-		</AnimatedBackground>
+		<!-- Main Content -->
+		<div class="min-h-screen">
+			{@render children?.()}
+		</div>
 	</Tooltip.Provider>
 
 	{#snippet failed(error, reset)}

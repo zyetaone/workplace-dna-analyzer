@@ -1,4 +1,3 @@
-<!-- Unified Card component to replace duplicate card patterns throughout the app -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Loading from '$lib/components/shared/Loading.svelte';
@@ -136,6 +135,8 @@
 		return `rounded-lg ${variantClasses[variant]} ${interactionClasses()} ${className}`.trim();
 	});
 </script>
+
+<!-- Unified Card component with comprehensive styling variants and layout options -->
 
 <div class={cardClasses}>
 	<!-- Loading overlay -->

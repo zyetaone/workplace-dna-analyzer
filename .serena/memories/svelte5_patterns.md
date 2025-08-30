@@ -3,56 +3,60 @@
 ## Core Runes
 
 ### State Management
+
 ```svelte
 <script>
-// Reactive state
-let count = $state(0);
-let items = $state([]);
-let user = $state({ name: '', email: '' });
+	// Reactive state
+	let count = $state(0);
+	let items = $state([]);
+	let user = $state({ name: '', email: '' });
 
-// Derived values (computed)
-let doubled = $derived(count * 2);
-let fullName = $derived(`${user.firstName} ${user.lastName}`);
+	// Derived values (computed)
+	let doubled = $derived(count * 2);
+	let fullName = $derived(`${user.firstName} ${user.lastName}`);
 </script>
 ```
 
 ### Effects
+
 ```svelte
 <script>
-// Run side effects
-$effect(() => {
-  console.log('Count changed:', count);
-  // Cleanup function (optional)
-  return () => {
-    console.log('Cleanup');
-  };
-});
+	// Run side effects
+	$effect(() => {
+		console.log('Count changed:', count);
+		// Cleanup function (optional)
+		return () => {
+			console.log('Cleanup');
+		};
+	});
 
-// Root effect (for managing lifecycle)
-$effect.root(() => {
-  // Create isolated effect scope
-});
+	// Root effect (for managing lifecycle)
+	$effect.root(() => {
+		// Create isolated effect scope
+	});
 </script>
 ```
 
 ### Props
+
 ```svelte
 <script>
-// Component props
-let { name, age = 18, ...rest } = $props();
+	// Component props
+	let { name, age = 18, ...rest } = $props();
 
-// With TypeScript
-interface Props {
-  name: string;
-  age?: number;
-}
-let { name, age = 18 }: Props = $props();
+	// With TypeScript
+	interface Props {
+		name: string;
+		age?: number;
+	}
+	let { name, age = 18 }: Props = $props();
 </script>
 ```
 
 ## Migration from Legacy
 
 ### From $: reactive statements
+
 ```svelte
 <!-- Legacy -->
 $: doubled = count * 2;
@@ -66,60 +70,60 @@ $effect(() => {
 ```
 
 ### From stores
+
 ```svelte
 <!-- Legacy -->
-import { page } from '$app/stores';
-$: slug = $page.params.slug;
+import {page} from '$app/stores'; $: slug = $page.params.slug;
 
 <!-- Svelte 5 -->
-import { page } from '$app/stores';
-// In template, use directly: {$page.params.slug}
-// In script for derived:
-let slug = $derived($page.params.slug);
+import {page} from '$app/stores'; // In template, use directly: {$page.params.slug}
+// In script for derived: let slug = $derived($page.params.slug);
 ```
 
 ### Snippets (replaces slots)
+
 ```svelte
+<!-- Children pattern -->
+<script>
+	let { children } = $props();
+</script>
+
 <!-- Define snippet -->
 {#snippet buttonContent(text)}
-  <span>{text}</span>
+	<span>{text}</span>
 {/snippet}
 
 <!-- Use snippet -->
 {@render buttonContent('Click me')}
-
-<!-- Children pattern -->
-<script>
-let { children } = $props();
-</script>
 {@render children?.()}
 ```
 
 ## Component Patterns
 
 ### Two-way Binding
+
 ```svelte
 <script>
-let value = $state('');
+	let value = $state('');
 </script>
+
 <input bind:value />
 ```
 
 ### Event Handlers
+
 ```svelte
-<button onclick={() => count++}>
-  Click me
-</button>
+<button onclick={() => count++}> Click me </button>
 ```
 
 ### Class Directive
+
 ```svelte
-<div class:active={isActive} class:highlight={isHighlight}>
-  Content
-</div>
+<div class:active={isActive} class:highlight={isHighlight}>Content</div>
 ```
 
 ## Best Practices
+
 1. Use `$state` for reactive values
 2. Use `$derived` for computed values
 3. Use `$effect` sparingly (only for side effects)

@@ -12,36 +12,24 @@
 
   const statusConfig = $derived(() => {
     if (store.session?.isActive) {
-      return { 
-        text: 'Active', 
-        class: 'bg-green-100 text-green-700 border-green-200',
-        icon: '●'
-      };
+      return { text: '● Active', class: 'text-green-500' };
     }
-    return { 
-      text: 'Ended', 
-      class: 'bg-red-100 text-red-700 border-red-200',
-      icon: '●'
-    };
+    return { text: '● Ended', class: 'text-red-500' };
   });
 
 
 </script>
 
-<div class="flex items-center justify-between flex-wrap gap-4">
+<div class="flex items-center justify-between">
   <div>
-    <h1 class="text-2xl font-bold text-gray-900">{store.session?.name || 'Loading...'}</h1>
-    <div class="flex items-center gap-3 mt-2">
-      <span class="px-3 py-1 text-sm font-mono bg-gray-100 text-gray-700 rounded-lg border border-gray-200 font-semibold">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{store.session?.name || 'Loading...'}</h1>
+    <div class="flex items-center gap-3 mt-1">
+      <span class="px-3 py-1 text-sm font-mono bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg border dark:border-gray-600">
         {store.session?.code || '...'}
       </span>
-      <span class="px-3 py-1 text-xs font-medium rounded-full border {statusConfig().class} flex items-center gap-1">
-        <span class="text-xs">{statusConfig().icon}</span>
-        {statusConfig().text}
-      </span>
-      <span class="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full border border-purple-200">
-        {store.participants?.length || 0} participants
-      </span>
+        <span class="px-3 py-1 text-xs font-medium rounded-full {statusConfig().class}">
+          {statusConfig().text}
+        </span>
     </div>
   </div>
 

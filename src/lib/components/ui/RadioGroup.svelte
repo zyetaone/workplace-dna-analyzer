@@ -58,24 +58,26 @@
 		lg: 'h-3 w-3'
 	};
 
-	let baseStyles = 'rounded-full border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
+	let baseStyles =
+		'rounded-full border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
 	let enabledStyles = 'border-gray-300 bg-white hover:border-gray-400';
 	let checkedStyles = 'border-blue-600 bg-blue-600';
 	let disabledStyles = 'disabled:cursor-not-allowed disabled:opacity-50';
 	let errorStyles = error ? 'border-red-300 focus:ring-red-500' : '';
 
-	let radioClasses = $derived([
-		baseStyles,
-		sizeStyles[size],
-		disabledStyles,
-		errorStyles
-	].filter(Boolean).join(' '));
+	let radioClasses = $derived(
+		[baseStyles, sizeStyles[size], disabledStyles, errorStyles].filter(Boolean).join(' ')
+	);
 
-	let groupClasses = $derived([
-		'space-y-3',
-		orientation === 'horizontal' ? 'flex flex-wrap gap-6 space-y-0' : 'space-y-3',
-		className
-	].filter(Boolean).join(' '));
+	let groupClasses = $derived(
+		[
+			'space-y-3',
+			orientation === 'horizontal' ? 'flex flex-wrap gap-6 space-y-0' : 'space-y-3',
+			className
+		]
+			.filter(Boolean)
+			.join(' ')
+	);
 </script>
 
 <fieldset class="space-y-3">
@@ -101,7 +103,7 @@
 	>
 		{#each options as option}
 			<div class="flex items-start gap-3">
-				<RadioGroupPrimitive.Item 
+				<RadioGroupPrimitive.Item
 					value={option.value}
 					disabled={disabled || option.disabled}
 					class={radioClasses}
@@ -115,7 +117,7 @@
 					<div class="text-sm font-medium text-gray-700">
 						{option.label}
 					</div>
-					
+
 					{#if option.description}
 						<p class="text-sm text-gray-500">
 							{option.description}

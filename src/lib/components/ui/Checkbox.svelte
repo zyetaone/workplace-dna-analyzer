@@ -53,20 +53,25 @@
 		lg: 'h-5 w-5'
 	};
 
-	let baseStyles = 'rounded border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
+	let baseStyles =
+		'rounded border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
 	let enabledStyles = 'border-gray-300 bg-white hover:border-gray-400';
 	let checkedStyles = 'bg-blue-600 border-blue-600 hover:bg-blue-700';
 	let disabledStyles = 'disabled:cursor-not-allowed disabled:opacity-50';
 	let errorStyles = error ? 'border-red-300 focus:ring-red-500' : '';
 
-	let checkboxClasses = $derived([
-		baseStyles,
-		sizeStyles[size],
-		checked ? checkedStyles : enabledStyles,
-		disabledStyles,
-		errorStyles,
-		className
-	].filter(Boolean).join(' '));
+	let checkboxClasses = $derived(
+		[
+			baseStyles,
+			sizeStyles[size],
+			checked ? checkedStyles : enabledStyles,
+			disabledStyles,
+			errorStyles,
+			className
+		]
+			.filter(Boolean)
+			.join(' ')
+	);
 </script>
 
 <div class="flex items-start gap-3">
@@ -78,15 +83,19 @@
 		{value}
 		onCheckedChange={handleCheckedChange}
 		class={checkboxClasses}
-		aria-describedby={error ? `${checkboxId}-error` : description ? `${checkboxId}-description` : undefined}
+		aria-describedby={error
+			? `${checkboxId}-error`
+			: description
+				? `${checkboxId}-description`
+				: undefined}
 		aria-invalid={error ? 'true' : undefined}
 		{...restProps}
 	>
 		{#if checked}
-			<svg 
+			<svg
 				class={`${iconSizeStyles[size]} text-white`}
-				fill="none" 
-				stroke="currentColor" 
+				fill="none"
+				stroke="currentColor"
 				viewBox="0 0 24 24"
 				stroke-width="3"
 			>

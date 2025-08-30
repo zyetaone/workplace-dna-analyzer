@@ -1,66 +1,8 @@
 /**
- * UNIFIED STATE MANAGEMENT - Clean Svelte 5 Runes
- * Consolidated base state management for admin and AI functionality
+ * Simplified Admin Dashboard State - Clean Svelte 5 Runes
  */
 
 import type { Session, Participant } from '../../lib/server/db/schema';
-
-/**
- * Base State Management Class
- * Provides common state management patterns for session-based components
- */
-export abstract class BaseSessionState {
-	session = $state<Session | null>(null);
-	participants = $state<Participant[]>([]);
-	loading = $state(false);
-	error = $state<string | null>(null);
-
-	// Common computed properties
-	hasSession = $derived(this.session !== null);
-	hasParticipants = $derived(this.participants.length > 0);
-	activeParticipants = $derived(this.participants.filter((p) => !p.completed));
-	completedParticipants = $derived(this.participants.filter((p) => p.completed));
-	completionRate = $derived.by(() => {
-		if (this.participants.length === 0) return 0;
-		return Math.round((this.completedParticipants.length / this.participants.length) * 100);
-	});
-
-	// Common methods
-	updateSession(session: Session) {
-		this.session = session;
-	}
-
-	updateParticipants(participants: Participant[]) {
-		this.participants = participants;
-	}
-
-	setLoading(loading: boolean) {
-		this.loading = loading;
-	}
-
-	setError(error: string | null) {
-		this.error = error;
-	}
-
-	// Optimistic updates
-	optimisticUpdateParticipant(participantId: string, updates: Partial<Participant>) {
-		this.participants = this.participants.map((p) =>
-			p.id === participantId ? { ...p, ...updates } : p
-		);
-	}
-
-	optimisticRemoveParticipant(participantId: string) {
-		this.participants = this.participants.filter((p) => p.id !== participantId);
-	}
-
-	// Cleanup
-	cleanup() {
-		this.session = null;
-		this.participants = [];
-		this.loading = false;
-		this.error = null;
-	}
-}
 
 export interface SessionWithCounts extends Session {
 	activeCount: number;
@@ -144,13 +86,17 @@ export function getAdminStats() {
 }
 
 /**
- * Session Analytics State - Extends Base Session State
- * Specialized for admin dashboard analytics and session management
+ * Session store for individual session state management
  */
-export class SessionAnalyticsState extends BaseSessionState {
-	// Additional computed analytics specific to admin dashboard
-	activeCount = $derived(this.activeParticipants.length);
-	completedCount = $derived(this.completedParticipants.length);
+export class SessionAnalyticsState {
+	session = $state<Session | null>(null);
+	participants = $state<Participant[]>([]);
+	loading = $state(false);
+	error = $state<string | null>(null);
+
+	// Computed analytics
+	activeCount = $derived(this.participants.filter((p) => !p.completed).length);
+	completedCount = $derived(this.participants.filter((p) => p.completed).length);
 	hasCompletedParticipants = $derived(this.completedCount > 0);
 	completionRate = $derived.by(() => {
 		const total = this.participants.length;
@@ -175,21 +121,46 @@ export class SessionAnalyticsState extends BaseSessionState {
 	// Insights placeholder - simplified
 	insights = $state<any>(null);
 
-	// Specialized methods for admin dashboard
+	// Methods
+	updateSession(session: Session) {
+		this.session = session;
+	}
+
+	updateParticipants(participants: Participant[]) {
+		this.participants = participants;
+	}
+
+	setLoading(loading: boolean) {
+		this.loading = loading;
+	}
+
+	setError(error: string | null) {
+		this.error = error;
+	}
+
 	optimisticEndSession() {
 		if (this.session) {
 			this.session = { ...this.session, isActive: false };
 		}
 	}
 
+	optimisticDeleteParticipant(participantId: string) {
+		this.participants = this.participants.filter((p) => p.id !== participantId);
+	}
+
+	optimisticRemoveParticipant(participantId: string) {
+		// Alias for delete
+		this.optimisticDeleteParticipant(participantId);
+	}
+
+	rollbackRemoveParticipant(originalParticipants: Participant[]) {
+		this.participants = originalParticipants;
+	}
+
 	rollbackEndSession() {
 		if (this.session) {
 			this.session = { ...this.session, isActive: true };
 		}
-	}
-
-	rollbackRemoveParticipant(originalParticipants: Participant[]) {
-		this.participants = [...originalParticipants];
 	}
 
 	getGenerationDistribution() {

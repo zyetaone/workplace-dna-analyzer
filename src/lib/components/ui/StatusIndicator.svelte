@@ -58,21 +58,29 @@
 </script>
 
 {#if status === 'loading'}
-  <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg backdrop-blur-sm border {currentConfig.bg} {currentConfig.border} {currentConfig.text} {sizeConfig[size]} {className}">
-    {#if showIcon}
-      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-    {/if}
-    {#if message}
-      <span>{message}</span>
-    {/if}
-  </div>
+	<div
+		class="inline-flex items-center gap-2 px-3 py-2 rounded-lg backdrop-blur-sm border {currentConfig.bg} {currentConfig.border} {currentConfig.text} {sizeConfig[
+			size
+		]} {className}"
+	>
+		{#if showIcon}
+			<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+		{/if}
+		{#if message}
+			<span>{message}</span>
+		{/if}
+	</div>
 {:else}
-  <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg backdrop-blur-sm border {currentConfig.bg} {currentConfig.border} {currentConfig.text} {sizeConfig[size]} {className}">
-    {#if showIcon}
-      <span class="text-lg">{currentConfig.icon}</span>
-    {/if}
-    {#if message}
-      <span>{message}</span>
-    {/if}
-  </div>
+	<div
+		class="inline-flex items-center gap-2 px-3 py-2 rounded-lg backdrop-blur-sm border {currentConfig.bg} {currentConfig.border} {currentConfig.text} {sizeConfig[
+			size
+		]} {className}"
+	>
+		{#if showIcon}
+			<span class="text-lg">{currentConfig.icon}</span>
+		{/if}
+		{#if message}
+			<span>{message}</span>
+		{/if}
+	</div>
 {/if}

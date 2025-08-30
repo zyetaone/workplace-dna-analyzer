@@ -10,12 +10,11 @@ const config = {
 		},
 		// Node adapter configuration
 		adapter: adapter(),
-		
+
 		// Performance optimizations
 		serviceWorker: {
 			register: false // Disable for real-time apps
-		},
-	
+		}
 	},
 	compilerOptions: {
 		experimental: { async: true }

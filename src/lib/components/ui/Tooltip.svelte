@@ -3,20 +3,15 @@
 	import { Tooltip } from 'bits-ui';
 	// Bits UI v1 doesn't support transition props directly
 	import type { Snippet } from 'svelte';
-	
+
 	interface TooltipProps {
 		content: string;
 		side?: 'top' | 'right' | 'bottom' | 'left';
 		delayDuration?: number;
 		children: Snippet;
 	}
-	
-	let { 
-		content,
-		side = 'top',
-		delayDuration = 200,
-		children
-	}: TooltipProps = $props();
+
+	let { content, side = 'top', delayDuration = 200, children }: TooltipProps = $props();
 </script>
 
 <Tooltip.Root {delayDuration}>

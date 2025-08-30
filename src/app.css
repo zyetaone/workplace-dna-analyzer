@@ -3,21 +3,25 @@
    Modern CSS-first configuration with clean layer organization
    =================================================================== */
 
-/* Import Tailwind CSS 4.0 */
-@import 'tailwindcss';
+/* Import Professional Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 
-/* Import Specialized Systems */
-@import './lib/styles/typography.css';
-@import './lib/styles/colors.css';
-@import './lib/styles/grid.css';
+/* Import Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ===================================================================
    TAILWIND 4.0 THEME CONFIGURATION
    =================================================================== */
 @theme {
-	/* Design System Foundation - Golden Ratio & 8px Grid */
+	/* Design System Foundation */
 	--golden-ratio: 1.618;
 	--space-unit: 8px;
+
+	/* Font System */
+	--font-family-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-family-mono: 'SF Mono', ui-monospace, 'Consolas', monospace;
 
 	/* Core Brand Colors - OKLCH for Better Color Mixing */
 	--color-primary: oklch(59.3% 0.238 269.7); /* Deep purple */
@@ -48,6 +52,10 @@
 	--radius-md: 12px;
 	--radius-lg: 16px;
 	--radius-xl: 24px;
+
+	/* Grid System */
+	--grid-gap-base: 1.5rem;
+	--content-measure: 65ch;
 
 	/* Tailwind Color Extensions */
 	--color-purple-500: #a855f7;
@@ -92,33 +100,7 @@
 }
 
 @layer components {
-	/* Modern Card System - Uses CSS Variables Instead of @apply */
-	.card {
-		background: color-mix(in srgb, theme(colors.slate.900) 80%, transparent);
-		backdrop-filter: blur(20px);
-		border: 1px solid color-mix(in srgb, theme(colors.slate.600) 30%, transparent);
-		border-radius: var(--radius-lg);
-		box-shadow: 0 10px 25px color-mix(in srgb, black 10%, transparent);
-		transition: all var(--animate-duration-normal) var(--animate-ease);
-	}
-
-	.card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 20px 40px color-mix(in srgb, black 15%, transparent);
-		border-color: color-mix(in srgb, theme(colors.slate.500) 50%, transparent);
-	}
-
-	.card-elevated {
-		background: color-mix(in srgb, theme(colors.slate.900) 90%, transparent);
-		backdrop-filter: blur(24px);
-		box-shadow: 0 20px 40px color-mix(in srgb, black 20%, transparent);
-	}
-
-	.card-glass {
-		background: color-mix(in srgb, white 5%, transparent);
-		backdrop-filter: blur(16px) saturate(180%);
-		border: 1px solid color-mix(in srgb, white 10%, transparent);
-	}
+	/* Card System - Use Tailwind utilities instead */
 
 	/* Typography System - Fluid & Responsive */
 	.text-display {
@@ -156,67 +138,9 @@
 		color: var(--color-text-muted);
 	}
 
-	/* Spacing System - Based on 8px Grid */
-	.space-section {
-		margin-block: clamp(3rem, 8vw, 6rem);
-	}
+	/* Spacing System - Use Tailwind utilities instead */
 
-	.space-content > * + * {
-		margin-top: clamp(1rem, 3vw, 2rem);
-	}
-
-	.space-stack {
-		display: flex;
-		flex-direction: column;
-		gap: clamp(1rem, 2vw, 1.5rem);
-	}
-
-	.space-cluster {
-		display: flex;
-		flex-wrap: wrap;
-		gap: clamp(0.5rem, 1vw, 1rem);
-		align-items: center;
-	}
-
-	/* Interactive Elements */
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1.5rem;
-		border-radius: var(--radius-md);
-		font-weight: 500;
-		font-size: 0.875rem;
-		line-height: 1;
-		cursor: pointer;
-		transition: all var(--animate-duration-fast) var(--animate-ease);
-		text-decoration: none;
-		border: 1px solid transparent;
-	}
-
-	.btn-primary {
-		background: var(--color-primary);
-		color: white;
-		box-shadow: 0 2px 4px color-mix(in srgb, var(--color-primary) 30%, transparent);
-	}
-
-	.btn-primary:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 40%, transparent);
-	}
-
-	.btn-secondary {
-		background: transparent;
-		border-color: color-mix(in srgb, var(--color-text-secondary) 30%, transparent);
-		color: var(--color-text-secondary);
-	}
-
-	.btn-secondary:hover {
-		background: color-mix(in srgb, var(--color-text-secondary) 10%, transparent);
-		border-color: var(--color-text-secondary);
-		color: var(--color-text-primary);
-	}
+	/* Button System - Use Tailwind utilities instead */
 
 	/* Quiz Components */
 	.quiz-option {
@@ -227,31 +151,12 @@
 		backdrop-filter: blur(12px);
 		cursor: pointer;
 		transition: all var(--animate-duration-normal) var(--animate-ease);
-		position: relative;
-		overflow: hidden;
-	}
-
-	.quiz-option::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(
-			circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-			color-mix(in srgb, var(--color-primary) 15%, transparent),
-			transparent 60%
-		);
-		opacity: 0;
-		transition: opacity var(--animate-duration-normal);
 	}
 
 	.quiz-option:hover {
 		transform: translateY(-2px);
 		border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
 		background: color-mix(in srgb, var(--color-surface-dark) 50%, transparent);
-	}
-
-	.quiz-option:hover::before {
-		opacity: 1;
 	}
 
 	.quiz-option.selected {
@@ -347,60 +252,11 @@
 		backdrop-filter: blur(8px);
 	}
 
-	/* Form Elements */
-	.form-field {
-		width: 100%;
-		padding: 0.75rem 1rem;
-		border-radius: var(--radius-md);
-		border: 1px solid color-mix(in srgb, var(--color-text-muted) 30%, transparent);
-		background: color-mix(in srgb, var(--color-surface-dark) 50%, transparent);
-		backdrop-filter: blur(8px);
-		color: var(--color-text-primary);
-		font-size: 0.875rem;
-		transition: all var(--animate-duration-normal) var(--animate-ease);
-	}
-
-	.form-field::placeholder {
-		color: var(--color-text-muted);
-	}
-
-	.form-field:focus {
-		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
-	}
-
-	.form-field:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-		background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
-	}
-
-	.form-label {
-		display: block;
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--color-text-secondary);
-		margin-bottom: 0.375rem;
-	}
-
-	.form-error {
-		display: block;
-		font-size: 0.75rem;
-		color: var(--color-error);
-		margin-top: 0.25rem;
-	}
-
-	.form-hint {
-		display: block;
-		font-size: 0.75rem;
-		color: var(--color-text-muted);
-		margin-top: 0.25rem;
-	}
+	/* Form Elements - Use Tailwind utilities instead */
 }
 
 @layer utilities {
-	/* Custom Utilities using Tailwind 4.0 compatible syntax */
+	/* Essential Custom Utilities */
 
 	.glass-card {
 		backdrop-filter: blur(24px);
@@ -409,12 +265,110 @@
 		border-radius: var(--radius-xl);
 	}
 
-	.glass-surface {
-		backdrop-filter: blur(4px);
-		background: color-mix(in srgb, white 10%, transparent);
+	/* Typography Utilities */
+	.truncate {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
-	/* Accessibility Utilities */
+	.gradient-text {
+		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.gradient-text-zyeta {
+		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.gradient-text-primary {
+		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	/* Text Color Utilities */
+	.text-zyeta {
+		color: var(--color-text-primary);
+	}
+	.text-primary {
+		color: var(--color-primary);
+	}
+	.text-secondary {
+		color: var(--color-text-secondary);
+	}
+	.text-muted {
+		color: var(--color-text-muted);
+	}
+	.text-success {
+		color: var(--color-success);
+	}
+	.text-danger {
+		color: var(--color-error);
+	}
+
+	/* Swiss Grid System (Essential Classes) */
+	.swiss-container {
+		width: 100%;
+		margin-inline: auto;
+		padding-inline: clamp(1rem, 4vw, 2rem);
+		max-width: 1280px;
+	}
+
+	.swiss-container-2xl {
+		max-width: 1536px;
+	}
+
+	.swiss-hero {
+		display: grid;
+		grid-template-columns: repeat(12, 1fr);
+		gap: var(--grid-gap-base);
+		min-height: 80vh;
+		align-items: center;
+		padding-block: clamp(3rem, 8vw, 6rem);
+	}
+
+	.swiss-col-full {
+		grid-column: 1 / -1;
+	}
+
+	.swiss-measure {
+		max-width: var(--content-measure);
+	}
+
+	.space-h-compact {
+		gap: 0.5rem;
+	}
+
+	.swiss-stats-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		padding: var(--grid-gap-base);
+		background: color-mix(in srgb, var(--color-surface-dark) 50%, transparent);
+		border-radius: var(--radius-lg);
+		border: 1px solid color-mix(in srgb, var(--color-text-muted) 20%, transparent);
+		backdrop-filter: blur(8px);
+		transition: all var(--animate-duration-normal) var(--animate-ease);
+	}
+
+	.swiss-stats-card:hover {
+		transform: translateY(-2px);
+		border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+	}
+
+	/* Essential Animation & Accessibility */
+	.animate-bounce {
+		animation: bounce 1s infinite;
+	}
+
 	.sr-only {
 		position: absolute;
 		width: 1px;
@@ -425,125 +379,6 @@
 		clip: rect(0, 0, 0, 0);
 		white-space: nowrap;
 		border: 0;
-	}
-
-	/* Status Indicators */
-	.status {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.25rem 0.75rem;
-		border-radius: 9999px;
-		font-size: 0.75rem;
-		font-weight: 500;
-	}
-
-	.status-success {
-		background: color-mix(in srgb, var(--color-success) 15%, transparent);
-		color: var(--color-success);
-		border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
-	}
-
-	.status-error {
-		background: color-mix(in srgb, var(--color-error) 15%, transparent);
-		color: var(--color-error);
-		border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
-	}
-
-	.status-warning {
-		background: color-mix(in srgb, var(--color-warning) 15%, transparent);
-		color: var(--color-warning);
-		border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
-	}
-
-	/* Animation Classes */
-	.animate-bounce {
-		animation: bounce 1s infinite;
-	}
-
-	/* Transition Utilities */
-	.transition-fast {
-		transition: all var(--animate-duration-fast) var(--animate-ease);
-	}
-	.transition-slow {
-		transition: all var(--animate-duration-slow) var(--animate-ease);
-	}
-
-	/* Transform Utilities */
-	.hover-lift:hover {
-		transform: translateY(-4px);
-	}
-	.hover-scale:hover {
-		transform: scale(1.05);
-	}
-	.hover-rotate:hover {
-		transform: rotate(2deg);
-	}
-
-	/* Glass Effects */
-	.glass {
-		background: color-mix(in srgb, white 5%, transparent);
-		backdrop-filter: blur(16px) saturate(180%);
-		border: 1px solid color-mix(in srgb, white 10%, transparent);
-	}
-
-	.glass-strong {
-		background: color-mix(in srgb, white 10%, transparent);
-		backdrop-filter: blur(24px) saturate(200%);
-		border: 1px solid color-mix(in srgb, white 15%, transparent);
-	}
-
-	/* Layout Utilities */
-	.center {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.stack {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.cluster {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-		align-items: center;
-	}
-
-	.auto-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.golden-grid {
-		display: grid;
-		grid-template-columns: 1.618fr 1fr;
-		gap: 2rem;
-	}
-
-	/* Responsive Utilities */
-	.hide-mobile {
-		@media (max-width: 768px) {
-			display: none;
-		}
-	}
-	.show-mobile {
-		@media (min-width: 769px) {
-			display: none;
-		}
-	}
-	.hide-desktop {
-		@media (min-width: 769px) {
-			display: none;
-		}
-	}
-	.show-desktop {
-		@media (max-width: 768px) {
-			display: none;
-		}
 	}
 }
 

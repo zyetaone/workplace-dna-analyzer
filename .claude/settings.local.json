@@ -1,17 +1,17 @@
 {
-  "permissions": {
-    "allow": [
-      "mcp__serena__activate_project",
-      "mcp__serena__get_symbols_overview",
-      "mcp__serena__read_file",
-      "mcp__serena__search_for_pattern",
-      "mcp__sequential-thinking__sequentialthinking",
-      "WebFetch(domain:svelte.dev)",
-      "WebFetch(domain:svelte.dev)",
-      "mcp__serena__find_symbol",
-      "mcp__serena__find_file"
-    ],
-    "deny": [],
-    "ask": []
-  }
+	"permissions": {
+		"allow": [
+			"mcp__serena__activate_project",
+			"mcp__serena__get_symbols_overview",
+			"mcp__serena__read_file",
+			"mcp__serena__search_for_pattern",
+			"mcp__sequential-thinking__sequentialthinking",
+			"WebFetch(domain:svelte.dev)",
+			"WebFetch(domain:svelte.dev)",
+			"mcp__serena__find_symbol",
+			"mcp__serena__find_file"
+		],
+		"deny": [],
+		"ask": []
+	}
 }

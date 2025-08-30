@@ -1,19 +1,11 @@
-// UI Components Index - Clean exports for all UI components
-export { default as Button } from './Button.svelte';
-export { default as Card } from './Card.svelte';
-export { default as TextInput } from './TextInput.svelte';
-export { default as Select } from './Select.svelte';
-export { default as Checkbox } from './Checkbox.svelte';
-export { default as RadioGroup } from './RadioGroup.svelte';
-export { default as Progress } from './Progress.svelte';
-export { default as Tooltip } from './Tooltip.svelte';
-export { default as ConfirmationDialog } from './ConfirmationDialog.svelte';
-export { default as ScoreDisplay } from './ScoreDisplay.svelte';
-export { default as StatsCard } from './StatsCard.svelte';
-export { default as ParticipantCard } from './ParticipantCard.svelte';
-export { default as StatusIndicator } from './StatusIndicator.svelte';
-export { default as TabContent } from './TabContent.svelte';
-export { default as TabList } from './TabList.svelte';
-export { default as TabTrigger } from './TabTrigger.svelte';
-export { default as Tabs } from './Tabs.svelte';
-export { default as QRCode } from './QRCode.svelte';
+/**
+ * Shared Components Export
+ * Reusable components used across the application
+ */
+
+// Unified Components
+export { default as Loading } from './Loading.svelte';
+export { default as ErrorMessage } from './ErrorMessage.svelte';
+export { default as ErrorScreen } from './ErrorScreen.svelte';
+export { default as Modal } from './Modal.svelte';
+export { default as InvalidSession } from './InvalidSession.svelte';

@@ -49,9 +49,7 @@
 		}
 	}
 
-	const selectedLabel = $derived(
-		options.find(opt => opt.value === value)?.label || placeholder
-	);
+	const selectedLabel = $derived(options.find((opt) => opt.value === value)?.label || placeholder);
 
 	const sizeStyles = {
 		sm: 'h-8 px-3 py-1.5 text-sm',
@@ -59,20 +57,21 @@
 		lg: 'h-12 px-4 py-3 text-base'
 	};
 
-	let baseStyles = 'flex w-full items-center justify-between rounded-lg border bg-white transition-colors duration-200';
-	let focusStyles = 'focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
+	let baseStyles =
+		'flex w-full items-center justify-between rounded-lg border bg-white transition-colors duration-200';
+	let focusStyles =
+		'focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
 	let disabledStyles = 'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-gray-50';
-	
-	let errorStyles = $derived(error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300');
 
-	let triggerClasses = $derived([
-		baseStyles,
-		sizeStyles[size],
-		focusStyles,
-		disabledStyles,
-		errorStyles,
-		className
-	].filter(Boolean).join(' '));
+	let errorStyles = $derived(
+		error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'
+	);
+
+	let triggerClasses = $derived(
+		[baseStyles, sizeStyles[size], focusStyles, disabledStyles, errorStyles, className]
+			.filter(Boolean)
+			.join(' ')
+	);
 </script>
 
 <div class="space-y-1">
@@ -85,14 +84,8 @@
 		</label>
 	{/if}
 
- 	<Select.Root
-		type="single"
-		{value}
-		{onValueChange}
-		{disabled}
-		{...restProps}
-	>
-		<Select.Trigger 
+	<Select.Root type="single" {value} {onValueChange} {disabled} {...restProps}>
+		<Select.Trigger
 			class={triggerClasses}
 			aria-describedby={error ? `${selectId}-error` : hint ? `${selectId}-hint` : undefined}
 			aria-invalid={error ? 'true' : undefined}
@@ -100,17 +93,17 @@
 			<span class={selectedLabel === placeholder ? 'text-gray-500' : 'text-gray-700'}>
 				{selectedLabel}
 			</span>
-			<svg 
-				class="h-4 w-4 text-gray-400 transition-transform duration-200 group-data-[state=open]:rotate-180" 
-				fill="none" 
-				stroke="currentColor" 
+			<svg
+				class="h-4 w-4 text-gray-400 transition-transform duration-200 group-data-[state=open]:rotate-180"
+				fill="none"
+				stroke="currentColor"
 				viewBox="0 0 24 24"
 			>
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
 			</svg>
 		</Select.Trigger>
-		
-		<Select.Content 
+
+		<Select.Content
 			class="z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
 			sideOffset={5}
 		>
@@ -123,8 +116,18 @@
 						class="relative flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-gray-100 data-[disabled]:opacity-50 hover:bg-gray-50"
 					>
 						{#if isSelected}
-							<svg class="absolute right-2 h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+							<svg
+								class="absolute right-2 h-4 w-4 text-blue-600"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M5 13l4 4L19 7"
+								/>
 							</svg>
 						{/if}
 						<span class="text-gray-700">{option.label}</span>
