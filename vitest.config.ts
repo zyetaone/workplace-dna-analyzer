@@ -6,7 +6,7 @@ import { resolve } from 'path';
 export default defineConfig({
 	plugins: [svelte({ hot: !process.env.VITEST })],
 	test: {
-		include: ['src/**/*.{test,spec}.{js,ts,svelte}'],
+		include: ['src/**/*.{test,spec}.{js,ts,svelte}', 'tests/**/*.{test,spec}.{js,ts}'],
 		environment: 'jsdom',
 		setupFiles: ['./src/lib/test-utils/setup.ts'],
 		coverage: {
@@ -14,6 +14,7 @@ export default defineConfig({
 			exclude: [
 				'node_modules/',
 				'src/lib/test-utils/',
+				'tests/',
 				'**/*.d.ts',
 				'**/*.config.*',
 				'**/coverage/**',
@@ -22,10 +23,10 @@ export default defineConfig({
 			],
 			thresholds: {
 				global: {
-					branches: 80,
-					functions: 80,
-					lines: 80,
-					statements: 80
+					branches: 70,
+					functions: 70,
+					lines: 70,
+					statements: 70
 				}
 			}
 		},

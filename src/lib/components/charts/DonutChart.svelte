@@ -233,7 +233,7 @@
 	{#if showTooltips}
 		<div
 			bind:this={tooltip}
-			class="absolute pointer-events-none opacity-0 z-10 transition-opacity duration-200"
+			class="pointer-events-none absolute z-10 opacity-0 transition-opacity duration-200"
 		></div>
 	{/if}
 </div>

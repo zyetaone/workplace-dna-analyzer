@@ -1,16 +1,4 @@
-// Simple icon placeholder exports
-export function SecurityIcon(props: any) {
-	return '🔒';
-}
-
-export function AnalyticsIcon(props: any) {
-	return '📊';
-}
-
-export function MobileIcon(props: any) {
-	return '📱';
-}
-
-export function WorkplaceDNAIcon(props: any) {
-	return '🧬';
-}
+export { default as SecurityIcon } from './SecurityIcon.svelte';
+export { default as AnalyticsIcon } from './AnalyticsIcon.svelte';
+export { default as MobileIcon } from './MobileIcon.svelte';
+export { default as WorkplaceDNAIcon } from './WorkplaceDNAIcon.svelte';

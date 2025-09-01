@@ -1,41 +1,69 @@
 {
-  "version": "7",
-  "dialect": "sqlite",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "6",
-      "when": 1756186046790,
-      "tag": "0000_soft_virginia_dare",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1756223003728,
-      "tag": "0001_little_magma",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1756353606541,
-      "tag": "0002_faulty_mentallo",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1756381352718,
-      "tag": "0003_known_lily_hollister",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1756494716118,
-      "tag": "0004_broken_ma_gnuci",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "sqlite",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "6",
+			"when": 1756186046790,
+			"tag": "0000_soft_virginia_dare",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1756223003728,
+			"tag": "0001_little_magma",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1756353606541,
+			"tag": "0002_faulty_mentallo",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "6",
+			"when": 1756381352718,
+			"tag": "0003_known_lily_hollister",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "6",
+			"when": 1756494716118,
+			"tag": "0004_broken_ma_gnuci",
+			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "6",
+			"when": 1756669376763,
+			"tag": "0005_lame_doctor_octopus",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "6",
+			"when": 1756693171027,
+			"tag": "0006_narrow_shape",
+			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "6",
+			"when": 1756695637133,
+			"tag": "0007_kind_black_widow",
+			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "6",
+			"when": 1756695789125,
+			"tag": "0008_concerned_captain_marvel",
+			"breakpoints": true
+		}
+	]
 }

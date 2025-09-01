@@ -7,11 +7,11 @@
  */
 export function formatDate(date: Date | string): string {
 	const d = typeof date === 'string' ? new Date(date) : date;
-	return d.toLocaleDateString('en-US', { 
-		month: 'short', 
-		day: 'numeric', 
-		hour: '2-digit', 
-		minute: '2-digit' 
+	return d.toLocaleDateString('en-US', {
+		month: 'short',
+		day: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit'
 	});
 }
 
@@ -38,9 +38,4 @@ export function copyParticipantLink(baseUrl: string, slug: string, participantId
 	copyToClipboard(link);
 }
 
-/**
- * Class name utility - combines multiple class names
- */
-export function cn(...classes: (string | boolean | undefined | null)[]): string {
-    return classes.filter(Boolean).join(' ');
-}
+// Removed legacy cn util; prefer bits-ui mergeProps or string templates

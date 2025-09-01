@@ -7,34 +7,26 @@ import { env } from '$env/dynamic/private';
 // LibSQL expects file URLs in the format 'file:./path' or 'file:///absolute/path'
 let dbUrl = env.DATABASE_URL || 'file:./local.db';
 
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
 const client = createClient({ url: dbUrl });
 
 // Enable WAL mode for better concurrency and performance
-// WAL2 is important for handling multiple concurrent participants
 async function setupDatabase() {
-  try {
-    // Try WAL2 mode first (better concurrency than WAL)
-    await client.execute('PRAGMA journal_mode = WAL2');
-    // Reasonable timeout for concurrent access
-    await client.execute('PRAGMA busy_timeout = 5000');
-    // Standard synchronous mode for WAL
-    await client.execute('PRAGMA synchronous = NORMAL');
-    console.log('Database initialized with WAL2 mode');
-  } catch (error) {
-    // Fallback to WAL if WAL2 is not available
-    try {
-      await client.execute('PRAGMA journal_mode = WAL');
-      await client.execute('PRAGMA busy_timeout = 5000');
-      await client.execute('PRAGMA synchronous = NORMAL');
-      console.log('Database initialized with WAL mode');
-    } catch (e) {
-      // SQLite will use default mode if WAL is not available
-      console.warn('Could not enable WAL mode, using default');
-    }
-  }
+	try {
+		await client.execute('PRAGMA journal_mode = WAL');
+		await client.execute('PRAGMA busy_timeout = 5000');
+		await client.execute('PRAGMA synchronous = NORMAL');
+		if (IS_DEV) console.log('Database initialized with WAL mode');
+	} catch (e) {
+		// SQLite will use default mode if WAL is not available
+		console.warn('Could not enable WAL mode, using default');
+	}
 }
 
 // Initialize database settings
-setupDatabase().catch(console.error);
+setupDatabase().catch((err) => {
+	console.error('Database setup error:', err);
+});
 
 export const db = drizzle(client, { schema });

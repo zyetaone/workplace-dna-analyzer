@@ -1,5 +1,5 @@
 /// <reference types="@sveltejs/kit" />
-import type { QuizSession, Participant, QuizAnalytics } from '$lib/types';
+import type { QuizSession, QuizParticipant, QuizAnalytics } from '$lib/types';
 import type { AdminUser } from '$lib/server/db/schema';
 
 declare global {
@@ -14,7 +14,7 @@ declare global {
 			sessionCode?: string;
 			participantId?: string;
 			session?: QuizSession;
-			participants?: Participant[];
+			participants?: QuizParticipant[];
 			analytics?: QuizAnalytics;
 		}
 

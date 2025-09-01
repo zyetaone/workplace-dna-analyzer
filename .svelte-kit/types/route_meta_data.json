@@ -1,8 +1,26 @@
 {
-	"/": [],
-	"/admin": [],
-	"/admin/[code]": [],
-	"/[code]": [],
-	"/[code]/complete": [],
-	"/[code]/quiz": []
+	"/": [
+		"src/routes/+page.server.ts"
+	],
+	"/admin": [
+		"src/routes/admin/+page.server.ts"
+	],
+	"/admin/[code]": [
+		"src/routes/admin/[code]/+page.server.ts"
+	],
+	"/example-quiz": [
+		"src/routes/example-quiz/+page.server.ts"
+	],
+	"/(participant)/[code]": [
+		"src/routes/(participant)/[code]/+page.server.ts"
+	],
+	"/(participant)/[code]/activities": [
+		"src/routes/(participant)/[code]/activities/+page.server.ts"
+	],
+	"/(participant)/[code]/activity/[activitySlug]": [
+		"src/routes/(participant)/[code]/activity/[activitySlug]/+page.server.ts"
+	],
+	"/(participant)/[code]/activity/[activitySlug]/results": [],
+	"/(participant)/[code]/complete": [],
+	"/(participant)/[code]/quiz": []
 }

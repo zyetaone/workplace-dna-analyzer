@@ -3,16 +3,19 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 -->
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
-	import Card from '$lib/components/ui/Card.svelte';
+	import { Card } from '$lib/components/ui';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import TabList from '$lib/components/ui/TabList.svelte';
 	import TabTrigger from '$lib/components/ui/TabTrigger.svelte';
 	import TabContent from '$lib/components/ui/TabContent.svelte';
 	import type { getSessionStore } from '../admin.svelte.ts';
-	import { getAISessionStore } from '../ai.svelte';
-	import { analyzeWorkplaceData, generateConceptWordCloud } from '$lib/utils/analysis';
-	import GenerationDonutChart from '$lib/components/charts/GenerationDonutChart.svelte';
-	import ConceptWordCloud from '$lib/components/charts/ConceptWordCloud.svelte';
+	import { generateInsights } from '../admin.remote';
+	import {
+		analyzeWorkplaceData,
+		generateConceptWordCloud
+	} from '$lib/components/modules/analytics/analysis';
+	import DonutChart from '$lib/components/charts/DonutChart.svelte';
+	import WordCloud from '$lib/components/charts/WordCloud.svelte';
 	import type { Generation } from '$lib/questions';
 
 	interface InsightsPanelProps {
@@ -23,29 +26,24 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 
 	let activeTab = $state('office-dna');
 
-	// Get AI session store
-	const aiStore = getAISessionStore(store.session?.code || '');
-
 	// Comprehensive workplace analysis
 	let comprehensiveAnalysis = $state<any>(null);
 	let isAnalyzing = $state(false);
 
+	// Local AI (remote) state
+	let aiText = $state<string>('');
+	let isLoadingAI = $state(false);
+	let aiError = $state<string | null>(null);
+
 	// Update AI store with session data
 	$effect(() => {
-		if (store.session) {
-			aiStore.updateSession(store.session);
-		}
 		if (store.participants) {
-			aiStore.updateParticipants(store.participants);
 			// Perform comprehensive analysis
 			performAnalysis();
 		}
 	});
 
 	const insights = $derived(store.insights);
-	const aiInsights = $derived(aiStore.insights);
-	const isLoadingAI = $derived(aiStore.loading);
-	const aiError = $derived(aiStore.error);
 
 	// Perform comprehensive workplace analysis
 	async function performAnalysis() {
@@ -90,29 +88,32 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 	// Load AI insights when there are completed participants
 	$effect(() => {
 		const completedCount = store.participants?.filter((p) => p.completed).length || 0;
-		if (completedCount > 0 && !isLoadingAI && aiInsights.length === 0) {
-			console.log('🎯 Generating AI insights for completed participants...');
-			aiStore.generateInsights();
+		if (completedCount > 0 && !isLoadingAI && !aiText) {
+			void loadAIInsights();
 		}
 	});
 
 	// Debug: Log AI store state
-	$effect(() => {
-		const completedCount = store.participants?.filter((p) => p.completed).length || 0;
-		console.log('🤖 AI Store State:', {
-			hasInsights: aiInsights.length > 0,
-			isLoading: isLoadingAI,
-			hasError: !!aiError,
-			completedParticipants: completedCount,
-			sessionCode: store.session?.code
-		});
-	});
+	async function loadAIInsights() {
+		if (!store.session?.id) return;
+		isLoadingAI = true;
+		aiError = null;
+		try {
+			const res: any = await generateInsights({ sessionId: store.session.id });
+			// RemoteResponse.success wraps; normalize
+			aiText = (res && (res.insights || res.answer || '')) as string;
+		} catch (e: any) {
+			aiError = e?.message || 'Failed to generate insights';
+		} finally {
+			isLoadingAI = false;
+		}
+	}
 </script>
 
-<Card variant="elevated" class="mb-6">
+<Card variant="analytics" class="mb-6">
 	{#snippet children()}
 		<div class="p-6">
-			<div class="flex items-center gap-3 mb-6" in:fly={{ y: 20, duration: 600 }}>
+			<div class="mb-6 flex items-center gap-3" in:fly={{ y: 20, duration: 600 }}>
 				<h2 class="text-2xl font-bold text-gray-900">ZYETA AI Insights</h2>
 				<div class="live-pulse-enhanced"></div>
 			</div>
@@ -127,18 +128,22 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 					<TabContent value="office-dna" class="tab-content">
 						<div class="space-y-6">
 							<!-- Generation Analysis -->
-							{#if comprehensiveAnalysis && comprehensiveAnalysis.generationChartData.length > 0}
+							{#if comprehensiveAnalysis && comprehensiveAnalysis.generationChartData && comprehensiveAnalysis.generationChartData.length > 0}
 								<div
-									class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200"
+									class="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6"
 								>
-									<h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+									<h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800">
 										<span class="text-2xl">👥</span>
 										Generation Distribution
 									</h3>
 									<div class="flex items-center justify-center">
-										<GenerationDonutChart data={comprehensiveAnalysis.generationChartData} />
+										<DonutChart
+											data={comprehensiveAnalysis.generationChartData}
+											variant="generation"
+											centerText="Generation"
+										/>
 									</div>
-									<div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+									<div class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
 										{#each comprehensiveAnalysis.generationBreakdown as gen}
 											<div class="text-center">
 												<div class="text-2xl font-bold text-blue-600">{gen.percentage}%</div>
@@ -152,7 +157,8 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 
 							<!-- Concept Word Cloud -->
 							{#if comprehensiveAnalysis && comprehensiveAnalysis.concepts.length > 0}
-								<ConceptWordCloud
+								<WordCloud
+									variant="concepts"
 									concepts={comprehensiveAnalysis.concepts}
 									onRefresh={refreshConcepts}
 								/>
@@ -161,109 +167,90 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 							<!-- AI Insights -->
 							{#if true || store.participants?.filter((p) => p.completed).length > 0}
 								<div
-									class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200"
+									class="rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 p-6"
 								>
-									<h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+									<h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800">
 										<span class="text-2xl">🤖</span>
 										AI Workplace Analysis
 										{#if isLoadingAI}
-											<div class="flex items-center gap-2 ml-2">
-												<div class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+											<div class="ml-2 flex items-center gap-2">
+												<div class="h-2 w-2 animate-pulse rounded-full bg-purple-500"></div>
 												<span class="text-sm text-purple-600">Analyzing...</span>
 											</div>
 										{/if}
 									</h3>
 
-									<!-- AI Insights -->
-									<div class="space-y-3">
-										{#each aiInsights as insight, index}
-											<div
-												class="bg-white/70 rounded-lg p-4 text-gray-700"
-												in:fly={{ y: 20, duration: 500, delay: index * 100 }}
+									<!-- AI Insights (text) -->
+									{#if aiText}
+										<div class="whitespace-pre-wrap rounded-lg bg-white/70 p-4 text-gray-700">
+											{aiText}
+										</div>
+									{/if}
+
+									<!-- Loading State -->
+									{#if isLoadingAI && !aiText}
+										<div class="rounded-lg bg-white/70 p-4" in:fade={{ duration: 300 }}>
+											<div class="flex items-center gap-3">
+												<div class="flex space-x-1">
+													<div class="h-1 w-1 animate-pulse rounded-full bg-purple-500"></div>
+													<div
+														class="h-1 w-1 animate-pulse rounded-full bg-purple-500"
+														style="animation-delay: 0.2s"
+													></div>
+													<div
+														class="h-1 w-1 animate-pulse rounded-full bg-purple-500"
+														style="animation-delay: 0.4s"
+													></div>
+												</div>
+												<span class="text-xs text-purple-600">Generating AI insights...</span>
+											</div>
+										</div>
+									{/if}
+
+									<!-- Error State -->
+									{#if aiError}
+										<div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+											<div class="mb-2 flex items-center gap-2">
+												<span class="text-red-500">⚠️</span>
+												<span class="text-sm font-medium text-red-800">AI Analysis Error</span>
+											</div>
+											<p class="mb-3 text-sm text-red-700">{aiError}</p>
+											<button
+												class="text-sm text-red-600 transition-colors hover:text-red-800"
+												onclick={loadAIInsights}
 											>
-												<div class="flex items-start gap-3">
-													<div class="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-													<div class="flex-1">
-														<div class="flex items-center justify-between mb-1">
-															<h4 class="font-medium text-sm text-gray-800">{insight.title}</h4>
-															<span class="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded">
-																{Math.round(insight.confidence * 100)}% confidence
-															</span>
-														</div>
-														<p class="text-sm leading-relaxed mb-2">{insight.content}</p>
-														<p class="text-xs text-purple-700 font-medium">
-															{insight.recommendation}
-														</p>
-													</div>
-												</div>
-											</div>
-										{/each}
+												🔄 Try Again
+											</button>
+										</div>
+									{/if}
 
-										<!-- Loading State -->
-										{#if isLoadingAI && aiInsights.length === 0}
-											<div class="bg-white/70 rounded-lg p-4" in:fade={{ duration: 300 }}>
-												<div class="flex items-center gap-3">
-													<div class="flex space-x-1">
-														<div class="w-1 h-1 bg-purple-500 rounded-full animate-pulse"></div>
-														<div
-															class="w-1 h-1 bg-purple-500 rounded-full animate-pulse"
-															style="animation-delay: 0.2s"
-														></div>
-														<div
-															class="w-1 h-1 bg-purple-500 rounded-full animate-pulse"
-															style="animation-delay: 0.4s"
-														></div>
-													</div>
-													<span class="text-xs text-purple-600">Generating AI insights...</span>
-												</div>
-											</div>
-										{/if}
-
-										<!-- Error State -->
-										{#if aiError}
-											<div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-												<div class="flex items-center gap-2 mb-2">
-													<span class="text-red-500">⚠️</span>
-													<span class="text-sm font-medium text-red-800">AI Analysis Error</span>
-												</div>
-												<p class="text-sm text-red-700 mb-3">{aiError}</p>
-												<button
-													class="text-sm text-red-600 hover:text-red-800 transition-colors"
-													onclick={() => aiStore.generateInsights()}
-												>
-													🔄 Try Again
-												</button>
-											</div>
-										{/if}
-
-										<!-- Manual Refresh Button -->
-										{#if !isLoadingAI && aiInsights.length > 0 && !aiError}
-											<div class="text-center pt-4">
-												<button
-													class="text-sm text-purple-600 hover:text-purple-800 transition-colors"
-													onclick={() => aiStore.generateInsights()}
-												>
-													🔄 Refresh Analysis
-												</button>
-											</div>
-										{/if}
-									</div>
+									<!-- Manual Refresh Button -->
+									{#if !isLoadingAI && aiText && !aiError}
+										<div class="pt-4 text-center">
+											<button
+												class="text-sm text-purple-600 transition-colors hover:text-purple-800"
+												onclick={loadAIInsights}
+											>
+												🔄 Refresh Analysis
+											</button>
+										</div>
+									{/if}
 								</div>
 							{/if}
 
 							<!-- Culture Analysis (existing) -->
-							{#if aiInsights.length > 0}
+							{#if insights}
 								<div
-									class="bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-6 border border-blue-200"
+									class="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-teal-50 p-6"
 								>
-									<h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+									<h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
 										<span class="text-2xl">🎯</span>
 										Statistical Analysis
 									</h3>
-									<p class="text-gray-700 mb-4">{insights.officeAnalysis.description}</p>
-									<div class="grid md:grid-cols-3 gap-4">
+									<p class="mb-4 text-gray-700">{insights.officeAnalysis.description}</p>
+									<div class="grid gap-4 md:grid-cols-3">
 										{#each insights.officeAnalysis.recommendations as rec}
-											<div class="bg-white/70 rounded-lg p-3 text-sm text-gray-700">
+											<div class="rounded-lg bg-white/70 p-3 text-sm text-gray-700">
 												{rec}
 											</div>
 										{/each}
@@ -272,13 +259,13 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 							{/if}
 
 							<!-- Key Metrics -->
-							<div class="grid md:grid-cols-2 gap-6">
+							<div class="grid gap-6 md:grid-cols-2">
 								<div
-									class="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200"
+									class="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 p-4"
 								>
-									<div class="flex items-center gap-3 mb-2">
+									<div class="mb-2 flex items-center gap-3">
 										<div
-											class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
+											class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100"
 										>
 											<span class="text-xl">🎯</span>
 										</div>
@@ -293,11 +280,11 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 								</div>
 
 								<div
-									class="p-4 bg-gradient-to-br from-green-50 to-teal-50 rounded-lg border border-green-200"
+									class="rounded-lg border border-green-200 bg-gradient-to-br from-green-50 to-teal-50 p-4"
 								>
-									<div class="flex items-center gap-3 mb-2">
+									<div class="mb-2 flex items-center gap-3">
 										<div
-											class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"
+											class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100"
 										>
 											<span class="text-xl">👥</span>
 										</div>
@@ -315,12 +302,12 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 					</TabContent>
 				</Tabs>
 			{:else}
-				<div class="text-center py-12" in:fade={{ duration: 600 }}>
+				<div class="py-12 text-center" in:fade={{ duration: 600 }}>
 					<div
-						class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4"
+						class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100"
 					>
 						<svg
-							class="w-8 h-8 text-purple-600"
+							class="h-8 w-8 text-purple-600"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -333,16 +320,16 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 							/>
 						</svg>
 					</div>
-					<h3 class="text-lg font-medium text-gray-800 mb-2">AI Insights</h3>
-					<p class="text-gray-600 mb-4">
+					<h3 class="mb-2 text-lg font-medium text-gray-800">AI Insights</h3>
+					<p class="mb-4 text-gray-600">
 						Complete responses will generate personalized workplace insights
 					</p>
 
 					<!-- Manual AI Generation Button -->
 					{#if store.participants && store.participants.filter((p) => p.completed).length > 0}
 						<button
-							class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-							onclick={() => aiStore.generateInsights()}
+							class="rounded-lg bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-700"
+							onclick={loadAIInsights}
 							disabled={isLoadingAI}
 						>
 							{#if isLoadingAI}
@@ -354,8 +341,8 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 					{/if}
 
 					{#if aiError}
-						<div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-							<p class="text-red-700 text-sm">Error: {aiError}</p>
+						<div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3">
+							<p class="text-sm text-red-700">Error: {aiError}</p>
 						</div>
 					{/if}
 				</div>
@@ -363,3 +350,5 @@ InsightsPanel - Enhanced AI Insights with Tabbed Interface
 		</div>
 	{/snippet}
 </Card>
+
+<style></style>

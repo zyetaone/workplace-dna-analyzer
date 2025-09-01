@@ -30,3 +30,6 @@ coverage/
 .cache/
 .temp/
 *.pid
+
+# Claude MCP local config (not committed)
+.claude/*.local.json

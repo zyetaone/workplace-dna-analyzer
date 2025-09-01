@@ -1,9 +1,13 @@
 /**
  * Workplace preference quiz questions
+ * Now integrated with the unified question system
  */
+
+// Migration and types now handled by unified quiz system
 
 export type Generation = 'Baby Boomers' | 'Gen X' | 'Millennials' | 'Gen Z';
 
+// Legacy interfaces for backward compatibility
 export interface QuestionOption {
 	id: string;
 	label: string;
@@ -34,6 +38,29 @@ export interface GenerationOption {
 	label: string;
 	description: string;
 }
+
+export const GENERATION_OPTIONS: GenerationOption[] = [
+	{
+		id: 'Baby Boomers',
+		label: 'Baby Boomers (1946-1964)',
+		description: 'Traditional values, experience-focused, prefer formal communication'
+	},
+	{
+		id: 'Gen X',
+		label: 'Gen X (1965-1980)',
+		description: 'Independent, adaptable, value work-life balance'
+	},
+	{
+		id: 'Millennials',
+		label: 'Millennials (1981-1996)',
+		description: 'Tech-savvy, collaborative, seek meaningful work'
+	},
+	{
+		id: 'Gen Z',
+		label: 'Gen Z (1997-2012)',
+		description: 'Digital natives, diverse, socially conscious'
+	}
+];
 
 // Quiz questions
 export const questions: Question[] = [
@@ -319,31 +346,13 @@ export const questions: Question[] = [
 	}
 ];
 
-// Generation options for participant selection
-export const GENERATION_OPTIONS: GenerationOption[] = [
-	{
-		id: 'Baby Boomers',
-		label: 'Baby Boomers (1946-1964)',
-		description: 'Traditional values, experience-focused, loyal to organizations'
-	},
-	{
-		id: 'Gen X',
-		label: 'Generation X (1965-1980)',
-		description: 'Independent, adaptable, value work-life balance'
-	},
-	{
-		id: 'Millennials',
-		label: 'Millennials (1981-1996)',
-		description: 'Tech-savvy, collaborative, seek purpose and growth'
-	},
-	{
-		id: 'Gen Z',
-		label: 'Generation Z (1997-2012)',
-		description: 'Digital natives, diverse, value authenticity and social impact'
-	}
-];
+// Generation options moved to top of file to avoid duplication
 
-// Helper functions
+// Unified question set using the new system
+// Note: Temporarily commented out until migration modules are created
+// export const generalWorkplaceQuestionSet: QuestionSet = migrateGeneralQuestions(questions);
+
+// Helper functions (legacy - use QuestionHelpers from unified system instead)
 export function getQuestionById(id: string): Question | undefined {
 	return questions.find((q) => q.id === id);
 }

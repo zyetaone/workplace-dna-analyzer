@@ -11,5 +11,16 @@
 		"strict": false,
 		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true
-	}
+	},
+	"exclude": [
+		"tests/**",
+		"**/__tests__/**",
+		"docs/**",
+		"src/lib/states/functional/**",
+		"src/lib/state/**",
+		"src/lib/states/composition/**",
+		"src/lib/components/modules/ZyetaI/**s/ZyetaI/**",
+		"src/lib/components/modules/session/**/session/**",
+		"src/lib/components/modules/activities/quiz/**ies/quiz/**ies/quiz/**"
+	]
 }

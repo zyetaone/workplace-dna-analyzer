@@ -1,63 +1,78 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { formatDate, copyToClipboard } from '$lib/utils/common';
-	import { getAllSessionsRemote, createSessionRemote, deleteSessionRemote } from '../data.remote';
+	import { page } from '$app/state';
+	import {
+		createSession as createSessionCmd,
+		deleteSession as deleteSessionCmd
+	} from '../../app.remote';
 	import Toast, { showToast } from './(components)/Toast.svelte';
-	import { Card, StatsCard, ConfirmationDialog, Button, TextInput } from '$lib/components';
+	import {
+		Card,
+		ConfirmationDialog,
+		Button,
+		TextInput,
+		Tabs,
+		TabList,
+		TabTrigger,
+		TabContent,
+		Feedback
+	} from '$lib/components/ui';
+	import TemplateSelector from './(components)/TemplateSelector.svelte';
+	import TemplateManager from './(components)/TemplateManager.svelte';
+	import ActivitySelector from './(components)/ActivitySelector.svelte';
+	import EnhancedAnalyticsDashboard from '$lib/components/modules/analytics/components/EnhancedAnalyticsDashboard.svelte';
 
-	// Sessions state
-	let sessions = $state<any[]>([]);
-	let sessionsLoading = $state(true);
-	let sessionsError = $state<string | null>(null);
-
-	// Load sessions
-	async function loadSessions() {
-		sessionsLoading = true;
-		sessionsError = null;
-		try {
-			sessions = await getAllSessionsRemote({});
-		} catch (error: any) {
-			console.error('Failed to load sessions:', error);
-			sessionsError = error.message;
-		} finally {
-			sessionsLoading = false;
-		}
-	}
-
-	// Load sessions on mount
-	$effect(() => {
-		loadSessions();
-	});
+	// Get server-loaded data
+	let { data } = $props();
+	let sessions = $derived(data?.sessions || []);
+	let stats = $derived(
+		data?.stats || { total: 0, active: 0, totalParticipants: 0, completedSurveys: 0 }
+	);
 
 	// Simplified UI state
 	let sessionName = $state('');
+	let selectedTemplate = $state('basic');
+	let selectedActivities = $state(['workplace-preference']);
 	let showCreateForm = $state(false);
 	let isCreating = $state(false);
 	let deleteDialog = $state({ open: false, sessionCode: '' });
+	let createdSessionCode = $state<string | null>(null);
+	let showTemplateSelector = $state(false);
+	let activeTab = $state('sessions');
 
 	// Create session handler
-	async function createSession() {
+	async function handleCreateSession() {
 		if (!sessionName.trim()) return;
 
 		isCreating = true;
 		try {
-			const result = await createSessionRemote({ name: sessionName });
+			const result: any = await createSessionCmd({
+				name: sessionName,
+				template: selectedTemplate,
+				activities: selectedActivities
+			});
 
 			if (result.success && 'redirect' in result) {
 				showToast({
 					title: 'Success',
-					description: 'Session created successfully',
+					description: `Session created with ${selectedActivities.length} activities`,
 					variant: 'success'
 				});
-				sessionName = '';
-				showCreateForm = false;
-				
-				// Reload sessions to show updated list
-				await loadSessions();
 
-				// Navigate immediately
-				console.log('Navigating to:', result.redirect);
-				goto(result.redirect);
+				// Extract session code from redirect URL
+				const url = new URL(result.redirect as string, window.location.origin);
+				const sessionCode = url.pathname.split('/').pop();
+
+				// Reset form
+				sessionName = '';
+				selectedTemplate = 'basic';
+				selectedActivities = ['workplace-preference'];
+				showCreateForm = false;
+				createdSessionCode = sessionCode || null;
+
+				// Navigate to the session admin page (page will reload with new data)
+				goto(`/admin/${createdSessionCode}`);
 			} else {
 				showToast({ title: 'Error', description: 'Failed to create session', variant: 'error' });
 			}
@@ -75,7 +90,7 @@
 		if (!sessionCode) return;
 
 		try {
-			const result = await deleteSessionRemote({ code: sessionCode });
+			const result: any = await deleteSessionCmd({ code: sessionCode });
 
 			showToast({
 				title: result.success ? 'Success' : 'Error',
@@ -89,8 +104,7 @@
 
 			if (result.success) {
 				deleteDialog = { open: false, sessionCode: '' };
-				// Reload sessions after deletion
-				await loadSessions();
+				// Page will reload automatically with updated data
 			}
 		} catch (error) {
 			console.error('Session deletion failed:', error);
@@ -108,6 +122,15 @@
 		});
 	}
 
+	// Activity selection handlers
+	function handleTemplateChange(template: string) {
+		selectedTemplate = template;
+	}
+
+	function handleActivitiesChange(activities: string[]) {
+		selectedActivities = activities;
+	}
+
 	// Navigation helper
 	const openSession = (code: string) => goto(`/admin/${code}`);
 	const confirmDelete = (code: string) => {
@@ -119,28 +142,25 @@
 {#snippet sessionCard(session)}
 	<div class="h-fit">
 		<Card
-			variant="glassDark"
-			hoverable
-			hoverEffect="glow"
-			size="lg"
-			class="min-h-[320px] overflow-hidden flex flex-col transform hover:scale-[1.02] transition-all duration-300 ring-2 ring-slate-600/60 hover:ring-cyan-500/50 shadow-2xl hover:shadow-cyan-500/20"
+			variant="analytics"
+			class="flex min-h-[320px] transform flex-col overflow-hidden p-6 shadow-2xl ring-2 ring-slate-600/60 transition-all duration-300 hover:scale-[1.02] hover:shadow-cyan-500/20 hover:ring-cyan-500/50"
 		>
 			{#snippet children()}
-				<div class="flex-1 flex flex-col">
+				<div class="flex flex-1 flex-col">
 					<!-- Header with status -->
-					<div class="flex justify-between items-start mb-4">
-						<h3 class="text-2xl font-bold text-white flex-1 pr-3 leading-tight drop-shadow-lg">
+					<div class="mb-4 flex items-start justify-between">
+						<h3 class="flex-1 pr-3 text-2xl font-bold leading-tight text-white drop-shadow-lg">
 							{session.name}
 						</h3>
-						<div class="flex items-center gap-2 flex-shrink-0">
+						<div class="flex flex-shrink-0 items-center gap-2">
 							<span class="relative flex h-3 w-3">
 								{#if session.isActive}
 									<span
-										class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+										class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"
 									></span>
-									<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+									<span class="relative inline-flex h-3 w-3 rounded-full bg-green-500"></span>
 								{:else}
-									<span class="relative inline-flex rounded-full h-3 w-3 bg-slate-500"></span>
+									<span class="relative inline-flex h-3 w-3 rounded-full bg-slate-500"></span>
 								{/if}
 							</span>
 							<span
@@ -153,44 +173,50 @@
 
 					<!-- Session Code -->
 					<div class="mb-4">
-						<div class="text-sm text-slate-400 mb-1 font-medium">Session Code</div>
+						<div class="mb-1 text-sm font-medium text-slate-400">Session Code</div>
 						<div
-							class="font-mono text-2xl font-bold text-cyan-400 bg-slate-950/90 backdrop-blur-xl px-4 py-3 rounded-lg border-2 border-cyan-500/30 shadow-inner tracking-wider"
+							class="rounded-lg border-2 border-cyan-500/30 bg-slate-950/90 px-4 py-3 font-mono text-2xl font-bold tracking-wider text-cyan-400 shadow-inner backdrop-blur-xl"
 						>
 							{session.code}
 						</div>
 					</div>
 
 					<!-- Stats Grid -->
-					<div class="grid grid-cols-2 gap-4 mb-4">
+					<div class="mb-4 grid grid-cols-3 gap-4">
 						<div
-							class="text-center p-4 bg-slate-900/60 backdrop-blur-xl rounded-lg border-2 border-slate-700/50 shadow-lg"
+							class="rounded-lg border-2 border-slate-700/50 bg-slate-900/60 p-4 text-center shadow-lg backdrop-blur-xl"
 						>
 							<div class="text-3xl font-bold text-white">{session.activeCount || 0}</div>
 							<div class="text-xs text-slate-400">Active</div>
 						</div>
 						<div
-							class="text-center p-4 bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-xl rounded-lg border-2 border-green-600/50 shadow-lg"
+							class="rounded-lg border-2 border-green-600/50 bg-gradient-to-br from-green-900/40 to-emerald-900/40 p-4 text-center shadow-lg backdrop-blur-xl"
 						>
 							<div class="text-3xl font-bold text-green-400">{session.completedCount || 0}</div>
 							<div class="text-xs text-slate-400">Completed</div>
 						</div>
+						<div
+							class="rounded-lg border-2 border-cyan-600/50 bg-gradient-to-br from-cyan-900/40 to-blue-900/40 p-4 text-center shadow-lg backdrop-blur-xl"
+						>
+							<div class="text-3xl font-bold text-cyan-400">{session.activityCount || 0}</div>
+							<div class="text-xs text-slate-400">Activities</div>
+						</div>
 					</div>
 
 					<!-- Creation Date -->
-					<div class="text-sm text-slate-400 mt-auto">
+					<div class="mt-auto text-sm text-slate-400">
 						Created: {formatDate(session.createdAt)}
 					</div>
 				</div>
 			{/snippet}
 
-			{#snippet actions()}
+			{#snippet footer()}
 				<div class="grid grid-cols-3 gap-2">
 					<Button
 						onclick={() => openSession(session.code)}
 						variant="secondary"
 						size="sm"
-						class="text-xs bg-slate-800/80 hover:bg-slate-700/80 text-white border border-slate-600/50"
+						class="border border-slate-600/50 bg-slate-800/80 text-xs text-white hover:bg-slate-700/80"
 						>Open</Button
 					>
 					<Button onclick={() => copyLink(session)} variant="secondary" size="sm" class="text-xs"
@@ -215,204 +241,248 @@
 	<div class="">
 		<div class="container mx-auto px-6 py-12">
 			<!-- Header -->
+			<div class="mb-8">
+				<h1 class="mb-2 text-3xl font-bold text-slate-200">Admin Dashboard</h1>
+				<p class="text-slate-400">Manage sessions and activity templates</p>
+			</div>
 
-			<!-- Top Stats Bar - Fixed Position for Key Metrics -->
-			{#if sessions && sessions.length > 0}
-				<Card variant="glassDark" class="mb-6">
-					{#snippet children()}
-						{@const sessionsList = sessions}
-						{@const stats = {
-							total: sessionsList.length,
-							active: sessionsList.filter(s => s.isActive).length,
-							totalParticipants: sessionsList.reduce((sum, s) => sum + (s.activeCount + s.completedCount), 0),
-							completedSurveys: sessionsList.reduce((sum, s) => sum + s.completedCount, 0)
-						}}
-						<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-							<div
-								class="text-center p-3 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-slate-700/20"
-							>
-								<div class="text-2xl font-bold text-slate-100">{stats.total}</div>
-								<div class="text-xs text-slate-400">Total Sessions</div>
-							</div>
-							<div
-								class="text-center p-3 bg-green-900/30 backdrop-blur-sm rounded-lg border border-green-700/20"
-							>
-								<div class="text-2xl font-bold text-green-400">{stats.active}</div>
-								<div class="text-xs text-slate-400">Active Now</div>
-							</div>
-							<div
-								class="text-center p-3 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-slate-700/20"
-							>
-								<div class="text-2xl font-bold text-slate-100">
-									{stats.totalParticipants}
-								</div>
-								<div class="text-xs text-slate-400">Total Participants</div>
-							</div>
-							<div
-								class="text-center p-3 bg-purple-900/30 backdrop-blur-sm rounded-lg border border-purple-700/20"
-							>
-								<div class="text-2xl font-bold text-purple-400">
-									{stats.completedSurveys}
-								</div>
-								<div class="text-xs text-slate-400">Completed</div>
-							</div>
-						</div>
-					{/snippet}
-				</Card>
-			{/if}
+			<Tabs bind:value={activeTab} class="w-full">
+				<TabList class="mb-6">
+					<TabTrigger value="sessions">Sessions</TabTrigger>
+					<TabTrigger value="analytics">Analytics</TabTrigger>
+					<TabTrigger value="templates">Templates</TabTrigger>
+				</TabList>
 
-			<!-- Create Session with Smooth Transitions -->
-			<Card variant="glassDark" size="lg" class="mb-8">
-				{#snippet children()}
-					{#if !showCreateForm}
-						<div>
-							{#if sessions && sessions.length >= 3}
-								<div
-									class="text-center p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-slate-700/30"
-								>
-									<div class="text-4xl mb-2">📋</div>
-									<h3 class="text-lg font-semibold text-slate-200 mb-2">Session Limit Reached</h3>
-									<p class="text-slate-400 text-sm mb-4">
-										You can have up to 3 active sessions. Delete an existing session to create a new
-										one.
-									</p>
-									<div class="text-xs text-slate-500">
-										Current sessions: {sessions.length}/3
+				<TabContent value="sessions">
+					<!-- Top Stats Bar - Fixed Position for Key Metrics -->
+					{#if sessions && sessions.length > 0}
+						<Card variant="analytics" class="mb-6">
+							{#snippet children()}
+								{@const sessionsList = sessions}
+								{@const stats = {
+									total: sessionsList.length,
+									active: sessionsList.filter((s) => s.isActive).length,
+									totalParticipants: sessionsList.reduce(
+										(sum, s) => sum + (s.activeCount + s.completedCount),
+										0
+									),
+									completedSurveys: sessionsList.reduce((sum, s) => sum + s.completedCount, 0)
+								}}
+								<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+									<div
+										class="rounded-lg border border-slate-700/20 bg-slate-900/50 p-3 text-center backdrop-blur-sm"
+									>
+										<div class="text-2xl font-bold text-slate-100">{stats.total}</div>
+										<div class="text-xs text-slate-400">Total Sessions</div>
 									</div>
+									<div
+										class="rounded-lg border border-green-700/20 bg-green-900/30 p-3 text-center backdrop-blur-sm"
+									>
+										<div class="text-2xl font-bold text-green-400">{stats.active}</div>
+										<div class="text-xs text-slate-400">Active Now</div>
+									</div>
+									<div
+										class="rounded-lg border border-slate-700/20 bg-slate-900/50 p-3 text-center backdrop-blur-sm"
+									>
+										<div class="text-2xl font-bold text-slate-100">
+											{stats.totalParticipants}
+										</div>
+										<div class="text-xs text-slate-400">Total Participants</div>
+									</div>
+									<div
+										class="rounded-lg border border-purple-700/20 bg-purple-900/30 p-3 text-center backdrop-blur-sm"
+									>
+										<div class="text-2xl font-bold text-purple-400">
+											{stats.completedSurveys}
+										</div>
+										<div class="text-xs text-slate-400">Completed</div>
+									</div>
+								</div>
+							{/snippet}
+						</Card>
+					{/if}
+
+					<!-- Create Session with Smooth Transitions -->
+					<Card variant="analytics" class="mb-8 p-6">
+						{#snippet children()}
+							{#if !showCreateForm}
+								<div>
+									{#if sessions && sessions.length >= 3}
+										<div
+											class="rounded-lg border border-slate-700/30 bg-slate-900/50 p-6 text-center backdrop-blur-sm"
+										>
+											<div class="mb-2 text-4xl">📋</div>
+											<h3 class="mb-2 text-lg font-semibold text-slate-200">
+												Session Limit Reached
+											</h3>
+											<p class="mb-4 text-sm text-slate-400">
+												You can have up to 3 active sessions. Delete an existing session to create a
+												new one.
+											</p>
+											<div class="text-xs text-slate-500">
+												Current sessions: {sessions.length}/3
+											</div>
+										</div>
+									{:else}
+										<Button
+											onclick={() => (showCreateForm = true)}
+											class="w-full bg-gradient-to-r from-cyan-600 to-purple-600 text-white shadow-lg hover:from-cyan-700 hover:to-purple-700 hover:shadow-xl"
+											size="lg"
+										>
+											<span class="mr-2 text-2xl">+</span> Create New Session
+										</Button>
+									{/if}
 								</div>
 							{:else}
-								<Button
-									onclick={() => (showCreateForm = true)}
-									class="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl"
-									size="lg"
-								>
-									<span class="text-2xl mr-2">+</span> Create New Session
-								</Button>
-							{/if}
-						</div>
-					{:else}
-						<div class="space-y-6">
-							<div class="flex items-center justify-between">
-								<h2 class="text-2xl font-semibold text-slate-200">Create New Session</h2>
-								<Button
-									onclick={() => {
-										showCreateForm = false;
-										sessionName = '';
-									}}
-									variant="secondary"
-									size="sm"
-									class="text-slate-400 hover:text-slate-200"
-								>
-									✕
-								</Button>
-							</div>
-							<div class="flex flex-col sm:flex-row gap-4">
-								<div class="flex-1">
-									<TextInput
-										id="sessionName"
-										bind:value={sessionName}
-										placeholder="Enter session name..."
-										disabled={isCreating}
-										required
-										minlength={2}
-										label="Session Name"
-										size="md"
+								<div class="space-y-6">
+									<div class="flex items-center justify-between">
+										<h2 class="text-2xl font-semibold text-slate-200">Create New Session</h2>
+										<Button
+											onclick={() => {
+												showCreateForm = false;
+												sessionName = '';
+												selectedTemplate = 'basic';
+												selectedActivities = ['workplace-preference'];
+											}}
+											variant="secondary"
+											size="sm"
+											class="text-slate-400 hover:text-slate-200"
+										>
+											✕
+										</Button>
+									</div>
+
+									<!-- Session Name -->
+									<div>
+										<TextInput
+											id="sessionName"
+											bind:value={sessionName}
+											placeholder="Enter session name..."
+											disabled={isCreating}
+											required
+											minlength={2}
+											label="Session Name"
+											size="md"
+										/>
+									</div>
+
+									<!-- Activity Selection -->
+									<ActivitySelector
+										{selectedTemplate}
+										{selectedActivities}
+										onTemplateChange={handleTemplateChange}
+										onActivitiesChange={handleActivitiesChange}
 									/>
-								</div>
-								<div class="flex gap-2 items-end">
-									<Button
-										onclick={createSession}
-										disabled={isCreating || !sessionName.trim()}
-										loading={isCreating}
-										size="lg"
-										class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-									>
-										Create Session
-									</Button>
-								</div>
-							</div>
-						</div>
-					{/if}
-				{/snippet}
-			</Card>
 
-			<!-- Sessions Content -->
-			<Card variant="glassDark" class="min-h-[400px] relative">
-				{#snippet children()}
-					{#if sessionsError}
-						<div class="p-12 text-center">
-							<div class="text-6xl mb-4">❌</div>
-							<h2 class="text-2xl font-semibold text-slate-200 mb-2">Error Loading Sessions</h2>
-							<p class="text-slate-400">{sessionsError || 'Failed to load sessions'}</p>
-						</div>
-					{:else if sessionsLoading}
-						<div class="p-12 text-center">
-							<div class="inline-flex items-center justify-center w-16 h-16 mb-4">
-								<div class="animate-spin rounded-full border-4 border-slate-700 border-t-cyan-500 w-12 h-12"></div>
-							</div>
-							<h2 class="text-xl font-semibold text-slate-200 mb-2">Loading Sessions</h2>
-							<p class="text-slate-400">Fetching your sessions...</p>
-						</div>
-					{:else if !sessions || sessions.length === 0}
-						<div class="p-12 text-center">
-							<div class="text-6xl mb-4">📊</div>
-							<h2 class="text-2xl font-semibold text-slate-200 mb-2">No Sessions Yet</h2>
-							<p class="text-slate-400">Create your first session to get started!</p>
-						</div>
+									<!-- Create Button -->
+									<div class="flex justify-end">
+										<Button
+											onclick={handleCreateSession}
+											disabled={isCreating ||
+												!sessionName.trim() ||
+												selectedActivities.length === 0}
+											loading={isCreating}
+											size="lg"
+											class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+										>
+											Create Session with {selectedActivities.length} Activities
+										</Button>
+									</div>
+								</div>
+							{/if}
+						{/snippet}
+					</Card>
+
+					<!-- Sessions Content -->
+					<Card variant="analytics" class="relative min-h-[400px]">
+						{#snippet children()}
+							{#if !sessions || sessions.length === 0}
+								<div class="p-12 text-center">
+									<div class="mb-4 text-6xl">📊</div>
+									<h2 class="mb-2 text-2xl font-semibold text-slate-200">No Sessions Yet</h2>
+									<p class="text-slate-400">Create your first session to get started!</p>
+								</div>
+							{:else}
+								{@const sessionsList = sessions}
+								<div class="p-6">
+									<!-- Session Cards Container with Scroll -->
+									<div class="relative">
+										<div
+											class="scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 max-h-[600px] overflow-y-auto rounded-lg p-2"
+										>
+											<div
+												class="grid auto-rows-fr grid-cols-1 gap-8 pr-2 lg:grid-cols-2 xl:grid-cols-3"
+											>
+												{#each sessionsList as session (session.code)}
+													{@render sessionCard(session)}
+												{/each}
+											</div>
+										</div>
+
+										<!-- Scroll Indicator -->
+										{#if sessionsList.length > 8}
+											<div
+												class="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-lg bg-gradient-to-t from-slate-900/90 to-transparent"
+											></div>
+											<div
+												class="absolute bottom-2 right-4 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-400"
+											>
+												Scroll for more sessions
+											</div>
+										{/if}
+									</div>
+
+									<!-- Session Count Info -->
+									<div class="mt-4 text-center text-sm text-slate-400">
+										Showing {sessionsList.length} session{sessionsList.length !== 1 ? 's' : ''}
+									</div>
+								</div>
+							{/if}
+						{/snippet}
+					</Card>
+				</TabContent>
+
+				<TabContent value="analytics">
+					{#if sessions && sessions.length > 0}
+						{@const activeSession = sessions.find((s) => s.isActive) || sessions[0]}
+						<EnhancedAnalyticsDashboard
+							sessionCode={activeSession.code}
+							title={`Analytics - ${activeSession.name}`}
+							refreshInterval={10000}
+							showJourneyMap={true}
+							showEngagementHeatmap={true}
+						/>
 					{:else}
-						{@const sessionsList = sessions}
-						<div class="p-6">
-							<!-- Session Cards Container with Scroll -->
-							<div class="relative">
-								<div
-									class="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 rounded-lg p-2"
-								>
-									<div
-										class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 auto-rows-fr pr-2"
-									>
-										{#each sessionsList as session (session.code)}
-											{@render sessionCard(session)}
-										{/each}
-									</div>
+						<Card variant="analytics" class="p-12">
+							{#snippet children()}
+								<div class="text-center">
+									<div class="mb-4 text-6xl">📊</div>
+									<h3 class="mb-2 text-xl font-semibold text-slate-200">No Sessions Available</h3>
+									<p class="text-slate-400">Create a session first to view analytics</p>
 								</div>
-
-								<!-- Scroll Indicator -->
-								{#if sessionsList.length > 8}
-									<div
-										class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-900/90 to-transparent pointer-events-none rounded-b-lg"
-									></div>
-									<div
-										class="absolute bottom-2 right-4 text-xs text-slate-400 bg-slate-800/80 px-2 py-1 rounded"
-									>
-										Scroll for more sessions
-									</div>
-								{/if}
-							</div>
-
-							<!-- Session Count Info -->
-							<div class="mt-4 text-center text-sm text-slate-400">
-								Showing {sessionsList.length} session{sessionsList.length !== 1
-									? 's'
-									: ''}
-							</div>
-						</div>
+							{/snippet}
+						</Card>
 					{/if}
-				{/snippet}
-			</Card>
+				</TabContent>
+
+				<TabContent value="templates">
+					<TemplateManager />
+				</TabContent>
+			</Tabs>
 		</div>
 	</div>
 
 	<!-- Error state with reset functionality -->
 	{#snippet failed(error, reset)}
-		<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4" role="main">
+		<div class="flex min-h-screen items-center justify-center bg-gray-50 px-4" role="main">
 			<div
-				class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full"
+				class="w-full max-w-md rounded-lg bg-white p-8 shadow-lg"
 				role="alert"
 				aria-live="assertive"
 			>
-				<div class="text-red-600 text-5xl text-center mb-4" aria-hidden="true">⚠️</div>
-				<h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">Admin Dashboard Error</h1>
-				<p class="text-gray-600 text-center mb-6">
+				<div class="mb-4 text-center text-5xl text-red-600" aria-hidden="true">⚠️</div>
+				<h1 class="mb-2 text-center text-2xl font-bold text-gray-800">Admin Dashboard Error</h1>
+				<p class="mb-6 text-center text-gray-600">
 					{error && typeof error === 'object' && 'message' in error
 						? (error as Error).message
 						: 'An unexpected error occurred'}
@@ -420,7 +490,7 @@
 				<div class="text-center">
 					<button
 						type="button"
-						class="text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+						class="text-blue-600 underline hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
 						onclick={reset}
 						aria-label="Try again"
 					>
@@ -444,3 +514,7 @@
 />
 
 <Toast />
+
+<Toast />
+
+<style></style>

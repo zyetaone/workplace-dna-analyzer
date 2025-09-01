@@ -1,0 +1,264 @@
+/**
+ * ZYETA Design System (ZDS) - Consolidated CSS
+ * Complete design system with design tokens and component classes
+ * No cn utility needed - use native Svelte 5 class: and style: directives
+ */
+
+/* ===================================================================
+   ZDS DESIGN TOKENS - CSS Custom Properties
+   =================================================================== */
+
+:root {
+  /* Color Palette - Primary Brand */
+  --zds-color-primary: #7c3aed;
+  --zds-color-primary-hover: #6d28d9;
+  --zds-color-primary-active: #5b21b6;
+  
+  /* Surface Colors */
+  --zds-color-background: #0f0f23;
+  --zds-color-surface: #1a1a2e;
+  --zds-color-border: #27272a;
+  --zds-color-border-hover: #3f3f46;
+  
+  /* Text Colors */
+  --zds-color-text-primary: #ffffff;
+  --zds-color-text-secondary: #a1a1aa;
+  --zds-color-text-muted: #71717a;
+  
+  /* Secondary Colors */
+  --zds-color-secondary: #64748b;
+  --zds-color-secondary-hover: #475569;
+  --zds-color-secondary-active: #334155;
+  
+  /* Semantic Colors */
+  --zds-color-success: #22c55e;
+  --zds-color-warning: #f59e0b;
+  --zds-color-error: #ef4444;
+}
+
+/* ===================================================================
+   COMPONENT CLASSES WITH @APPLY
+   =================================================================== */
+
+@layer components {
+  /* Button Components */
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 font-medium rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2;
+    @apply focus-visible:ring-purple-500 focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50 select-none;
+    @apply bg-purple-600 text-white;
+    @apply hover:bg-purple-700 active:bg-purple-800 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply relative inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 font-medium rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2;
+    @apply focus-visible:ring-gray-500 focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50 select-none;
+    @apply bg-gray-600 text-white;
+    @apply hover:bg-gray-700 active:bg-gray-800;
+  }
+
+  .btn-ghost {
+    @apply relative inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 font-medium rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2;
+    @apply focus-visible:ring-purple-500 focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50 select-none;
+    @apply bg-transparent text-white;
+    @apply hover:bg-white/10 active:bg-white/20;
+  }
+
+  .btn-outline {
+    @apply relative inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 font-medium rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2;
+    @apply focus-visible:ring-purple-500 focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50 select-none;
+    @apply border border-purple-400 bg-transparent text-purple-400;
+    @apply hover:bg-purple-400/10 hover:border-purple-300;
+    @apply active:bg-purple-400/20;
+  }
+
+  .btn-destructive {
+    @apply relative inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 font-medium rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2;
+    @apply focus-visible:ring-red-500 focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50 select-none;
+    @apply bg-red-600 text-white;
+    @apply hover:bg-red-700 active:bg-red-800;
+  }
+
+  .btn-glass {
+    @apply relative inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 font-medium rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2;
+    @apply focus-visible:ring-purple-500 focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50 select-none;
+    @apply backdrop-blur-md bg-white/10 text-white border border-white/20;
+    @apply hover:bg-white/20 hover:border-white/30 active:bg-white/30;
+  }
+
+  /* Button Sizes */
+  .btn-xs { @apply h-7 px-2 text-xs; }
+  .btn-sm { @apply h-8 px-3 text-sm; }
+  .btn-md { @apply h-10 px-4 text-sm; }
+  .btn-lg { @apply h-12 px-6 text-base; }
+  .btn-xl { @apply h-14 px-8 text-lg; }
+
+  /* Card Components */
+  .card-default {
+    @apply rounded-xl p-6 transition-all duration-200;
+    @apply bg-gray-800 border border-gray-700;
+    @apply hover:border-gray-600;
+  }
+
+  .card-glass {
+    @apply rounded-xl p-6 transition-all duration-200;
+    @apply backdrop-blur-md bg-white/5 border border-white/10;
+    @apply hover:bg-white/10 hover:border-white/20;
+  }
+
+  .card-elevated {
+    @apply rounded-xl p-6 transition-all duration-200;
+    @apply bg-gray-800 shadow-xl shadow-black/50;
+    @apply hover:shadow-2xl;
+  }
+
+  .card-interactive {
+    @apply rounded-xl p-6 transition-all duration-200;
+    @apply bg-gray-800 border border-gray-700 cursor-pointer;
+    @apply hover:border-gray-600 hover:scale-[1.02] hover:shadow-lg;
+    @apply active:scale-[0.98];
+  }
+
+  /* Input Components */
+  .input-default {
+    @apply w-full rounded-lg border px-3 py-2;
+    @apply bg-transparent text-white placeholder:text-gray-400;
+    @apply transition-colors duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-purple-500/50;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply border-gray-600 hover:border-gray-500 focus:border-purple-500;
+  }
+
+  .input-error {
+    @apply w-full rounded-lg border px-3 py-2;
+    @apply bg-transparent text-white placeholder:text-gray-400;
+    @apply transition-colors duration-200;
+    @apply focus:outline-none focus:ring-2;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply border-red-500/50 hover:border-red-500 focus:border-red-500;
+    @apply focus:ring-red-500/50;
+  }
+
+  .input-success {
+    @apply w-full rounded-lg border px-3 py-2;
+    @apply bg-transparent text-white placeholder:text-gray-400;
+    @apply transition-colors duration-200;
+    @apply focus:outline-none focus:ring-2;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply border-green-500/50 hover:border-green-500 focus:border-green-500;
+    @apply focus:ring-green-500/50;
+  }
+
+  /* Input Sizes */
+  .input-sm { @apply h-8 text-sm; }
+  .input-md { @apply h-10 text-base; }
+  .input-lg { @apply h-12 text-lg; }
+
+  /* Loading States */
+  .loading-spinner {
+    @apply w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin;
+  }
+
+  .loading-overlay {
+    @apply absolute inset-0 z-50 flex items-center justify-center;
+    @apply bg-black/50 backdrop-blur-sm;
+  }
+
+  /* Progress Components */
+  .progress-container {
+    @apply h-2 overflow-hidden rounded-full bg-gray-700;
+  }
+
+  .progress-bar {
+    @apply h-full bg-gradient-to-r from-purple-500 to-purple-600;
+    @apply transition-all duration-500 ease-out;
+  }
+
+  /* Progress Fill Variants - Referenced by components */
+  .progress-fill {
+    @apply h-full transition-all duration-500 ease-out;
+  }
+}
+
+/* ===================================================================
+   UTILITY CLASSES
+   =================================================================== */
+
+@layer utilities {
+  /* Text Utilities */
+  .text-gradient {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass Effect */
+  .glass {
+    backdrop-filter: blur(24px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Focus Ring */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-purple-500;
+    @apply focus:ring-offset-2 focus:ring-offset-gray-900;
+  }
+}
+
+/* ===================================================================
+   ACCESSIBILITY & RESPONSIVE
+   =================================================================== */
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-primary,
+  .btn-secondary,
+  .card-default,
+  .input-default {
+    border-width: 2px !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
